@@ -3229,7 +3229,7 @@ class Prepare extends QuizLifeCycle
         undefined,
         {
           file: true,
-          seek: parseInt(audio_start_point) + 1,
+          seek: parseInt(audio_start_point),
         }
       );
 
