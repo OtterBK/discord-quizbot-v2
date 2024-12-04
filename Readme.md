@@ -527,3 +527,11 @@ node /home/ubuntu/quizbot3/index.js
 </details>
 
 ---
+
+## 📬 연락 방법 (Contact Information)
+이 프로젝트에 대해 질문이 있거나, 개선 아이디어를 공유하고 싶다면 언제든지 연락해주세요!  
+(Feel free to reach out if you have questions or ideas for improvement!)
+
+- **Discord**: bokum_
+- **Email**: [otter6975@gmail.com](mailto:otter6975@gmail.com)
+
