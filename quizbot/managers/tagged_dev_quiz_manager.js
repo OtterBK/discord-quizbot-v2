@@ -79,7 +79,12 @@ exports.getQuestionListByTags = (tags_value, limit=0) => //0 == unlimited
     }
   }
 
-  total_question_list.sort(() => Math.random() - 0.5);
+  // Fisher-Yates Shuffle 알고리즘으로 섞기
+  for(let i = total_question_list.length - 1; i > 0; i--)
+  {
+    const j = Math.floor(Math.random() * (i + 1));
+    [total_question_list[i], total_question_list[j]] = [total_question_list[j], total_question_list[i]];
+  }
 
   if(limit <= 0)
   {
