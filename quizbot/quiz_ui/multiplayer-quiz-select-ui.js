@@ -2,6 +2,7 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
+const fs = require('fs');
 //#endregion
 
 //#region 로컬 modules
@@ -217,6 +218,13 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
   createLobby(interaction)
   {
+    if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, ephemeral: true });
+      return undefined;
+    }
+
     if(this.checkForJoinLobby(interaction) === false) //아직 준비가 안됐다.
     {
       return;
@@ -228,6 +236,13 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
   tryJoinLobby(interaction, multiplayer_lobby_info)
   {
+    if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, ephemeral: true });
+      return undefined;
+    }
+
     if(multiplayer_lobby_info.is_ingame)
     {
       interaction.channel.send({content: `\`\`\`🌐 ${multiplayer_lobby_info.session_name} 은 이미 게임 중입니다.\`\`\``});
@@ -255,6 +270,33 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     }, 2500);
 
     return new MultiplayerQuizLobbyUI(fake_quiz_info, interaction, true, session_id);
+  }
+
+  checkMultiplayerBan(list)
+  {
+    //나중에 시간마다 조회하는 방식으로 변경할 것
+    if (!fs.existsSync(SYSTEM_CONFIG.banned_user_path)) 
+    {
+      return false;
+    }
+
+    //멀티플레이 ban 시스템
+    const banned_list = fs.readFileSync(SYSTEM_CONFIG.banned_user_path, {
+      encoding: 'utf8',
+      flag: 'r',
+    });
+
+    const banned_list_array = banned_list.split('\n');
+
+    for (const banned_id of banned_list_array) 
+    {
+      if (list.includes(banned_id.trim())) 
+      {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 
