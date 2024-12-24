@@ -178,7 +178,11 @@ class UserQuizInfoUI extends QuizInfoUI
         }
   
         const question_info = question_list[i];
-        const option = { label: `${i+1}번째 문제(${this.answerTypeToString(question_info.data.answer_type)})`, description: `${question_info.data.answers}`, value: `${i}` };
+        const option = { label: `${i+1}번째 문제(${this.answerTypeToString(question_info.data.answer_type)})`, 
+                        description: `${question_info.data.answers.length < 100 
+                                        ? question_info.data.answers 
+                                        : question_info.data.answers.substring(0, 99)}`, 
+                        value: `${i}` };
         temp_question_select_menu.addOptions(option);
       }
   
