@@ -307,7 +307,7 @@ class UserQuizInfoUI extends QuizInfoUI
     if(interaction.customId === 'quiz_toggle_public') //퀴즈 공개/비공개 버튼
     {
       //비공개에서 공개로 전환할 경우
-      if(user_quiz_info.data.is_private === true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
+      if(user_quiz_info.data.is_private == true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
       {
         interaction.user.send({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, ephemeral: true });
         return;
