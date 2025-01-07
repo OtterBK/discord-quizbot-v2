@@ -376,6 +376,10 @@ class UserQuizInfoUI extends QuizInfoUI
     user_quiz_info.data.simple_description = utility.removeMarkdownSpecialChars(quiz_simple_description);
     user_quiz_info.data.description = quiz_description;
     user_quiz_info.data.modified_time = new Date();
+
+    //제작자 이름과 avatar url도 갱신해주자
+    user_quiz_info.data.creator_name = modal_interaction.user?.displayName; //잠만 이게 맞아?
+    user_quiz_info.data.creator_icon_url = modal_interaction.user?.avatarURL();
   
     user_quiz_info.saveDataToDB();
     this.refreshUI();
