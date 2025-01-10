@@ -178,7 +178,11 @@ class UserQuizInfoUI extends QuizInfoUI
         }
   
         const question_info = question_list[i];
-        const option = { label: `${i+1}번째 문제(${this.answerTypeToString(question_info.data.answer_type)})`, description: `${question_info.data.answers}`, value: `${i}` };
+        const option = { label: `${i+1}번째 문제(${this.answerTypeToString(question_info.data.answer_type)})`, 
+          description: `${question_info.data.answers.length < 100 
+            ? question_info.data.answers 
+            : question_info.data.answers.substring(0, 99)}`, 
+          value: `${i}` };
         temp_question_select_menu.addOptions(option);
       }
   
@@ -303,7 +307,7 @@ class UserQuizInfoUI extends QuizInfoUI
     if(interaction.customId === 'quiz_toggle_public') //퀴즈 공개/비공개 버튼
     {
       //비공개에서 공개로 전환할 경우
-      if(user_quiz_info.data.is_private === true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
+      if(user_quiz_info.data.is_private == true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
       {
         interaction.user.send({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, ephemeral: true });
         return;
@@ -369,9 +373,13 @@ class UserQuizInfoUI extends QuizInfoUI
       
     user_quiz_info.data.quiz_title = quiz_title;
     user_quiz_info.data.thumbnail = quiz_thumbnail;
-    user_quiz_info.data.simple_description = quiz_simple_description;
+    user_quiz_info.data.simple_description = utility.removeMarkdownSpecialChars(quiz_simple_description);
     user_quiz_info.data.description = quiz_description;
     user_quiz_info.data.modified_time = new Date();
+
+    //제작자 이름과 avatar url도 갱신해주자
+    user_quiz_info.data.creator_name = modal_interaction.user?.displayName; //잠만 이게 맞아?
+    user_quiz_info.data.creator_icon_url = modal_interaction.user?.avatarURL();
   
     user_quiz_info.saveDataToDB();
     this.refreshUI();

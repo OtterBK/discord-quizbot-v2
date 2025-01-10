@@ -273,7 +273,16 @@ const start_quiz_handler = async (interaction) =>
   
       if(current_notice.length >= 0)
       {
-        interaction.channel.send({ content: `\`\`\`${current_notice}\`\`\`` });
+        interaction.channel.send({ 
+          content: `\`\`\`${current_notice}\`\`\``,
+          components: [new ActionRowBuilder()
+            .addComponents(
+              new ButtonBuilder()
+                .setLabel('보드게임봇 테스트 참여하기')
+                .setURL('https://koreanbots.dev/bots/952896575145930773')
+                .setStyle(ButtonStyle.Link),
+            ) ],
+        });
       }
     }
   }

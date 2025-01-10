@@ -489,3 +489,11 @@ exports.calcTagsValue = (values) =>
 {
   return values.reduce((acc, tag_value) => acc + parseInt(tag_value), 0);
 };
+
+exports.removeMarkdownSpecialChars = (str) => 
+{
+  // Markdown 특수문자를 제거하는 정규식
+  // eslint-disable-next-line no-useless-escape
+  const markdownSpecialChars = /[*`_~#\[\]\(\)\{\}><|!.\-+]/g;
+  return str.replace(markdownSpecialChars, '');
+};
