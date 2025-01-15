@@ -2764,6 +2764,9 @@ class InitializeOmakaseQuiz extends Initialize
 
     //오마카세 퀴즈 설정 값
     const use_basket_mode = quiz_info['basket_mode'] ?? true;
+    
+    //인증된 퀴즈에서만 뽑을지 필터
+    const certified_filter = quiz_info['certified_filter'] ?? true; 
 
     let total_dev_question_count = undefined;
     let dev_question_list = undefined;
@@ -2780,8 +2783,6 @@ class InitializeOmakaseQuiz extends Initialize
       const dev_quiz_tags = quiz_info['dev_quiz_tags']; //오마카세 퀴즈는 quiz_tags 가 있다.
       const custom_quiz_type_tags = quiz_info['custom_quiz_type_tags']; //오마카세 퀴즈는 quiz_type_tags 가 있다.
       const custom_quiz_tags = quiz_info['custom_quiz_tags']; //오마카세 퀴즈는 quiz_tags 도 있다.
-          
-      const certified_filter = quiz_info['certified_filter'] ?? true; //인증된 퀴즈에서만 뽑을지 필터
   
       //무작위로 question들 뽑아내자. 각각 넉넉하게 limit 만큼 뽑는다.
       [total_dev_question_count, dev_question_list] = tagged_dev_quiz_manager.getQuestionListByTags(dev_quiz_tags, limit);
@@ -2825,10 +2826,8 @@ class InitializeOmakaseQuiz extends Initialize
       // this.quiz_session.already_liked = false; //장바구니 모드면 추천하기를 무조건 띄운다. -> 안띄운다 우선
     }
 
-    logger.info(`Omakase Question count of this session. use_basket_mode=${use_basket_mode}, dev=${dev_quiz_count}, custom=${custom_quiz_count}, limit=${limit}`);
+    logger.info(`Omakase Question count of this session. use_basket_mode=${use_basket_mode}, certified_filter=${certified_filter}, dev=${dev_quiz_count}, custom=${custom_quiz_count}, limit=${limit}`);
     
-        
-    //좀 더 세부적으로 섞어야할 것 같은데...너무 귀찮다 우선 걍 이렇게 ㄱㄱ하자
 
     //build dev questions 
     dev_question_list.slice(0, dev_quiz_count).forEach(question_row => 
