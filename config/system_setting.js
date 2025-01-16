@@ -61,7 +61,7 @@ exports.SYSTEM_CONFIG = {
   CUSTOM_AUDIO_MAX_FILE_SIZE: '10M', //문제용 오디오 파일 최대 용량
   CUSTOM_AUDIO_YTDL_MAX_LENGTH: 1200, //문제용 오디오로 사용가능한 오디오 최대 길이(s)
   // custom_audio_cache_path: `${__dirname}/../resources/cache`,
-  CUSTOM_AUDIO_CACHE_PATH: `G:/quizdata/cache`,
+  CUSTOM_AUDIO_CACHE_PATH: `${__dirname}/../resources/cache`,
 
   YTDL_COOKIE_PATH: `${__dirname}/../resources/ytdl_cookie.json`,
   YTDL_IPV6_USE: true, //IPv6도 함께 사용할지 여부
@@ -183,5 +183,6 @@ exports.DEV_QUIZ_TAG = { // 공식 퀴즈용 태그, 32비트로 확장
 
   // "기타":       0b00000000000000000000100000000000,  // 2048
   "고전가요":      0b00000000000000000100000000000000,  // 16384
+  "인디곡":        0b00000000000000001000000000000000,  // 32768
 };
 
