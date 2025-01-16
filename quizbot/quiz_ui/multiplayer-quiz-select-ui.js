@@ -10,7 +10,7 @@ const ipc_manager = require('../managers/ipc_manager.js');
 const { CLIENT_SIGNAL, SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
 
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const quiz_system = require('../quiz_system/quiz_system.js');
 const {
   modal_complex_page_jump,
@@ -275,13 +275,13 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
   checkMultiplayerBan(list)
   {
     //나중에 시간마다 조회하는 방식으로 변경할 것
-    if (!fs.existsSync(SYSTEM_CONFIG.banned_user_path)) 
+    if (!fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH)) 
     {
       return false;
     }
 
     //멀티플레이 ban 시스템
-    const banned_list = fs.readFileSync(SYSTEM_CONFIG.banned_user_path, {
+    const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
       encoding: 'utf8',
       flag: 'r',
     });

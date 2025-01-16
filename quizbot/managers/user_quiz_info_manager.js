@@ -60,6 +60,7 @@ const QuestionInfoColumn =
   "answer_audio_range_row",
   "hint_image_url",
   "answer_type",
+  "question_audio_repeat",
 ];
 
 let question_info_key_fields = '';

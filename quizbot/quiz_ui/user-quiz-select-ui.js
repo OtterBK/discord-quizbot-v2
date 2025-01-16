@@ -6,7 +6,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const {  loadUserQuizListFromDB } = require('../managers/user_quiz_info_manager.js');
 const {
   sort_by_select_menu,

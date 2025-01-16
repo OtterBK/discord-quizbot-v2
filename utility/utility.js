@@ -10,14 +10,14 @@ const axios = require('axios');
 const PRIVATE_CONFIG = require('../config/private_config.json');
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE, QUIZ_TYPE, BGM_TYPE, QUIZ_TAG } = require('../config/system_setting.js');
 const { orderBy } = require('lodash');
-const text_contents = require('../config/text_contents.json')[SYSTEM_CONFIG.language];
+const text_contents = require('../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('./logger.js')('Utility');
 
 //미리 로드해둘 것들
 let bgm_long_timers = undefined;
 exports.initializeBGM = () => 
 {
-  const long_timer_path = SYSTEM_CONFIG.bgm_path + "/" + BGM_TYPE.COUNTDOWN_LONG;
+  const long_timer_path = SYSTEM_CONFIG.BGM_PATH + "/" + BGM_TYPE.COUNTDOWN_LONG;
   bgm_long_timers = [];
   const long_timer_list = fs.readdirSync(long_timer_path);
   long_timer_list.forEach((file_name) => 
@@ -209,7 +209,7 @@ exports.parseContentInfoFromDirName = (dir_name) =>
 
 exports.fade_audio_play = async (audio_player, audio_resource, from, to, duration) => 
 {
-  const interval = SYSTEM_CONFIG.fade_interval; //ms단위
+  const interval = SYSTEM_CONFIG.FADE_INTERVAL; //ms단위
 
   let current_time = 0;
   let current_volume = from;
@@ -354,7 +354,7 @@ exports.playBGM = async (audio_player, bgm_type) =>
   }
   else 
   {
-    bgm_file_path = SYSTEM_CONFIG.bgm_path + "/" + bgm_type;
+    bgm_file_path = SYSTEM_CONFIG.BGM_PATH + "/" + bgm_type;
   }
 
   if (bgm_file_path == undefined) return;

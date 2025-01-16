@@ -8,7 +8,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 //#region 로컬 modules
 
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE,} = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const logger = require('../../utility/logger.js')('QuizUI');
 const {
   select_btn_component,
@@ -91,7 +91,7 @@ class QuizbotUI
       return;
     }
 
-    this.holder.sendDelayedUI(ui, do_resend);
+    return this.holder.sendDelayedUI(ui, do_resend);
   }
 
   goToBack()

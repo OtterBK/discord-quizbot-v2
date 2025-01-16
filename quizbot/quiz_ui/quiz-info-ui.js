@@ -6,7 +6,7 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const utility = require('../../utility/utility.js');
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const {
@@ -90,9 +90,11 @@ class QuizInfoUI extends QuizbotUI
   getDescription()
   {
     let description = text_contents.quiz_info_ui.description;
+
+    const all_question_count = this.quiz_info['quiz_size'] ?? this.max_quiz_count;
   
     return description
-      .replace('${quiz_size}', `[ ${this.quiz_info['selected_question_count'] ?? this.quiz_info['quiz_size']} / ${this.max_quiz_count} ]`)
+      .replace('${quiz_size}', `[ ${this.quiz_info['selected_question_count'] ?? this.quiz_info['quiz_size']} / ${all_question_count} ]`)
       .replace('${quiz_type_name}', `${this.quiz_info['type_name'] ?? ''}`)
       .replace('${quiz_description}', `${this.quiz_info['description'] ?? ''}`);
   }

@@ -6,7 +6,7 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_MAKER_TYPE, QUIZ_TYPE, BGM_TYPE } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const utility = require('../../utility/utility.js');
 const ipc_manager = require('../managers/ipc_manager.js');

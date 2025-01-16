@@ -16,7 +16,7 @@ const pool = new pg.Pool({
   password: PRIVATE_CONFIG.DB.PASSWORD,
   database: PRIVATE_CONFIG.DB.DATABASE,
   port: PRIVATE_CONFIG.DB.PORT,
-  max: SYSTEM_CONFIG.pg_max_pool_size,
+  max: SYSTEM_CONFIG.PG_MAX_POOL_SIZE,
 });
 
 let is_initialized = false;

@@ -7,7 +7,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_MAKER_TYPE, QUIZ_TYPE } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const utility = require('../../utility/utility.js');
 const {
   omakase_quiz_info_tag_comp,

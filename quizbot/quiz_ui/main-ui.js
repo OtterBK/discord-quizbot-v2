@@ -6,7 +6,7 @@ const fs = require('fs');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const { sync_objects, sendMultiplayerSignal } = require('../managers/ipc_manager.js');
 const {
   select_btn_component,

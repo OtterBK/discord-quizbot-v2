@@ -6,7 +6,7 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_MAKER_TYPE, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const {
@@ -26,7 +26,7 @@ const { DevQuizInfoUI } = require("./dev-quiz-info-ui.js");
 class DevQuizSelectUI extends QuizBotControlComponentUI  
 {
 
-  static resource_path = SYSTEM_CONFIG.dev_quiz_path;
+  static resource_path = SYSTEM_CONFIG.DEV_QUIZ_PATH;
   static quiz_contents_sorted_by_name =  utility.loadLocalDirectoryQuiz(DevQuizSelectUI.resource_path); //동적 로드할 필요는 딱히 없을듯..? 초기 로드 시, 정적으로 로드하자;
   // static quiz_contents_sorted_by_mtime =  utility.loadLocalDirectoryQuiz(DevQuizSelectUI.resource_path, 'mtime'); //mtime 안쓰니깐 잠시 빼두자;
   
