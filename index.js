@@ -24,12 +24,13 @@ const multiplayer_manager = require('./quizbot/managers/multiplayer_manager.js')
 const manager = new ClusterManager(`${__dirname}/quizbot/bot.js`, {
   totalShards: 'auto', // or 'auto'
   shardsPerClusters: 2,
-  totalClusters: 1,
+  totalClusters: 'auto',
   token: PRIVATE_CONFIG.BOT.TOKEN,
   restarts: { //최대 자동 재시작 횟수
     max: 5, // Maximum amount of restarts per cluster
     interval: 60000 * 60, // Interval to reset restarts
   },
+  mode: 'process'
 });
 
 multiplayer_manager.initialize(manager);
