@@ -155,7 +155,7 @@ const registerMainClusterService = () =>
 
   registerUpdateServerCountScheduler();
   registerMonitoringService();
-}
+};
 
 const registerUpdateServerCountScheduler = () =>
 {
@@ -185,12 +185,12 @@ const registerUpdateServerCountScheduler = () =>
   };
 
   setInterval(() => update(), 3600000); // 60분마다 서버 수를 업데이트합니다.
-}
+};
 
 const registerMonitoringService = () =>
 {
   startMonitoring();
-}
+};
 
 const syncAdmin = () =>
 {
@@ -205,37 +205,37 @@ const syncAdmin = () =>
   logger.info(`Finding Admin instance for ${admin_id}`);
 
   client.users
-  .fetch(admin_id)
-  .then((instance) => 
-  {
-    if (instance == undefined) 
+    .fetch(admin_id)
+    .then((instance) => 
     {
-      return;
-    }
-
-    admin_instance = instance;
-    admin_instance.send(
-      `Hello Quizbot Admin! Quizbot has been started! this is ${client.cluster.id} cluster`
-    ); //찾았으면 인사해주자
-
-    logger.info(
-      `Found admin instance in cluster ${client.cluster.id}! syncing this admin instance`
-    );
-    client.cluster.send(
-      //cluster manager 한테 알림
+      if (instance == undefined) 
       {
-        ipc_message_type: ipc_manager.IPC_MESSAGE_TYPE.SYNC_ADMIN,
-        admin_instance: admin_instance,
+        return;
       }
-    );
-  })
-  .catch((err) => 
-  {
-    logger.error(
-      `Cannot find admin instance in cluster ${client.cluster.id} err: ${err.message}`
-    );
-  });
-}
+
+      admin_instance = instance;
+      admin_instance.send(
+        `Hello Quizbot Admin! Quizbot has been started! this is ${client.cluster.id} cluster`
+      ); //찾았으면 인사해주자
+
+      logger.info(
+        `Found admin instance in cluster ${client.cluster.id}! syncing this admin instance`
+      );
+      client.cluster.send(
+      //cluster manager 한테 알림
+        {
+          ipc_message_type: ipc_manager.IPC_MESSAGE_TYPE.SYNC_ADMIN,
+          admin_instance: admin_instance,
+        }
+      );
+    })
+    .catch((err) => 
+    {
+      logger.error(
+        `Cannot find admin instance in cluster ${client.cluster.id} err: ${err.message}`
+      );
+    });
+};
 
 const checkPermission = (interaction) =>
 {
@@ -304,13 +304,13 @@ const start_quiz_handler = async (interaction) =>
       {
         interaction.channel.send({ 
           content: `\`\`\`${current_notice}\`\`\``,
-          components: [new ActionRowBuilder()
-            .addComponents(
-              new ButtonBuilder()
-                .setLabel('보드게임봇 테스트 참여하기')
-                .setURL('https://koreanbots.dev/bots/952896575145930773')
-                .setStyle(ButtonStyle.Link),
-            ) ],
+          // components: [new ActionRowBuilder()
+          //   .addComponents(
+          //     new ButtonBuilder()
+          //       .setLabel('보드게임봇 테스트 참여하기')
+          //       .setURL('https://koreanbots.dev/bots/952896575145930773')
+          //       .setStyle(ButtonStyle.Link),
+          //   ) ],
         });
       }
     }
@@ -390,10 +390,19 @@ const clear_quiz_handler = (interaction) =>
 // 상호작용 이벤트
 client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) => 
 {
-  if(SYSTEM_CONFIG.MAINTENANCE_MODE && PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
+  //임시로 잠시 해둠 -> 점검모드
+  if (fs.existsSync(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH)) 
   {
-    interaction.reply({content: `\`\`\`⚠ ${SYSTEM_CONFIG.MAINTENANCE_ALERT}\`\`\``, ephemeral: true});
-    return;
+    const maintenance_notice = fs.readFileSync(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH, {
+      encoding: 'utf8',
+      flag: 'r',
+    });
+
+    if(PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
+    {
+      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, ephemeral: true});
+      return;
+    }
   }
 
   const main_command = interaction.commandName;

@@ -4,8 +4,6 @@ exports.SYSTEM_CONFIG = {
   LANGUAGE: 'kor', //사용 언어
 
   DEVELOP_MODE: true, //개발자 모드 활성화, console 로깅 등
-  MAINTENANCE_MODE: false, //점검 모드, 어드민만 봇 사용 가능
-  MAINTENANCE_ALERT: '현재 퀴즈봇을 점검하고 있습니다.', //점검 모드 시, 안내 문구
 
   USE_INLINE_VOLUME: false, //성능 많이 잡아먹음, 렉 많으면 끌 것, false 설정 시, fade in,out 효과 없음 
   FADE_INTERVAL: 500, //fade in,out 시 사용할 interval(ms), 값이 낮을수록 부드러운 fade 효과를 얻을 수 있으나 리소스를 많이 잡아먹음
@@ -43,6 +41,7 @@ exports.SYSTEM_CONFIG = {
   // version_info_path: `${__dirname}/../resources/version_info.txt`, //실시간 버전. 24.10.12 -> 이제 안쓴다.
   BANNED_USER_PATH: `${__dirname}/../resources/banned_user.txt`, //퀴즈만들기 밴
   TAGGED_DEV_QUIZ_INFO: `${__dirname}/../resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
+  MAINTENANCE_NOTICE_PATH: `${__dirname}/../resources/maintenance_notice.txt`, //실시간 점검 공지
 
   HINT_PERCENTAGE: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
   HINT_MAX_TRY: 1000, //힌트 만들 때 최대 시도 횟수
@@ -183,6 +182,6 @@ exports.DEV_QUIZ_TAG = { // 공식 퀴즈용 태그, 32비트로 확장
 
   // "기타":       0b00000000000000000000100000000000,  // 2048
   "고전가요":      0b00000000000000000100000000000000,  // 16384
-  "인디곡":        0b00000000000000001000000000000000,  // 32768
+  "인디뮤직":      0b00000000000000001000000000000000,  // 32768
 };
 
