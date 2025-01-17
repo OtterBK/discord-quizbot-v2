@@ -30,7 +30,7 @@ const manager = new ClusterManager(`${__dirname}/quizbot/bot.js`, {
     max: 5, // Maximum amount of restarts per cluster
     interval: 60000 * 60, // Interval to reset restarts
   },
-  // mode: 'process' //worker 모드가 나은 것 같기두...
+  // mode: 'process'
 });
 
 multiplayer_manager.initialize(manager);
@@ -113,7 +113,7 @@ setInterval(async () =>
   });
 
 
-}, SYSTEM_CONFIG.guilds_count_manager_interval * 1000);
+}, SYSTEM_CONFIG.GUILDS_COUNT_MANAGER_INTERVAL * 1000);
 
 // //웹 서버 시작
 // web_manager.strat_web();
