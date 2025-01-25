@@ -3187,9 +3187,9 @@ class Prepare extends QuizLifeCycle
         await this.prepareAnswerAdditionalInfo(target_question); //정답 표시 시, 사용할 추가 정보 Dev퀴즈 전용이다.
       }
 
-      if(this.quiz_session.isMultiplayerSession() === false) //멀티 퀴즈 아니면 오디오 리소스도 바로 생성 ㄱㄱ
+      if(this.quiz_session.isMultiplayerSession() === false) //멀티 퀴즈 아니면 문제용 오디오 리소스는 바로 생성 ㄱㄱ
       {
-        Prepare.fillAudioResource(target_question);
+        Prepare.fillQuestionAudioResource(target_question);
       }
 
     }
@@ -3587,7 +3587,11 @@ class Prepare extends QuizLifeCycle
     {
       setTimeout(() => 
       {
-        this.prepareCustomAnswer(target_question, target_question_data, [ipv4, ipv6]);
+        this.prepareCustomAnswer(target_question, target_question_data, [ipv4, ipv6])
+          .then(() => 
+          {
+            Prepare.fillAnswerAudioResource(target_question); //info 파싱 됐으면 리소스생성 ㄱㄱ
+          });
       }
       , 0);    
     }

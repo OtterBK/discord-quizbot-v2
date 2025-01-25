@@ -388,7 +388,7 @@ class UserQuestionInfoUI extends QuizbotUI
   {
     let audio_range_string = '[랜덤 구간 재생]'; //이게 디폴트
 
-    if(audio_start)
+    if(audio_start >= 0)
     {
       audio_range_string = `[${audio_start}초 ~ `;
 
