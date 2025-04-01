@@ -5,8 +5,8 @@
 //#endregion
 
 //#region 로컬 modules
-const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const { SYSTEM_CONFIG, DEV_QUIZ_TAG, QUIZ_TAG } = require('../../config/system_setting.js');
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const utility = require('../../utility/utility.js');
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const {
@@ -90,9 +90,11 @@ class QuizInfoUI extends QuizbotUI
   getDescription()
   {
     let description = text_contents.quiz_info_ui.description;
+
+    const all_question_count = this.quiz_info['quiz_size'] ?? this.max_quiz_count;
   
     return description
-      .replace('${quiz_size}', `[ ${this.quiz_info['selected_question_count'] ?? this.quiz_info['quiz_size']} / ${this.max_quiz_count} ]`)
+      .replace('${quiz_size}', `[ ${this.quiz_info['selected_question_count'] ?? this.quiz_info['quiz_size']} / ${all_question_count} ]`)
       .replace('${quiz_type_name}', `${this.quiz_info['type_name'] ?? ''}`)
       .replace('${quiz_description}', `${this.quiz_info['description'] ?? ''}`);
   }
@@ -104,7 +106,7 @@ class QuizInfoUI extends QuizbotUI
     // 공식 퀴즈 설정
     tag_info_text += `📕 **공식 퀴즈 설정**\n`;
     const dev_quiz_tags = this.quiz_info['dev_quiz_tags'];
-    const dev_quiz_tags_string = this.formatTagsString(dev_quiz_tags, SYSTEM_CONFIG.DEV_QUIZ_TAG, '음악 퀴즈');
+    const dev_quiz_tags_string = this.formatTagsString(dev_quiz_tags, DEV_QUIZ_TAG, '음악 퀴즈');
     tag_info_text += `🔸 퀴즈 유형: \`음악 퀴즈\`\n`;
     tag_info_text += `🔹 퀴즈 장르: \`${dev_quiz_tags_string}\`\n\n`;
     
@@ -135,7 +137,7 @@ class QuizInfoUI extends QuizbotUI
   
   formatTagsString(tags) 
   {
-    const tagsString = utility.convertTagsValueToString(tags, SYSTEM_CONFIG.DEV_QUIZ_TAG);
+    const tagsString = utility.convertTagsValueToString(tags, DEV_QUIZ_TAG);
     return tagsString === '' ? '선택 안함' : tagsString;
   }
   
@@ -145,7 +147,7 @@ class QuizInfoUI extends QuizbotUI
     {
       return '선택 안함';
     }
-    return utility.convertTagsValueToString(typeTags, SYSTEM_CONFIG.QUIZ_TAG);
+    return utility.convertTagsValueToString(typeTags, QUIZ_TAG);
   }
   
   getCustomQuizTagsString(quizTags, typeTags) 
@@ -154,7 +156,7 @@ class QuizInfoUI extends QuizbotUI
     {
       return typeTags !== 0 ? '모든 장르(분류되지 않은 퀴즈 포함)' : '선택 안함';
     }
-    return utility.convertTagsValueToString(quizTags, SYSTEM_CONFIG.QUIZ_TAG);
+    return utility.convertTagsValueToString(quizTags, QUIZ_TAG);
   }
   
   onInteractionCreate(interaction) 

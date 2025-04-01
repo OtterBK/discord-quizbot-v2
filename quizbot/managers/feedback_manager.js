@@ -97,10 +97,10 @@ exports.addQuizLike = async (quiz_id, guild_id, user_id) =>
       const like_count = like_count_result.rows[0].like_count;
 
       logger.info(`Custom quiz's like updated to ${like_count}. quiz_id: ${quiz_id}`);
-      if(like_count >= SYSTEM_CONFIG.certify_like_criteria) //특정 수 이상이면 인증된 퀴즈 시도
+      if(like_count >= SYSTEM_CONFIG.CERTIFY_LIKE_CRITERIA) //특정 수 이상이면 인증된 퀴즈 시도
       {
         logger.debug(`Trying Custom quiz has been auto certified. quiz_id: ${quiz_id}`);
-        db_manager.certifyQuiz(quiz_id, SYSTEM_CONFIG.certify_played_count_criteria);
+        db_manager.certifyQuiz(quiz_id, SYSTEM_CONFIG.CERTIFY_PLAYED_COUNT_CRITERIA);
       }
     });
 

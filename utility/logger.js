@@ -10,7 +10,7 @@ const winston = require('winston');
 const winstonDaily = require('winston-daily-rotate-file'); // 날짜별로 로그 저장
 const { combine, timestamp, printf, label } = winston.format;
  
-const logDir = SYSTEM_CONFIG.log_path;  // 로그 저장할 경로
+const logDir = SYSTEM_CONFIG.LOG_PATH;  // 로그 저장할 경로
 const colorize = winston.format.colorize(); // 로그레벨별로 색상 정의
  
 // 기본설정을 사용하면 로그레벨만 색상이 적용되어 출력되는 로그를 재정의하였다.
@@ -49,14 +49,14 @@ const getLogger = (path) =>
           info: 2,
           debug: 3,
         },
-        level: SYSTEM_CONFIG.develop_mode ? 'debug' : 'info',
+        level: SYSTEM_CONFIG.DEVELOP_MODE ? 'debug' : 'info',
         datePattern: 'YYYY-MM-DD',
         dirname: logDir,
         filename: `%DATE%.log`,
         zippedArchive: true,	
         // handleExceptions: true,
-        maxFiles: SYSTEM_CONFIG.log_max_files,
-        maxSize: SYSTEM_CONFIG.log_max_size,
+        maxFiles: SYSTEM_CONFIG.LOG_MAX_FILES,
+        maxSize: SYSTEM_CONFIG.LOG_MAX_SIZE,
       }),
       // // error 레벨 로그를 저장할 파일 설정
       // new winstonDaily({
@@ -71,7 +71,7 @@ const getLogger = (path) =>
   });
  
   // Production 환경이 아닌 경우(dev 등) - Console 로그 출력
-  if (SYSTEM_CONFIG.develop_mode == true) 
+  if (SYSTEM_CONFIG.DEVELOP_MODE == true) 
   {
     logger.add(new winston.transports.Console({
       // handleExceptions: true,

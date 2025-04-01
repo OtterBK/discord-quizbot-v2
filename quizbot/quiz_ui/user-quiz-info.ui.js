@@ -6,7 +6,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_TYPE, QUIZ_MAKER_TYPE, ANSWER_TYPE } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
@@ -121,7 +121,7 @@ class UserQuizInfoUI extends QuizInfoUI
     let description = '';
     description += `⚒️ 퀴즈 제작: **${(user_quiz_info.data.creator_name ?? '')}**\n`;
   
-    description += `🏷 한줄 소개: **${user_quiz_info.data.simple_description ?? ''}**\n`;
+    description += `🏷 한줄 소개: ${user_quiz_info.data.simple_description ? `**${user_quiz_info.data.simple_description}**` : ''}\n`;
     if(this.readonly)
     {
       const selected_question_count = this.quiz_info['selected_question_count'] ?? user_quiz_info.question_list.length;

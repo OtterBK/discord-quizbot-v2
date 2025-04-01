@@ -36,9 +36,6 @@
         "K Pop&icon=🇰🇷/보이그룹4&quiz&icon=🎧",
         "K Pop&icon=🇰🇷/보이그룹5&quiz&icon=🎧",
         "K Pop&icon=🇰🇷/보이그룹6&quiz&icon=🎧",
-        "K Pop&icon=🇰🇷/인디 뮤직1&quiz&icon=🎧",
-        "K Pop&icon=🇰🇷/인디 뮤직2&quiz&icon=🎧",
-        "K Pop&icon=🇰🇷/인디 뮤직3&quiz&icon=🎧",
         "K Pop&icon=🇰🇷/추억의 발라드1&quiz&icon=🎧",
         "K Pop&icon=🇰🇷/한국 힙합1&quiz&icon=🎧",
         "K Pop&icon=🇰🇷/한국 힙합2&quiz&icon=🎧",
@@ -174,5 +171,10 @@
         "팝송&icon=🇺🇸/팝송3&quiz&icon=🎧",
         "팝송&icon=🇺🇸/팝송4&quiz&icon=🎧",
         "팝송&icon=🇺🇸/팝송5&quiz&icon=🎧"
+    ],
+    "인디뮤직": [
+        "K Pop&icon=🇰🇷/인디 뮤직1&quiz&icon=🎧",
+        "K Pop&icon=🇰🇷/인디 뮤직2&quiz&icon=🎧",
+        "K Pop&icon=🇰🇷/인디 뮤직3&quiz&icon=🎧"
     ]
 }

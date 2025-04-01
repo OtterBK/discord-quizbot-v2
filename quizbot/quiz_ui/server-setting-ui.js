@@ -8,7 +8,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const option_system = require("../quiz_option/quiz_option.js");
 const OPTION_TYPE = option_system.OPTION_TYPE;
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const {
   option_control_btn_component,
   option_component,

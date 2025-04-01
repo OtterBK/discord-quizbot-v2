@@ -36,6 +36,7 @@ const audio_cache_manager = require('./managers/audio_cache_manager.js');
 const multiplayer_chat_manager = require('./managers/multiplayer_chat_manager.js');
 const report_manager = require('./managers/report_manager.js');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
+const { startMonitoring } = require('./managers/monitoring_manager.js');
 
 /** global 변수 **/
 
@@ -111,7 +112,7 @@ client.on('ready', () =>
   quizbot_ui.startUIHolderAgingManager();
 
   logger.info(`Initializing Tagged Dev Quiz Manager`);
-  tagged_dev_quiz_manager.initialize(SYSTEM_CONFIG.tagged_dev_quiz_info);
+  tagged_dev_quiz_manager.initialize(SYSTEM_CONFIG.TAGGED_DEV_QUIZ_INFO);
 
   // logger.info(`Starting FFMPEG Aging Manager`);
   // quiz_system.startFFmpegAgingManager();
@@ -137,76 +138,104 @@ client.on('ready', () =>
   ///////////
   logger.info(`Started Quizbot! tag name: ${client.user.tag}!`);
 
-  if (koreanbots != undefined && client.cluster.id == 0) 
-  {
-    //0번 클러스터에서만
-    const update = () => 
-    {
-      let servers_count = ipc_manager.sync_objects.get('guild_count');
-      if (servers_count == undefined || servers_count == 0) 
-      {
-        servers_count = client.guilds.cache.size;
-      }
+  registerMainClusterService();
 
-      logger.info(`Updating Korean bot server count: ${servers_count}`);
-      koreanbots.mybot
-        .update({ servers: servers_count, shards: getInfo().TOTAL_SHARDS })
-        .then((res) =>
-          logger.info(
-            '서버 수를 정상적으로 업데이트하였습니다!\n반환된 정보:' +
-              JSON.stringify(res)
-          )
-        )
-        .catch((err) => logger.error(`${err.stack ?? err.message}`));
-    };
-
-    setInterval(() => update(), 3600000); // 60분마다 서버 수를 업데이트합니다.
-  }
-
-  ///////////
-  if (PRIVATE_CONFIG.ADMIN_ID != undefined) 
-  {
-    //해당 cluster에서 admin instance 찾아본다
-    const admin_id = PRIVATE_CONFIG.ADMIN_ID;
-
-    logger.info(`Finding Admin instance for ${admin_id}`);
-
-    client.users
-      .fetch(admin_id)
-      .then((instance) => 
-      {
-        if (instance == undefined) 
-        {
-          return;
-        }
-
-        admin_instance = instance;
-        admin_instance.send(
-          `Hello Quizbot Admin! Quizbot has been started! this is ${client.cluster.id} cluster`
-        ); //찾았으면 인사해주자
-
-        logger.info(
-          `Found admin instance in cluster ${client.cluster.id}! syncing this admin instance`
-        );
-        client.cluster.send(
-          //cluster manager 한테 알림
-          {
-            ipc_message_type: ipc_manager.IPC_MESSAGE_TYPE.SYNC_ADMIN,
-            admin_instance: admin_instance,
-          }
-        );
-      })
-      .catch((err) => 
-      {
-        logger.error(
-          `Cannot find admin instance in cluster ${client.cluster.id} err: ${err.message}`
-        );
-      });
-  }
+  syncAdmin();
 
   ///////////
   createCleanUp();
 });
+
+const registerMainClusterService = () =>
+{
+  if(client.cluster.id != 0) //0번 클러스터에서만 수행되는 서비스
+  {
+    return;
+  }
+
+  registerUpdateServerCountScheduler();
+  registerMonitoringService();
+};
+
+const registerUpdateServerCountScheduler = () =>
+{
+  if(!koreanbots) 
+  {
+    return;
+  }
+
+  const update = () => 
+  {
+    let servers_count = ipc_manager.sync_objects.get('guild_count');
+    if (servers_count == undefined || servers_count == 0) 
+    {
+      servers_count = client.guilds.cache.size;
+    }
+
+    logger.info(`Updating Korean bot server count: ${servers_count}`);
+    koreanbots.mybot
+      .update({ servers: servers_count, shards: getInfo().TOTAL_SHARDS })
+      .then((res) =>
+        logger.info(
+          '서버 수를 정상적으로 업데이트하였습니다!\n반환된 정보:' +
+            JSON.stringify(res)
+        )
+      )
+      .catch((err) => logger.error(`${err.stack ?? err.message}`));
+  };
+
+  setInterval(() => update(), 3600000); // 60분마다 서버 수를 업데이트합니다.
+};
+
+const registerMonitoringService = () =>
+{
+  startMonitoring();
+};
+
+const syncAdmin = () =>
+{
+  if (!PRIVATE_CONFIG.ADMIN_ID) 
+  {
+    return;
+  }
+  
+  //해당 cluster에서 admin instance 찾아본다
+  const admin_id = PRIVATE_CONFIG.ADMIN_ID;
+
+  logger.info(`Finding Admin instance for ${admin_id}`);
+
+  client.users
+    .fetch(admin_id)
+    .then((instance) => 
+    {
+      if (instance == undefined) 
+      {
+        return;
+      }
+
+      admin_instance = instance;
+      admin_instance.send(
+        `Hello Quizbot Admin! Quizbot has been started! this is ${client.cluster.id} cluster`
+      ); //찾았으면 인사해주자
+
+      logger.info(
+        `Found admin instance in cluster ${client.cluster.id}! syncing this admin instance`
+      );
+      client.cluster.send(
+      //cluster manager 한테 알림
+        {
+          ipc_message_type: ipc_manager.IPC_MESSAGE_TYPE.SYNC_ADMIN,
+          admin_instance: admin_instance,
+        }
+      );
+    })
+    .catch((err) => 
+    {
+      logger.error(
+        `Cannot find admin instance in cluster ${client.cluster.id} err: ${err.message}`
+      );
+    });
+};
 
 const checkPermission = (interaction) =>
 {
@@ -264,9 +293,9 @@ const start_quiz_handler = async (interaction) =>
   if(uiHolder != undefined)
   {
     //임시로 잠시 해둠 -> 실시간 공지 보내기
-    if (fs.existsSync(SYSTEM_CONFIG.current_notice_path)) 
+    if (fs.existsSync(SYSTEM_CONFIG.CURRENT_NOTICE_PATH)) 
     {
-      const current_notice = fs.readFileSync(SYSTEM_CONFIG.current_notice_path, {
+      const current_notice = fs.readFileSync(SYSTEM_CONFIG.CURRENT_NOTICE_PATH, {
         encoding: 'utf8',
         flag: 'r',
       });
@@ -275,13 +304,13 @@ const start_quiz_handler = async (interaction) =>
       {
         interaction.channel.send({ 
           content: `\`\`\`${current_notice}\`\`\``,
-          components: [new ActionRowBuilder()
-            .addComponents(
-              new ButtonBuilder()
-                .setLabel('보드게임봇 테스트 참여하기')
-                .setURL('https://koreanbots.dev/bots/952896575145930773')
-                .setStyle(ButtonStyle.Link),
-            ) ],
+          // components: [new ActionRowBuilder()
+          //   .addComponents(
+          //     new ButtonBuilder()
+          //       .setLabel('보드게임봇 테스트 참여하기')
+          //       .setURL('https://koreanbots.dev/bots/952896575145930773')
+          //       .setStyle(ButtonStyle.Link),
+          //   ) ],
         });
       }
     }
@@ -297,10 +326,10 @@ const create_quiz_tool_btn_component = new ActionRowBuilder().addComponents(
 const create_quiz_handler = async (interaction) => 
 {
   //나중에 시간마다 조회하는 방식으로 변경할 것
-  if (fs.existsSync(SYSTEM_CONFIG.banned_user_path)) 
+  if (fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH)) 
   {
     //퀴즈만들기 ban 시스템
-    const banned_list = fs.readFileSync(SYSTEM_CONFIG.banned_user_path, {
+    const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
       encoding: 'utf8',
       flag: 'r',
     });
@@ -361,10 +390,19 @@ const clear_quiz_handler = (interaction) =>
 // 상호작용 이벤트
 client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) => 
 {
-  if(SYSTEM_CONFIG.maintenance_mode && PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
+  //임시로 잠시 해둠 -> 점검모드
+  if (fs.existsSync(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH)) 
   {
-    interaction.reply({content: `\`\`\`⚠ ${SYSTEM_CONFIG.maintenance_alert}\`\`\``, ephemeral: true});
-    return;
+    const maintenance_notice = fs.readFileSync(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH, {
+      encoding: 'utf8',
+      flag: 'r',
+    });
+
+    if(PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
+    {
+      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, ephemeral: true});
+      return;
+    }
   }
 
   const main_command = interaction.commandName;

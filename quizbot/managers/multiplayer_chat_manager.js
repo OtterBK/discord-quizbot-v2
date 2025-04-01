@@ -23,7 +23,7 @@ const vote_validation_time = 24 * 60 * 60 * 1000; //1일 유효
 let voted_cache = {};
 const checkVote = async (user_id) =>
 {
-  if(koreanbots === undefined || SYSTEM_CONFIG.check_korean_bot_vote === false)
+  if(koreanbots === undefined || SYSTEM_CONFIG.CHECK_KOREAN_BOT_VOTE === false)
   {
     return true;
   }

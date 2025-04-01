@@ -32,7 +32,7 @@ const getHashedPath = (target) =>
     return undefined;
   }
 
-  const cache_path = SYSTEM_CONFIG.custom_audio_cache_path;
+  const cache_path = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
   const sub_path = target.charAt(0).toUpperCase();
     
   return path.join(cache_path, sub_path);
@@ -165,8 +165,8 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
     output: `${video_id}.%(ext)s`,
     formatSort: '+size', //파일 크기로 오름차순 정렬
     format: 'bestaudio[ext=webm]/bestaudio', //정렬된 포맷 중 webm 확장자인것. 없으면 젤 작은 audio -> 즉 webm이면서 파일 크기가 가장 작은거
-    maxFilesize: SYSTEM_CONFIG.custom_audio_max_file_size, //최대 파일 크기
-    matchFilter: `duration <= ${SYSTEM_CONFIG.custom_audio_ytdl_max_length}`, //최대 길이
+    maxFilesize: SYSTEM_CONFIG.CUSTOM_AUDIO_MAX_FILE_SIZE, //최대 파일 크기
+    matchFilter: `duration <= ${SYSTEM_CONFIG.CUSTOM_AUDIO_YTDL_MAX_LENGTH}`, //최대 길이
     noPlaylist: true,
     writeInfoJson: true, //비디오 정보 json으로 저장
     noCheckCertificates: true, //ssl 체크 안함
@@ -252,19 +252,19 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
   }
   else if(result.result_type == DOWNLOAD_RESULT_TYPE.OVER_DURATION)
   {
-    logger.warn(`${audio_url}'s durations is over than ${SYSTEM_CONFIG.custom_audio_ytdl_max_length}`);
+    logger.warn(`${audio_url}'s durations is over than ${SYSTEM_CONFIG.CUSTOM_AUDIO_YTDL_MAX_LENGTH}`);
     cache_result = {
       success: false,
-      causation_message: `오디오 길이가 ${SYSTEM_CONFIG.custom_audio_ytdl_max_length}초를 초과합니다.`,
+      causation_message: `오디오 길이가 ${SYSTEM_CONFIG.CUSTOM_AUDIO_YTDL_MAX_LENGTH}초를 초과합니다.`,
       need_retry: false
     };
   }
   else if(result.result_type == DOWNLOAD_RESULT_TYPE.OVER_MAX_FILE_SIZE)
   {
-    logger.warn(`${audio_url}'s all audio file size is over than ${SYSTEM_CONFIG.custom_audio_max_file_size}`);
+    logger.warn(`${audio_url}'s all audio file size is over than ${SYSTEM_CONFIG.CUSTOM_AUDIO_MAX_FILE_SIZE}`);
     cache_result = {
       success: false,
-      causation_message: `${audio_url}의 모든 오디오 파일 크기가 ${SYSTEM_CONFIG.custom_audio_max_file_size}를 초과합니다.`,
+      causation_message: `${audio_url}의 모든 오디오 파일 크기가 ${SYSTEM_CONFIG.CUSTOM_AUDIO_MAX_FILE_SIZE}를 초과합니다.`,
       need_retry: false
     };
   }
@@ -468,7 +468,7 @@ const getExpectedErrorType = (error_message) =>
 
 const logFailedUrl = (url_list) =>
 {
-  const cache_root_path = SYSTEM_CONFIG.custom_audio_cache_path;
+  const cache_root_path = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
   const failed_url_path = path.join(cache_root_path, "failed_url.txt");
   fs.appendFile(failed_url_path, `${url_list}\n`, 'utf8', (err) => 
   {
@@ -621,7 +621,7 @@ const forceCaching = async (audio_url_list_path, thread_index=0) =>
   console.log(`new cached ${new_cached_count}!. failed ${failed_count}...`);
   if(failed_count > 0)
   {
-    const failed_log_path = path.join(SYSTEM_CONFIG.custom_audio_cache_path, `failed_url${thread_index}.txt`);
+    const failed_log_path = path.join(SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH, `failed_url${thread_index}.txt`);
     fs.writeFileSync(failed_log_path, failed_url_list, 'utf-8');
   }
 

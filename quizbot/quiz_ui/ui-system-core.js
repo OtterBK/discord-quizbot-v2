@@ -145,7 +145,7 @@ const startUIHolderAgingManager = () =>
 //UI holder Aging Manager
 const uiHolderAgingManager = () =>
 {
-  const uiholder_aging_for_oldkey_value = SYSTEM_CONFIG.ui_holder_aging_manager_criteria * 1000; //last updated time이 일정 값 이전인 ui는 삭제할거임
+  const uiholder_aging_for_oldkey_value = SYSTEM_CONFIG.UI_HOLDER_AGING_MANAGER_CRITERIA * 1000; //last updated time이 일정 값 이전인 ui는 삭제할거임
   const uiholder_aging_manager = setInterval(()=>
   {
     const criteria_value = Date.now() - uiholder_aging_for_oldkey_value; //이거보다 이전에 update 된 것은 삭제
@@ -168,7 +168,7 @@ const uiHolderAgingManager = () =>
     });
 
     logger.info(`Done Aginging UI Holder... free count: ${free_count}`);
-  }, SYSTEM_CONFIG.ui_holder_aging_manager_interval * 1000); //체크 주기
+  }, SYSTEM_CONFIG.UI_HOLDER_AGING_MANAGER_INTERVAL * 1000); //체크 주기
 
   return uiholder_aging_manager;
 };

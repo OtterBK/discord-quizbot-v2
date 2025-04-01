@@ -1,73 +1,79 @@
 'use strict';
 
 exports.SYSTEM_CONFIG = {
-  language: 'kor', //사용 언어
+  LANGUAGE: 'kor', //사용 언어
 
-  develop_mode: true, //개발자 모드 활성화, console 로깅 등
-  maintenance_mode: false, //점검 모드, 어드민만 봇 사용 가능
-  maintenance_alert: '현재 퀴즈봇을 점검하고 있습니다.', //점검 모드 시, 안내 문구
+  DEVELOP_MODE: true, //개발자 모드 활성화, console 로깅 등
 
-  use_inline_volume: false, //성능 많이 잡아먹음, 렉 많으면 끌 것, false 설정 시, fade in,out 효과 없음 
-  fade_interval: 500, //fade in,out 시 사용할 interval(ms), 값이 낮을수록 부드러운 fade 효과를 얻을 수 있으나 리소스를 많이 잡아먹음
-  fade_in_duration: 5000, //fade in 시간(ms)
-  fade_out_duration: 5000, //fade out 시간(ms)
-  fade_in_volume_initialize_term: 500, //fade in은 초기 볼륨을 설정하고 시작한다. 이때 볼륨 설정하고 일정한 텀을 줘야 제대로 적용된다.
+  USE_INLINE_VOLUME: false, //성능 많이 잡아먹음, 렉 많으면 끌 것, false 설정 시, fade in,out 효과 없음 
+  FADE_INTERVAL: 500, //fade in,out 시 사용할 interval(ms), 값이 낮을수록 부드러운 fade 효과를 얻을 수 있으나 리소스를 많이 잡아먹음
+  FADE_IN_DURATION: 5000, //fade in 시간(ms)
+  FACE_OUT_DURATION: 5000, //fade out 시간(ms)
+  FACE_IN_VOLUME_INITIALIZE_TERM: 500, //fade in은 초기 볼륨을 설정하고 시작한다. 이때 볼륨 설정하고 일정한 텀을 줘야 제대로 적용된다.
 
-  max_question_audio_play_time: 60, //문제용 오디오 최대 허용 길이(s)
-  max_answer_audio_play_time: 13, //정답용 오디오 최대 허용 길이(s)
+  MAX_QUESTION_AUDIO_PLAY_TIME: 60, //문제용 오디오 최대 허용 길이(s)
+  MAX_ANSWER_AUDIO_PLAY_TIME: 13, //정답용 오디오 최대 허용 길이(s)
+  MAX_QUESTION_AUDIO_REPEAT: 5, //문제용 오디오 최대 반복 가능 횟수
+  MAX_QUESTION_TOTAL_AUDIO_PLAY_TIME: 70, //반복 재생 포함하여 진짜 최대 길이
 
-  max_check_prepared_queue: 120, //prepared queue 최대 확인 횟수
-  prepared_queue_check_interval: 250, //prepared queue 체크 간격
+  MAX_CHECK_PREPARED_QUEUE: 120, //prepared queue 최대 확인 횟수
+  PREPARED_QUEUE_CHECK_INTERVAL: 250, //prepared queue 체크 간격
 
-  ui_holder_aging_manager_criteria: 900, //얼마나 오래된 holder를 삭제할 지(s)
-  ui_holder_aging_manager_interval: 600, //체크 주기(s)
+  UI_HOLDER_AGING_MANAGER_CRITERIA: 900, //얼마나 오래된 holder를 삭제할 지(s)
+  UI_HOLDER_AGING_MANAGER_INTERVAL: 600, //체크 주기(s)
 
-  guilds_count_manager_interval: 10, //참여 중인 guild 수 체크 주기(s)
+  GUILDS_COUNT_MANAGER_INTERVAL: 10, //참여 중인 guild 수 체크 주기(s)
 
-  correct_answer_cycle_wait: 6500, //정답 맞췄을 시, 얼마나 대기할 지
-  timeover_cycle_wait: 6500, //타임오버 시, 얼마나 대기할 지
-  graceful_timeover_max_try: 0, //타임오버 시, 부드러운 타임 오버를 위한 최대 시도 수
-  graceful_timeover_interval: 500, //부드러운 타임 오버 체크 간격 (ms)
+  CORRECT_ANSWER_CYCLE_WAIT: 6500, //정답 맞췄을 시, 얼마나 대기할 지
+  TIMEOVER_CYCLE_WAIT: 6500, //타임오버 시, 얼마나 대기할 지
+  GRACEFUL_TIMEOVER_MAX_TRY: 0, //타임오버 시, 부드러운 타임 오버를 위한 최대 시도 수
+  GRACEFUL_TIMEOVER_INTERVAL: 500, //부드러운 타임 오버 체크 간격 (ms)
 
-  explain_wait: 3000, //퀴즈 설명 단계에서 각 설명 텀
-  ending_wait: 3500, //순위 발표 단계에서 각 순위 표시 텀
+  EXPLAIN_WAIT: 3000, //퀴즈 설명 단계에서 각 설명 텀
+  ENDING_WAIT: 3500, //순위 발표 단계에서 각 순위 표시 텀
 
-  bgm_path: `${__dirname}/../resources/bgm`, //BGM 파일 위치
-  dev_quiz_path: `${__dirname}/../resources/quizdata`, //Dev퀴즈 파일 위치
-  log_path: `${__dirname}/../log`, //LOG 저장할 위치
-  notices_path: `${__dirname}/../resources/notices`, //공지사항 파일 위치
-  current_notice_path: `${__dirname}/../resources/current_notice.txt`, //실시간 공지
+  BGM_PATH: `${__dirname}/../resources/bgm`, //BGM 파일 위치
+  DEV_QUIZ_PATH: `${__dirname}/../resources/quizdata`, //Dev퀴즈 파일 위치
+  LOG_PATH: `${__dirname}/../log`, //LOG 저장할 위치
+  NOTICES_PATH: `${__dirname}/../resources/notices`, //공지사항 파일 위치
+  CURRENT_NOTICE_PATH: `${__dirname}/../resources/current_notice.txt`, //실시간 공지
   // fixed_notice_path: `${__dirname}/../resources/fixed_notice.txt`, //고정 공지...애매하네 걍 쓰지말자
   // version_info_path: `${__dirname}/../resources/version_info.txt`, //실시간 버전. 24.10.12 -> 이제 안쓴다.
-  banned_user_path: `${__dirname}/../resources/banned_user.txt`, //퀴즈만들기 밴
-  tagged_dev_quiz_info: `${__dirname}/../resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
+  BANNED_USER_PATH: `${__dirname}/../resources/banned_user.txt`, //퀴즈만들기 밴
+  TAGGED_DEV_QUIZ_INFO: `${__dirname}/../resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
+  MAINTENANCE_NOTICE_PATH: `${__dirname}/../resources/maintenance_notice.txt`, //실시간 점검 공지
 
-  hint_percentage: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
-  hint_max_try: 1000, //힌트 만들 때 최대 시도 횟수
+  HINT_PERCENTAGE: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
+  HINT_MAX_TRY: 1000, //힌트 만들 때 최대 시도 횟수
 
-  pg_max_pool_size: 5, //Postgresql max pool 개수
+  PG_MAX_POOL_SIZE: 5, //Postgresql max pool 개수
 
-  log_max_files: 10, //log로 남길 파일 최대 수
-  log_max_size: '100m', //각 log 파일 최대 크기
+  LOG_MAX_FILES: 10, //log로 남길 파일 최대 수
+  LOG_MAX_SIZE: '100m', //각 log 파일 최대 크기
     
-  ffmpeg_kill_timeout: 70000, //ffmpeg에서 에러 발생 시나, start 안했을 시 안꺼지는 버그 있음. 최대 timeout 설정해서 시간 지나면 강종
-  ffmpeg_aging_manager_criteria: 300, //5분 지나도 안꺼지면 ffmpeg는 강종
-  ffmpeg_aging_manager_interval: 300, //체크 주기(s)
+  FFMPEG_KILL_TIMEOUT: 70000, //ffmpeg에서 에러 발생 시나, start 안했을 시 안꺼지는 버그 있음. 최대 timeout 설정해서 시간 지나면 강종
+  FFMPEG_AGING_MANAGER_CRITERIA: 300, //5분 지나도 안꺼지면 ffmpeg는 강종
+  FFMPEG_AGING_MANAGER_INTERVAL: 300, //체크 주기(s)
 
-  custom_audio_max_throttle: 500 * 1024,
+  CUSTOM_AUDIO_MAX_THROTTLE: 500 * 1024,
     
-  custom_audio_max_file_size: '10M', //문제용 오디오 파일 최대 용량
-  custom_audio_ytdl_max_length: 1200, //문제용 오디오로 사용가능한 오디오 최대 길이(s)
+  CUSTOM_AUDIO_MAX_FILE_SIZE: '10M', //문제용 오디오 파일 최대 용량
+  CUSTOM_AUDIO_YTDL_MAX_LENGTH: 1200, //문제용 오디오로 사용가능한 오디오 최대 길이(s)
   // custom_audio_cache_path: `${__dirname}/../resources/cache`,
-  custom_audio_cache_path: `G:/quizdata/cache`,
+  CUSTOM_AUDIO_CACHE_PATH: `${__dirname}/../resources/cache`,
 
-  ytdl_cookie_path: `${__dirname}/../resources/ytdl_cookie.json`,
-  ytdl_ipv6_USE: true, //IPv6도 함께 사용할지 여부
+  YTDL_COOKIE_PATH: `${__dirname}/../resources/ytdl_cookie.json`,
+  YTDL_IPV6_USE: true, //IPv6도 함께 사용할지 여부
 
-  certify_like_criteria: 10, //인증된 퀴즈 전환을 위한 추천 수 기준
-  certify_played_count_criteria: 50, //인증된 퀴즈 전환을 위한 플레이 수 기준
+  CERTIFY_LIKE_CRITERIA: 10, //인증된 퀴즈 전환을 위한 추천 수 기준
+  CERTIFY_PLAYED_COUNT_CRITERIA: 50, //인증된 퀴즈 전환을 위한 플레이 수 기준
 
-  check_korean_bot_vote: false,
+  CHECK_KOREAN_BOT_VOTE: false, //챗 기능 사용 시, KOREAN BOT 추천해야지만 사용할 수 있는지 여부
+
+  //Monitoring service
+  MONITORING_CHECK_INTERVAL: 30000, // 리소스 모니터링 주기
+  MONITORING_AVERAGE_DURATION: 300000, // 리소스 평균값 계산 시, 사용할 duration
+  MONITORING_CPU_USAGE_THRESHOLD: 90, // 경고 로그 남길 기준 percentage
 };
 
 exports.CUSTOM_EVENT_TYPE = {
@@ -176,5 +182,6 @@ exports.DEV_QUIZ_TAG = { // 공식 퀴즈용 태그, 32비트로 확장
 
   // "기타":       0b00000000000000000000100000000000,  // 2048
   "고전가요":      0b00000000000000000100000000000000,  // 16384
+  "인디뮤직":      0b00000000000000001000000000000000,  // 32768
 };
 

@@ -6,7 +6,7 @@ const fs = require('fs');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const {
 
 } = require("./components.js");
@@ -51,7 +51,7 @@ class NotesSelectUI extends QuizBotControlComponentUI
   {
     this.main_description = text_contents.notes_select_ui.description;
 
-    this.loadNoteContents(SYSTEM_CONFIG.notices_path)
+    this.loadNoteContents(SYSTEM_CONFIG.NOTICES_PATH)
       .then(content_list =>
       {
         this.notice_contents = content_list;

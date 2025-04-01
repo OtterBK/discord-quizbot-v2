@@ -30,7 +30,7 @@ exports.initialize = (tagged_quiz_info_path) =>
       const content_name = content_names.length > 1 ? content_names[1] : content_names[0];
       const quiz_info = utility.parseContentInfoFromDirName(content_name);
 
-      const quiz_path = SYSTEM_CONFIG.dev_quiz_path + "/" + content_path + "/";
+      const quiz_path = SYSTEM_CONFIG.DEV_QUIZ_PATH + "/" + content_path + "/";
       const quiz_title = `${quiz_info['name']} `;
 
       if (fs.existsSync(quiz_path) && fs.lstatSync(quiz_path).isDirectory()) 

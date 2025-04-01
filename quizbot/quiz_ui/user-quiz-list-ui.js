@@ -7,7 +7,7 @@
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const PRIVATE_CONFIG = require('../../config/private_config.json');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.language]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const logger = require('../../utility/logger.js')('QuizUI');
 const { UserQuizInfo, loadUserQuizListFromDB } = require('../managers/user_quiz_info_manager.js');
 const {
