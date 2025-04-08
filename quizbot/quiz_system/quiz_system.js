@@ -5139,7 +5139,7 @@ class QuestionCustom extends Question
     const resource = current_question['audio_resource'];
     const audio_play_time = current_question['audio_length'] ?? 0;
     const question_audio_repeat = current_question['question_audio_repeat'] ?? 1;
-    let total_audio_play_time = (audio_play_time * question_audio_repeat) + (500 * (question_audio_repeat)); //500은 재생 텀
+    let total_audio_play_time = (audio_play_time * question_audio_repeat) + (500 * (question_audio_repeat - 1)); //500은 재생 텀. -1 해줘야한다. total_audio_play_time 이 0이여야 자동 타이머가 실행됨...
     
     total_audio_play_time = Math.min(total_audio_play_time, SYSTEM_CONFIG.MAX_QUESTION_TOTAL_AUDIO_PLAY_TIME * 1000);
 
@@ -5310,7 +5310,7 @@ class QuestionOmakase extends Question
     const resource = current_question['audio_resource'];
     const audio_play_time = current_question['audio_length'] ?? 0;
     const question_audio_repeat = current_question['question_audio_repeat'] ?? 1;
-    let total_audio_play_time = (audio_play_time * question_audio_repeat) + (500 * (question_audio_repeat)); //500은 재생 텀
+    let total_audio_play_time = (audio_play_time * question_audio_repeat) + (500 * (question_audio_repeat - 1)); //500은 재생 텀
 
     total_audio_play_time = Math.min(total_audio_play_time, SYSTEM_CONFIG.MAX_QUESTION_TOTAL_AUDIO_PLAY_TIME * 1000);
 
