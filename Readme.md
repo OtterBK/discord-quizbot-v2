@@ -248,11 +248,11 @@
 
 1. **다음 명령어를 실행하여 퀴즈봇 설치를 시작합니다.**
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/OtterBK/discord-quizbot-v2/develop/auto_script/install_quizbot3.sh -o /tmp/install_quizbot3.sh && chmod +x /tmp/install_quizbot3.sh && sudo bash /tmp/install_quizbot3.sh
+   curl -fsSL https://raw.githubusercontent.com/OtterBK/discord-quizbot-v2/master/auto_script/install_quizbot3.sh -o /tmp/install_quizbot3.sh && chmod +x /tmp/install_quizbot3.sh && sudo bash /tmp/install_quizbot3.sh
    ```
    
 2. **원하는 옵션을 입력하여 설치를 진행합니다.**
-![설치 진행](https://github.com/user-attachments/assets/c463ac4d-ca14-4919-8972-9db22bb83192)
+   ![설치 진행](https://github.com/user-attachments/assets/c463ac4d-ca14-4919-8972-9db22bb83192)
 
 3. **스크립트 실행이 완료되면 Quizbot3가 성공적으로 설치됩니다**:<br>
    ![설치 완료](https://github.com/user-attachments/assets/955c5d05-e30e-49a3-8093-af65603b81dd)  
