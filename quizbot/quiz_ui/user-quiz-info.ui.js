@@ -179,9 +179,8 @@ class UserQuizInfoUI extends QuizInfoUI
   
         const question_info = question_list[i];
         const option = { label: `${i+1}번째 문제(${this.answerTypeToString(question_info.data.answer_type)})`, 
-          description: `${question_info.data.answers.length < 100 
-            ? question_info.data.answers 
-            : question_info.data.answers.substring(0, 99)}`, 
+          description: `${question_info.data.answers.substring(0, 50)}`, 
+          //embed 데이터 최대가 8kb 정도다. 50문제의 정답값을 모두 100자로하면 HTTP Internal Server Error 뜨면서 전송이안됨. 100자에서 50자로 더 타이트하게 잘라서 표기
           value: `${i}` };
         temp_question_select_menu.addOptions(option);
       }
