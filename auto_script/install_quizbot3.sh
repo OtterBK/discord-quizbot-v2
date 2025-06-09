@@ -89,10 +89,16 @@ sudo cp -R custom_node_modules/* node_modules/
 print_emphasized "Quizbot3 has been installed!"
 
 # Set environment variable
-echo "Setting QUIZBOT_PATH to $INSTALL_PATH"
-sudo sh -c "echo 'QUIZBOT_PATH=\"$INSTALL_PATH\"' >> /etc/environment"
-. /etc/environment
-print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH"
+print_emphasized "Setting QUIZBOT_PATH globally..."
+
+PROFILE_SCRIPT="/etc/profile.d/quizbot_path.sh"
+sudo sh -c "echo 'export QUIZBOT_PATH=\"$INSTALL_PATH\"' > $PROFILE_SCRIPT"
+sudo chmod 644 $PROFILE_SCRIPT
+
+# 현재 터미널 세션에도 즉시 적용
+export QUIZBOT_PATH="$INSTALL_PATH"
+print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH (system-wide)"
+
 
 # Restore DB after Git clone
 if [ -z "$BACKUP_FILE" ]; then
