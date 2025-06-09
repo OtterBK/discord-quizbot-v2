@@ -74,6 +74,13 @@ sudo service postgresql restart
 print_emphasized "Installing Git..."
 sudo apt install git -y
 
+# Node.js install (Moved up)
+print_emphasized "Installing Node.js $NODE_VERSION.x..."
+curl -sL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo bash -
+sudo apt remove libnode-dev -y
+sudo apt remove libnode72:amd64 -y
+sudo apt install nodejs -y
+
 print_emphasized "Cloning Quizbot3 repository..."
 sudo git clone https://github.com/OtterBK/Quizbot3.git "$INSTALL_PATH"
 cd "$INSTALL_PATH"
@@ -106,13 +113,6 @@ if [ -n "$BACKUP_FILE" ]; then
     sudo -u postgres psql -d quizbot3 -f "$TMP_FILE"
     rm "$TMP_FILE"
 fi
-
-# Node.js install
-print_emphasized "Installing Node.js $NODE_VERSION.x..."
-curl -sL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo bash -
-sudo apt remove libnode-dev -y
-sudo apt remove libnode72:amd64 -y
-sudo apt install nodejs -y
 
 # Cron setup
 if [ "$REGISTER_CRON" = true ]; then
