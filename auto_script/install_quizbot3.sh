@@ -74,6 +74,13 @@ sudo service postgresql restart
 print_emphasized "Installing Git..."
 sudo apt install git -y
 
+# Node.js install (Moved up)
+print_emphasized "Installing Node.js $NODE_VERSION.x..."
+curl -sL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo bash -
+sudo apt remove libnode-dev -y
+sudo apt remove libnode72:amd64 -y
+sudo apt install nodejs -y
+
 print_emphasized "Cloning Quizbot3 repository..."
 sudo git clone https://github.com/OtterBK/Quizbot3.git "$INSTALL_PATH"
 cd "$INSTALL_PATH"
@@ -82,10 +89,16 @@ sudo cp -R custom_node_modules/* node_modules/
 print_emphasized "Quizbot3 has been installed!"
 
 # Set environment variable
-echo "Setting QUIZBOT_PATH to $INSTALL_PATH"
-sudo sh -c "echo 'QUIZBOT_PATH=\"$INSTALL_PATH\"' >> /etc/environment"
-. /etc/environment
-print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH"
+print_emphasized "Setting QUIZBOT_PATH globally..."
+
+PROFILE_SCRIPT="/etc/profile.d/quizbot_path.sh"
+sudo sh -c "echo 'export QUIZBOT_PATH=\"$INSTALL_PATH\"' > $PROFILE_SCRIPT"
+sudo chmod 644 $PROFILE_SCRIPT
+
+# 현재 터미널 세션에도 즉시 적용
+export QUIZBOT_PATH="$INSTALL_PATH"
+print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH (system-wide)"
+
 
 # Restore DB after Git clone
 if [ -z "$BACKUP_FILE" ]; then
@@ -106,13 +119,6 @@ if [ -n "$BACKUP_FILE" ]; then
     sudo -u postgres psql -d quizbot3 -f "$TMP_FILE"
     rm "$TMP_FILE"
 fi
-
-# Node.js install
-print_emphasized "Installing Node.js $NODE_VERSION.x..."
-curl -sL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo bash -
-sudo apt remove libnode-dev -y
-sudo apt remove libnode72:amd64 -y
-sudo apt install nodejs -y
 
 # Cron setup
 if [ "$REGISTER_CRON" = true ]; then
