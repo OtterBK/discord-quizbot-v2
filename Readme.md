@@ -238,80 +238,25 @@
   </summary>
 
 
-### Quizbot3 자동 설치 가이드
+### Quizbot3 자동 설치 가이드 (권장)
 
-**Ubuntu 22.04 LTS**에서만 검증된 설치 방법입니다.
+**Ubuntu 22.04 LTS** 권장
 
 ---
 
 ### 설치 단계:
 
-1. **Quizbot 자동 설치 스크립트를 홈 경로에 다운로드합니다**.  
+1. **다음 명령어를 실행하여 퀴즈봇 설치를 시작합니다.**
    ```bash
-   wget https://raw.githubusercontent.com/OtterBK/Quizbot3/refs/heads/develop/auto_script/setup_quizbot3.sh
+   curl -fsSL https://raw.githubusercontent.com/OtterBK/discord-quizbot-v2/master/auto_script/install_quizbot3.sh -o /tmp/install_quizbot3.sh && chmod +x /tmp/install_quizbot3.sh && sudo bash /tmp/install_quizbot3.sh
    ```
-   [setup_quizbot3.sh 다운로드](https://github.com/OtterBK/Quizbot3/blob/develop/auto_script/setup_quizbot3.sh)
-
-2. **DB 스키마 구성을 위한 `base.sql`을 홈 경로에 다운로드합니다**.  
-   ```bash
-   wget https://raw.githubusercontent.com/OtterBK/Quizbot3/refs/heads/master/auto_script/db_backup/base.sql
-   ```
-   [base.sql 다운로드](https://github.com/OtterBK/Quizbot3/blob/master/auto_script/db_backup/base.sql)
    
+2. **원하는 옵션을 입력하여 설치를 진행합니다.**
+   ![설치 진행](https://github.com/user-attachments/assets/c463ac4d-ca14-4919-8972-9db22bb83192)
 
-3. **퀴즈봇을 설치할 디렉터리를 홈 경로에 생성합니다**.
-   ```bash
-   mkdir /home/ubuntu/quizbot3
-   ```
+3. **스크립트 실행이 완료되면 Quizbot3가 성공적으로 설치됩니다**:<br>
+   ![설치 완료](https://github.com/user-attachments/assets/955c5d05-e30e-49a3-8093-af65603b81dd)  
 
-4. **현재 디렉터리 구조는 다음과 같을 것입니다**:<br>
-   ![디렉터리 구조](https://github.com/user-attachments/assets/47fe14a9-6a7f-4d13-ace2-561e899f21de)
-
-5. **다음 명령어를 실행하여 퀴즈봇을 설치합니다**:
-   ```bash
-   sudo sh /home/ubuntu/setup_quizbot3.sh --install-path=/home/ubuntu/quizbot3/ --node=18 --cron --dump=/home/ubuntu/base.sql --swap=8G
-   ```
-
-6. **스크립트 실행이 완료되면 Quizbot3가 성공적으로 설치됩니다**:<br>
-   ![설치 완료](https://github.com/user-attachments/assets/af803c4f-cd53-4402-a1e0-233c5b8dee8a)  
-   ![Quizbot3 설치 확인](https://github.com/user-attachments/assets/3943c9bf-a2d7-4496-914c-30679c99ce41)
-
-### 스크립트 옵션 설명
-
- * **설치 경로 설정** (`--install-path`):  
-   Quizbot3를 설치할 경로를 지정합니다.
-   
-   ```bash
-   --install-path=/your/install/directory
-   ```
-
- * **Node.js 버전 선택** (`--node`):  
-   기본적으로 Node.js 18 버전이 설치되며, 16 또는 17 버전도 선택할 수 있습니다.
-   
-   ```bash
-   --node=16  # Node.js 16 설치
-   ```
-
- * **크론 스케줄러 설정** (`--cron` 옵션):  
-   이 옵션을 통해 정기적으로 서버를 시작, 중지하거나 백업 등의 작업을 예약할 수 있습니다.
-   
-   ```bash
-   --cron
-   ```
-
- * **데이터베이스 백업 복원** (`--dump`):  
-   기존 데이터베이스 백업 파일이 있을 경우 해당 경로를 지정하면 복원합니다.
-   
-   ```bash
-   --dump=/path/to/base.sql
-   ```
-
- * **스왑 메모리 설정** (`--swap`):  
-   메모리가 부족할 때를 대비하여 추가적인 SWAP 메모리를 설정할 수 있습니다. 예를 들어 8GB의 SWAP을 설정하려면:
-   
-   ```bash
-   --swap=8  # 8GB 스왑 설정
-   ```
 
 </details>
 
@@ -322,7 +267,7 @@
     📦 [수동 설치 방법]
   </summary>
 
-### Quizbot3 수동 설치 가이드
+~~### Quizbot3 수동 설치 가이드~~
 
 ### 1. 패키지 목록 업데이트
 
