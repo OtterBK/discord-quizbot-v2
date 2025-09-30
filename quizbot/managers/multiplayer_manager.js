@@ -615,7 +615,7 @@ function handleRequestChat(signal)
   }
 
 
-  const result = session.acceptChatRequest(signal.user_id, signal.chat_message);
+  const result = session.acceptChatRequest(signal.guild_id, signal.user_id, signal.chat_message);
   return { state: result };
 }
 
@@ -1796,16 +1796,17 @@ class MultiplayerSession
     return true;
   }
 
-  acceptChatRequest(user_id, chat_message)
+  acceptChatRequest(guild_id, user_id, chat_message)
   {
     const signal = { //세션 펑
       signal_type: SERVER_SIGNAL.CONFIRM_CHAT,
+      guild_id: guild_id,
       user_id: user_id,
       timestamp: Date.now(),
       chat_message: chat_message
     };
     this.sendSignal(signal);
-    logger.debug(`Broadcasting Chat Message ${user_id}: ${chat_message}`);
+    logger.info(`Broadcasting Chat Message ${guild_id}_${user_id}: ${chat_message}`);
   }
 
   sendStatLoaded(updated_guild_info)
