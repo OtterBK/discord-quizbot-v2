@@ -611,10 +611,13 @@ const processReportLog = async (interaction) =>
 
   const [processed_ban_history, processed_report_log_list] = await processReportCore(chat_id, process_type);
   
-  const chat_content = interaction.message?.embeds?.[0]?.description ?? '(내용 없음)';
-  sendProcessedBanResult(interaction.user, processed_ban_history, chat_id, chat_content);
+  if(process_type == REPORT_PROCESSED_RESULT_TYPE.BANNED)
+  {
+    const chat_content = interaction.message?.embeds?.[0]?.description ?? '(내용 없음)';
+    sendProcessedBanResult(interaction.user, processed_ban_history, chat_id, chat_content);
 
-  notifyProcessedReportLog(processed_report_log_list);
+    notifyProcessedReportLog(processed_report_log_list);
+  }
 
   interaction.message.delete();
 };
