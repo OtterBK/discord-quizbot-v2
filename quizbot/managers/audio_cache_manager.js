@@ -333,7 +333,7 @@ const executeDownloadProcess = async (audio_url, yt_dlp_option) =>
     audio_url, 
     yt_dlp_option,
     {
-      timeout: 10000,
+      timeout: 20000,
       killSignal: 'SIGKILL'
     }
   );       

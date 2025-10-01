@@ -1163,7 +1163,7 @@ const MultiplayerSessionMixin = Base => class extends Base
     }
 
     const custom_chat_component = cloneDeep(multiplayer_chat_comp);
-    const message_id = signal.user_id + '-' + signal.timestamp;
+    const message_id = signal.guild_id + '-' + signal.user_id + '-' + signal.timestamp;
     custom_chat_component.components[0].setCustomId(`chat_report_${message_id}`);
     //신고 버튼에 ID 설정해줘야함
 
