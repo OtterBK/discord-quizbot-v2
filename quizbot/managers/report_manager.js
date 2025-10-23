@@ -754,7 +754,7 @@ const applyGuildBan = async (guild_id) =>
 const profanity_checker = createProfanityChecker(null, { return_matches: true });
 const autoProcessReportLog = async () =>
 {
-  logger.info(`Auto Process Reported Chat Start`);
+  logger.debug(`Auto Process Reported Chat Start`);
   let reported_chat_info_list = undefined;
   try
   {
