@@ -1,4 +1,5 @@
 #!/bin/bash
+. /etc/profile.d/quizbot_path.sh
 
 # Get the INSTALL_PATH environment variable (QUIZBOT_PATH)
 if [ -z "$QUIZBOT_PATH" ]; then
