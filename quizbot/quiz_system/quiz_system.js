@@ -5,7 +5,7 @@
 //#region 외부 모듈 로드
 const fs = require('fs');
 const { joinVoiceChannel, createAudioPlayer, NoSubscriberBehavior, createAudioResource, StreamType, VoiceConnectionStatus, entersState, AudioPlayerStatus } = require('@discordjs/voice');
-const { PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle, RESTJSONErrorCodes, TeamMemberMembershipState } = require('discord.js');
+const { PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle, RESTJSONErrorCodes, TeamMemberMembershipState, MessageFlags } = require('discord.js');
 const pathToFfmpeg = require('ffmpeg-static');
 process.env.FFMPEG_PATH = pathToFfmpeg;
 const cloneDeep = require("lodash/cloneDeep.js");
@@ -1625,7 +1625,7 @@ class MultiplayerQuizSession extends MultiplayerSessionMixin(QuizSession)
 
     if(this.quiz_data.quiz_size < 20)
     {
-      this.sendMessage({content: `\`\`\`🌐 이 멀티플레이에서 생성된 문제 수가 20개 미만입니다.\n해당 게임의 결과는 전적에 반영되지 않습니다.\`\`\``, ephemeral: true});
+      this.sendMessage({content: `\`\`\`🌐 이 멀티플레이에서 생성된 문제 수가 20개 미만입니다.\n해당 게임의 결과는 전적에 반영되지 않습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     }
 
     this.multiplayer_state = MULTIPLAYER_STATE.QUESTION_LIST_READY;
@@ -4444,7 +4444,7 @@ class Question extends QuizLifeCycleWithUtility
     {
       if(remain_chance == 0) //라스트 찬스였으면
       {
-        message.reply({content: `\`\`\`🔸 땡! 이번 문제의 정답 제출 기회를 모두 사용했어요.\`\`\``, ephemeral: true});
+        message.reply({content: `\`\`\`🔸 땡! 이번 문제의 정답 제출 기회를 모두 사용했어요.\`\`\``, flags: MessageFlags.Ephemeral});
       }
 
       return;
@@ -4478,7 +4478,7 @@ class Question extends QuizLifeCycleWithUtility
       {
         const reply_message = `이번 문제의 정답 제출 기회를 모두 사용했어요.`;
         interaction.explicit_replied = true;
-        interaction.reply({content: reply_message, ephemeral: true})
+        interaction.reply({content: reply_message, flags: MessageFlags.Ephemeral})
           .catch(err => 
           {
             logger.error(`Failed to replay to wrong submit, guild_id:${this.quiz_session.guild_id}, err: ${err.stack}`);
@@ -4503,7 +4503,7 @@ class Question extends QuizLifeCycleWithUtility
         reply_message += "```";
                 
         interaction.explicit_replied = true;
-        interaction.reply({content: reply_message, ephemeral: true})
+        interaction.reply({content: reply_message, flags: MessageFlags.Ephemeral})
           .catch(err => 
           {
             logger.error(`Failed to replay to wrong submit, guild_id:${this.quiz_session.guild_id}, err: ${err.stack}`);
@@ -4558,7 +4558,7 @@ class Question extends QuizLifeCycleWithUtility
       this.selected_choice_map.set(member, selected_choice);
 
       interaction.explicit_replied = true;
-      interaction.reply({ content: `\`\`\`🔸 선택한 정답: ${this.choiceAsIcon(selected_choice)}\`\`\``, ephemeral: true });
+      interaction.reply({ content: `\`\`\`🔸 선택한 정답: ${this.choiceAsIcon(selected_choice)}\`\`\``, flags: MessageFlags.Ephemeral });
     }
   }
 

@@ -5,6 +5,7 @@ const {
   Client,
   GatewayIntentBits,
   PermissionsBitField,
+  MessageFlags,
 } = require('discord.js');
 const { ClusterClient, getInfo } = require('discord-hybrid-sharding');
 const fs = require('fs');
@@ -249,7 +250,7 @@ const checkPermission = (interaction) =>
     interaction.reply({
       content:
         `\`\`\`🔸 이 채널에 메시지를 보낼 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return false;
   }
@@ -264,7 +265,7 @@ const checkPermission = (interaction) =>
     interaction.reply({
       content:
         `\`\`\`🔸 이 채널의 속성을 확인할 수 있는 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return false;
   }
@@ -279,7 +280,7 @@ const start_quiz_handler = async (interaction) =>
   {
     interaction.reply({
       content: `\`\`\`🔸 개인 메시지 채널에서는 퀴즈 플레이가 불가능합니다.\`\`\``,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -355,13 +356,13 @@ const create_quiz_handler = async (interaction) =>
     interaction.reply({
       content:
         `\`\`\`🔸 퀴즈 제작에 참여해주셔서 감사합니다!\n퀴즈봇이 메시지를 보낼거에요. 확인해보세요!\`\`\``,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     interaction.member.send({
       content:
         `\`\`\`🔸 퀴즈만들기는 개인채널(DM)으로만 요청 가능해요!\n여기서 다시 한번 '/퀴즈만들기' 를 입력하시거나 버튼을 클릭하세요!\`\`\``,
       components: [create_quiz_tool_btn_component],
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -371,7 +372,7 @@ const create_quiz_handler = async (interaction) =>
   interaction.reply({
     content:
       `\`\`\`🔸 개인 메시지로 퀴즈 제작 화면을 보내드렸어요!\n퀴즈봇과의 개인 메시지를 확인해주세요 🛠\`\`\``,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 };
 
@@ -400,7 +401,7 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
 
     if(PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
     {
-      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
   }
@@ -464,7 +465,7 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
       //이제 Public UI 조작은 주인만 가능~
       interaction.reply({
         content: `\`\`\`🔸 해당 UI를 생성한 ${uiHolder.getOwnerName()}님만이 조작할 수 있어요.\nUI를 새로 만들려면 [/퀴즈] 명령어를 다시 입력해주세요!\`\`\``,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
       return;
     }

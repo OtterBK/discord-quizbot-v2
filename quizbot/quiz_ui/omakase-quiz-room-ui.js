@@ -2,7 +2,7 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
-
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -172,7 +172,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     this.quiz_info['basket_mode'] = true;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`장바구니 모드를 사용합니다.\n장바구니 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`장바구니 모드를 사용합니다.\n장바구니 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, flags: MessageFlags.Ephemeral});
 
     return new UserQuizSelectUI(basket_items);
   }
@@ -185,14 +185,14 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     if(!cached_basket_items)
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 최근 장바구니 데이터가 없어요...\n🔸 장바구니 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`🔸 최근 장바구니 데이터가 없어요...\n🔸 장바구니 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
     this.quiz_info['basket_items'] = cloneDeep(cached_basket_items);
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 장바구니 데이터를 불러왔어요.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 장바구니 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
 
     this.refreshUI();
     return this;
@@ -203,7 +203,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     this.quiz_info['basket_mode'] = false;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 장르 선택 모드를 사용합니다.\n선택하신 장르에 따라 퀴즈봇이 문제를 제출합니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 장르 선택 모드를 사용합니다.\n선택하신 장르에 따라 퀴즈봇이 문제를 제출합니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
     this.refreshUI();
     return this;

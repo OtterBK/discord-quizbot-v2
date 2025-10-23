@@ -1,5 +1,5 @@
 //외부모듈
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 
 //로컬 모듈
 const db_manager = require('./db_manager.js');
@@ -55,7 +55,7 @@ exports.addQuizLikeAuto = async (interaction, quiz_id, quiz_title) =>
   interaction.explicit_replied = true;
   if(await exports.checkAlreadyLike(quiz_id, user_id))
   {
-    interaction.reply({content: '```' + `💚 이미 [${quiz_title}] 퀴즈를 추천했네요. 감사합니다! 😄` + '```', ephemeral: true});
+    interaction.reply({content: '```' + `💚 이미 [${quiz_title}] 퀴즈를 추천했네요. 감사합니다! 😄` + '```', flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -65,13 +65,13 @@ exports.addQuizLikeAuto = async (interaction, quiz_id, quiz_title) =>
 
       if(result == true)
       {
-        interaction.reply({content: '```' + `👍 [${quiz_title}] 퀴즈를 추천했어요! ` + '```', ephemeral: true});
+        interaction.reply({content: '```' + `👍 [${quiz_title}] 퀴즈를 추천했어요! ` + '```', flags: MessageFlags.Ephemeral});
         logger.info(`Custom quiz got liked by ${user.displayName}[${user_id}]. quiz_title: ${quiz_title} quiz_id: ${quiz_id}`);
       }
       else
       {
         interaction.explicit_replied = true;
-        interaction.reply({content: '```' + `💚 이미 [${quiz_title}] 퀴즈를 추천했네요. 감사합니다! 😄` + '```', ephemeral: true});
+        interaction.reply({content: '```' + `💚 이미 [${quiz_title}] 퀴즈를 추천했네요. 감사합니다! 😄` + '```', flags: MessageFlags.Ephemeral});
       }
     });
 };

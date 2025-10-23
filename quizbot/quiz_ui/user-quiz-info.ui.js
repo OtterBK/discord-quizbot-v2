@@ -2,6 +2,7 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -230,7 +231,7 @@ class UserQuizInfoUI extends QuizInfoUI
       if(this.user_quiz_info.question_list?.length == 0)
       {
         interaction.explicit_replied = true;
-        interaction.reply({content: `\`\`\`🔸 이 퀴즈의 문제 수가 0개라 시작할 수 없습니다.\`\`\``, ephemeral: true});
+        interaction.reply({content: `\`\`\`🔸 이 퀴즈의 문제 수가 0개라 시작할 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral});
         return;
       }
   
@@ -241,7 +242,7 @@ class UserQuizInfoUI extends QuizInfoUI
         const reason_message = text_contents.quiz_info_ui.failed_start.replace("${reason}", reason);
 
         interaction.explicit_replied = true;
-        interaction.reply({content: reason_message, ephemeral: true});
+        interaction.reply({content: reason_message, flags: MessageFlags.Ephemeral});
         return;
       }
         
@@ -308,7 +309,7 @@ class UserQuizInfoUI extends QuizInfoUI
       //비공개에서 공개로 전환할 경우
       if(user_quiz_info.data.is_private == true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
       {
-        interaction.user.send({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, ephemeral: true });
+        interaction.user.send({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, flags: MessageFlags.Ephemeral });
         return;
       }
   
@@ -324,14 +325,14 @@ class UserQuizInfoUI extends QuizInfoUI
   
     if(interaction.customId === 'quiz_delete') //퀴즈 삭제 버튼
     {
-      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\`\`\``, components: [quiz_delete_confirm_comp], ephemeral: true });
+      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\`\`\``, components: [quiz_delete_confirm_comp], flags: MessageFlags.Ephemeral });
       return;
     }
   
     if(interaction.customId === 'quiz_delete_confirmed') //퀴즈 정말정말정말로 삭제 버튼
     {
       this.freeHolder(); //더 이상 UI 못 쓰도록
-      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.quiz_id}` + "```", ephemeral: true });
+      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.quiz_id}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
       return;
@@ -384,7 +385,7 @@ class UserQuizInfoUI extends QuizInfoUI
     this.refreshUI();
   
     modal_interaction.explicit_replied = true;
-    modal_interaction.reply({ content: `\`\`\`🔸 퀴즈 정보를 수정하였습니다.\`\`\``, ephemeral: true });
+    modal_interaction.reply({ content: `\`\`\`🔸 퀴즈 정보를 수정하였습니다.\`\`\``, flags: MessageFlags.Ephemeral });
     logger.info(`Edited Quiz info... quiz_id: ${user_quiz_info.quiz_id}`);
   }
   

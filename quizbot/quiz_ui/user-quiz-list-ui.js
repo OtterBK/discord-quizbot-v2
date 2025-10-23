@@ -1,6 +1,7 @@
 'use strict';
 
 //#region 필요한 외부 모듈
+const { MessageFlags } = require('discord.js');
 
 //#endregion
 
@@ -175,7 +176,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
     const quiz_description = modal_interaction.fields.getTextInputValue('txt_input_quiz_description');
 
     modal_interaction.explicit_replied = true;
-    modal_interaction.reply({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성 중... 잠시만 기다려주세요.\`\`\``, ephemeral: true});
+    modal_interaction.reply({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성 중... 잠시만 기다려주세요.\`\`\``, flags: MessageFlags.Ephemeral});
 
     //이건 어쩔 수 없음 직접 하드코딩으로 데이터 넣어야함
     user_quiz_info.data.creator_id = modal_interaction.user.id;
@@ -197,7 +198,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
       {
         if(created_quiz_id === undefined) //저장 실패
         {
-          modal_interaction.user.send({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM(제육보끔#1916)으로 문의 바랍니다.\`\`\``, ephemeral: true});
+          modal_interaction.user.send({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM(제육보끔#1916)으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral});
           return;
         }
     
@@ -228,7 +229,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
   {
     if(user.id !== user_quiz_info.data.creator_id && user.id !== PRIVATE_CONFIG?.ADMIN_ID) //어드민이면 다 수정 할 수 있음
     {
-      user.send({content: `\`\`\`🔸 당신은 해당 퀴즈를 수정할 권한이 없습니다. quiz_id: ${user_quiz_info.data.quiz_id}\`\`\``, ephemeral: true});
+      user.send({content: `\`\`\`🔸 당신은 해당 퀴즈를 수정할 권한이 없습니다. quiz_id: ${user_quiz_info.data.quiz_id}\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
@@ -278,7 +279,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
 
     let info_string = 
 	 `🔸 유저분들이 ${user.displayName} 님의 퀴즈를 [${total_played_count}]회 플레이했어요!\n🔸 이번 주에 가장 플레이된 퀴즈는 [${best_quiz_of_week.data.quiz_title ?? "UNKNOWN NAME"}]이네요!\n🔸 모든 퀴즈 중 가장 많이 플레이된 퀴즈는 [${best_quiz.data.quiz_title ?? "UNKNOWN NAME"}]입니다!\n🔸 퀴즈 제작에 참여해주셔서 정말 감사드립니다.🙂`;
-    user.send({content: '```' + info_string + '```', ephemeral: true});
+    user.send({content: '```' + info_string + '```', flags: MessageFlags.Ephemeral});
   }
 }
 
