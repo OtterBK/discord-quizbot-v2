@@ -387,7 +387,7 @@ class UIHolder
       else
       {
         this.base_interaction.explicit_replied = true;
-        this.base_interaction.reply( {embeds: [this.getUIEmbed()], components: this.getUIComponents(), fetchReply: true} )
+        this.base_interaction.reply( {embeds: [this.getUIEmbed()], components: this.getUIComponents(), withResponse: true} )
           .then((message) =>
           {
             this.base_message = message;
