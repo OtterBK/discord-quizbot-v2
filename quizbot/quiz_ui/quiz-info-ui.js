@@ -1,7 +1,7 @@
 'use strict';
 
 //#region 필요한 외부 모듈
-
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
