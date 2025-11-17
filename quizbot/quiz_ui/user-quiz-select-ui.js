@@ -1,6 +1,7 @@
 'use strict';
 
 //#region 필요한 외부 모듈
+const { MessageFlags } = require('discord.js');
 const cloneDeep = require("lodash/cloneDeep.js");
 //#endregion
 
@@ -286,19 +287,19 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
       const quiz_title = user_quiz_info.data.quiz_title;
       if(quiz_id === undefined)
       {
-        interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈에서 Quiz id 값을 찾을 수 없습니다.\`\`\``, ephemeral: true});
+        interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈에서 Quiz id 값을 찾을 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral});
         return; 
       }
 
       if(this.basket_items[quiz_id] !== undefined)
       {
-        interaction.reply({content: `\`\`\`🔸 [${quiz_title}] 퀴즈는 이미 담겼습니다.\`\`\``, ephemeral: true});
+        interaction.reply({content: `\`\`\`🔸 [${quiz_title}] 퀴즈는 이미 담겼습니다.\`\`\``, flags: MessageFlags.Ephemeral});
         return;
       }
 
       if(Object.keys(this.basket_items ?? []).length >= this.max_basket_size)
       {
-        interaction.reply({content: `\`\`\`🔸 장바구니가 가득 찼습니다. 더 이상 퀴즈를 담을 수 없어요.\`\`\``, ephemeral: true});
+        interaction.reply({content: `\`\`\`🔸 장바구니가 가득 찼습니다. 더 이상 퀴즈를 담을 수 없어요.\`\`\``, flags: MessageFlags.Ephemeral});
         return; 
       }
 

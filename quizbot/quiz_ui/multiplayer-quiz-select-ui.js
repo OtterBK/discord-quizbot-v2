@@ -3,6 +3,7 @@
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
 const fs = require('fs');
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -157,7 +158,7 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
   {
     this.loadMultiplayerLobbyList();
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 목록을 다시 불러왔습니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 목록을 다시 불러왔습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return undefined;
   }
 
@@ -209,7 +210,7 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
       const reason_message = text_contents.quiz_info_ui.failed_start.replace("${reason}", reason);
 
       interaction.explicit_replied = true;
-      interaction.reply({content: reason_message, ephemeral: true});
+      interaction.reply({content: reason_message, flags: MessageFlags.Ephemeral});
       return false;
     }
 
@@ -221,7 +222,7 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
     {
       interaction.explicit_replied = true;
-      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, ephemeral: true });
+      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return undefined;
     }
 
@@ -239,7 +240,7 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
     {
       interaction.explicit_replied = true;
-      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, ephemeral: true });
+      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return undefined;
     }
 

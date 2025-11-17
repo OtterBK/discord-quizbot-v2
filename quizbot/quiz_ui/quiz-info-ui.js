@@ -1,7 +1,7 @@
 'use strict';
 
 //#region 필요한 외부 모듈
-
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -195,7 +195,7 @@ class QuizInfoUI extends QuizbotUI
     if(this.checkTagSelected() === false)
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 시작하시려면 퀴즈 유형 및 장르를 1개라도 선택해주세요!\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`🔸 시작하시려면 퀴즈 유형 및 장르를 1개라도 선택해주세요!\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
@@ -210,7 +210,7 @@ class QuizInfoUI extends QuizbotUI
       const reason_message = text_contents.quiz_info_ui.failed_start.replace("${reason}", reason);
 
       interaction.explicit_replied = true;
-      interaction.reply({content: reason_message, ephemeral: true});
+      interaction.reply({content: reason_message, flags: MessageFlags.Ephemeral});
       return;
     }
     
@@ -333,7 +333,7 @@ class QuizInfoUI extends QuizbotUI
     if(isNaN(selected_question_count) || selected_question_count <= 0) //입력 값 잘못된거 처리
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 문제 수 설정에 입력된 ${input_selected_question_count} 값은 잘못됐습니다.\n양수의 숫자만 입력해주세요.\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`🔸 문제 수 설정에 입력된 ${input_selected_question_count} 값은 잘못됐습니다.\n양수의 숫자만 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral});
       return false;
     }
 
@@ -348,7 +348,7 @@ class QuizInfoUI extends QuizbotUI
     }
     
     // interaction.explicit_replied = true;
-    // interaction.reply({content: `\`\`\`🔸 제출할 문제 수를 ${selected_question_count}개로 설정했습니다.\`\`\``, ephemeral: true});
+    // interaction.reply({content: `\`\`\`🔸 제출할 문제 수를 ${selected_question_count}개로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     quiz_info['selected_question_count'] = selected_question_count;
 
     return true;

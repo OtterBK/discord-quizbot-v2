@@ -1,4 +1,5 @@
 #!/bin/bash
+. /etc/profile.d/quizbot_path.sh
 
 # Check if QUIZBOT_PATH is set
 if [ -z "$QUIZBOT_PATH" ]; then

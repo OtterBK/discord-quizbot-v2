@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const { getQuizSession } = require('../quiz_system/quiz_system.js');
 const utility = require('../../utility/utility.js');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
@@ -79,7 +79,7 @@ const checkBanned = async (interaction, user_id) =>
     }
 
     const expiration_date = new Date(parseInt(ban_expiration_timestamp));
-    interaction.reply({content: `\`\`\`전체 대화 기능 이용이 제한되었습니다. (${expiration_date.toLocaleString()} 까지)\`\`\``, ephemeral: true});   
+    interaction.reply({content: `\`\`\`전체 대화 기능 이용이 제한되었습니다. (${expiration_date.toLocaleString()} 까지)\`\`\``, flags: MessageFlags.Ephemeral});   
     return true;
   }
   catch(err)
@@ -118,7 +118,7 @@ const sendMultiplayerChat = async (interaction) =>
       🔸 동의하시면 [동의하기] 버튼을 누르신 후, [하트 추가]를 눌러 주시기 바랍니다.\n
       🔸 해당 동의는 24시간 동안 유효합니다.
       \`\`\``
-      , ephemeral: true
+      , flags: MessageFlags.Ephemeral
       , components: [agree_comp]
     });
 
@@ -134,14 +134,14 @@ const sendMultiplayerChat = async (interaction) =>
   const channel = quiz_session.channel;
   if(channel?.id !== interaction.channel.id)
   {
-    interaction.reply({content: `\`\`\`🔸 퀴즈가 진행 중인 채팅 채널에서만 사용 가능합니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 퀴즈가 진행 중인 채팅 채널에서만 사용 가능합니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
   const message = interaction.options.getString('메시지') ?? '';
   if(message === undefined || message === '')
   {
-    interaction.reply({content: `\`\`\`🔸 메시지 값은 필수입니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 메시지 값은 필수입니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -149,12 +149,12 @@ const sendMultiplayerChat = async (interaction) =>
 
   if(quiz_session.isIgnoreChat())
   {
-    interaction.reply({content: `\`\`\`🔸 전체 채팅 기능이 꺼져있습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 전체 채팅 기능이 꺼져있습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
   quiz_session.sendRequestChat(user.id, chat_message);
-  interaction.reply({ content: `\`\`\`메시지 전송됨\`\`\`` , ephemeral: true});
+  interaction.reply({ content: `\`\`\`메시지 전송됨\`\`\`` , flags: MessageFlags.Ephemeral});
 };
 
 const toggleMultiplayerChat = (interaction) =>
@@ -168,21 +168,21 @@ const toggleMultiplayerChat = (interaction) =>
   }
 
   const ignore_chat = quiz_session.toggleIgnoreChat(interaction.user.displayName);
-  interaction.reply({content: `\`\`\`🔸 전체 채팅을 ${ignore_chat ? "껐습니다." : "켰습니다."}\`\`\``, ephemeral: true});
+  interaction.reply({content: `\`\`\`🔸 전체 채팅을 ${ignore_chat ? "껐습니다." : "켰습니다."}\`\`\``, flags: MessageFlags.Ephemeral});
 };
 
 const getMultiplayerQuizSession = (interaction) =>
 {
   if(!interaction.guild)
   {
-    interaction.reply({content: `\`\`\`🔸 퀴즈 진행 중인 서버에서만 사용 가능합니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 퀴즈 진행 중인 서버에서만 사용 가능합니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return undefined;
   }
 
   const quiz_session = getQuizSession(interaction.guild.id);
   if(quiz_session === undefined || quiz_session.isMultiplayerSession() === false)
   {
-    interaction.reply({content: `\`\`\`🔸 멀티플레이 퀴즈에 참가 중이지 않습니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 멀티플레이 퀴즈에 참가 중이지 않습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return undefined;
   }
 

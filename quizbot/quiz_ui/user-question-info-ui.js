@@ -3,6 +3,7 @@
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
 const ytdl = require('discord-ytdl-core');
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -547,7 +548,7 @@ class UserQuestionInfoUI extends QuizbotUI
     if(this.question_list !== undefined && this.question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
     {
       modal_interaction.explicit_replied = true;
-      modal_interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, ephemeral: true });
+      modal_interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -563,7 +564,7 @@ class UserQuestionInfoUI extends QuizbotUI
     if(question_id === undefined)
     {
       modal_interaction.explicit_replied = true;
-      modal_interaction.reply({ content: `\`\`\`${this.quiz_info.quiz_id} / ${modal_interaction.user.id}에서 문제를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, ephemeral: true });
+      modal_interaction.reply({ content: `\`\`\`${this.quiz_info.quiz_id} / ${modal_interaction.user.id}에서 문제를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -610,7 +611,7 @@ class UserQuestionInfoUI extends QuizbotUI
     if(question_id === undefined)
     {
       modal_interaction.explicit_replied = true;
-      modal_interaction.reply({content: `\`\`\`${this.quiz_info.quiz_id} / ${modal_interaction.user.id}에서 문제를 저장하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, ephemeral: true});
+      modal_interaction.reply({content: `\`\`\`${this.quiz_info.quiz_id} / ${modal_interaction.user.id}에서 문제를 저장하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 

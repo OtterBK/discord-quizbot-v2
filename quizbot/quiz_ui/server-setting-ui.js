@@ -2,6 +2,7 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
+const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -129,7 +130,7 @@ class ServerSettingUI extends QuizBotControlComponentUI
     this.embed.footer = undefined;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `해당 옵션을 어떤 값으로 설정할까요?`, ephemeral: true});
+    interaction.reply({content: `해당 옵션을 어떤 값으로 설정할까요?`, flags: MessageFlags.Ephemeral});
 
     return this;
   }
@@ -149,7 +150,7 @@ class ServerSettingUI extends QuizBotControlComponentUI
     this.embed.footer = undefined;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 옵션 값을 ${selected_value}로 설정했습니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`🔸 옵션 값을 ${selected_value}로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
     return this;
   }
@@ -176,7 +177,7 @@ class ServerSettingUI extends QuizBotControlComponentUI
         };
 
         this.update();
-        interaction.reply({content: `${result_message}`, ephemeral: true});
+        interaction.reply({content: `${result_message}`, flags: MessageFlags.Ephemeral});
       });
   }
 

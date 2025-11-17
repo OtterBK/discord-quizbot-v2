@@ -1,6 +1,6 @@
 const fs = require('fs');
 const cloneDeep = require("lodash/cloneDeep.js");
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, MessageFlags} = require('discord.js');
 
 const PRIVATE_CONFIG = require('../../config/private_config.json');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
@@ -223,7 +223,7 @@ const submitReportChatModal = (interaction) =>
   const result = 0;
   const report_type = REPORT_PROCESSED_RESULT_TYPE.IN_PROGRESS;
 
-  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\`\`\``, ephemeral: true});
+  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
   db_manager.insertChatInfo(chat_info_key_fields, [chat_id, content, sender_id, result]);
   db_manager.insertReportInfo(report_info_key_fields, [chat_id, reporter_id, report_detail, report_type]);
@@ -455,7 +455,7 @@ const sendReportLog = async (interaction) =>
 
   if(interaction.guild)
   {
-    interaction.reply({content: `\`\`\`개인 메시지 채널에서만 사용 가능합니다.\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`개인 메시지 채널에서만 사용 가능합니다.\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -469,7 +469,7 @@ const sendReportLog = async (interaction) =>
     const err_message = `select reported chat info list error. err: ${err.stack}`;
 
     logger.error(err_message);
-    user.send({content: `\`\`\`${err_message}\`\`\``, ephemeral: true});
+    user.send({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
 
     return;
   }
@@ -495,7 +495,7 @@ const sendReportLog = async (interaction) =>
     await sendReportProcessingUI(user, reported_chat_info);
   }
 
-  interaction.reply({content: `\`\`\`${reported_chat_info_list.rowCount}개의 신고 항목 조회함\`\`\``, ephemeral: true});
+  interaction.reply({content: `\`\`\`${reported_chat_info_list.rowCount}개의 신고 항목 조회함\`\`\``, flags: MessageFlags.Ephemeral});
 };
 
 const sendReportProcessingUI = async (user, reported_chat_info) =>
@@ -605,7 +605,7 @@ const processReportLog = async (interaction) =>
     const err_message = `cannot extract chat_id from ${interaction.customId}`;
     logger.error(err_message);
     
-    interaction.reply({content: `\`\`\`${err_message}\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -652,7 +652,7 @@ const processFollowUpAction = async (interaction) =>
     const err_message = `cannot extract chat_id from ${interaction.customId}`;
     logger.error(err_message);
     
-    interaction.reply({content: `\`\`\`${err_message}\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -662,7 +662,7 @@ const processFollowUpAction = async (interaction) =>
       const err_message = `cannot extract chat_info from ${chat_id}`;
       logger.error(err_message);
       
-      interaction.reply({content: `\`\`\`${err_message}\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
@@ -686,7 +686,7 @@ const processFollowUpAction = async (interaction) =>
     const expiration_date = new Date(ban_history.ban_expiration_timestamp).toLocaleString();
     const result_message = `제재 ${ban_type_string}\nCHAT_ID:${chat_id}\nUSER_ID: ${ban_history.user_id}\nBAN_COUNT: ${ban_history.ban_count}\n밴 만료일자: ${expiration_date}\n`;
 
-    interaction.reply({content: `\`\`\`${result_message}\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`${result_message}\`\`\``, flags: MessageFlags.Ephemeral});
   }
   else if(followup_processed_type === FOLLOWUP_PROCESSED_RESULT_TYPE.GUILD_BANNED)
   {
@@ -697,7 +697,7 @@ const processFollowUpAction = async (interaction) =>
       const err_message = `cannot fetch guild ${guild_id}`;
       logger.error(err_message);
       
-      interaction.reply({content: `\`\`\`${err_message}\`\`\``, ephemeral: true});
+      interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
@@ -712,7 +712,7 @@ const processFollowUpAction = async (interaction) =>
       result_message = `Guild ${guild.name}/${guild.id} is already banned.`;
     }
     logger.info(result_message);
-    interaction.reply({content: `\`\`\`${result_message}\`\`\``, ephemeral: true});
+    interaction.reply({content: `\`\`\`${result_message}\`\`\``, flags: MessageFlags.Ephemeral});
   }
 
 };
@@ -754,7 +754,7 @@ const applyGuildBan = async (guild_id) =>
 const profanity_checker = createProfanityChecker(null, { return_matches: true });
 const autoProcessReportLog = async () =>
 {
-  logger.info(`Auto Process Reported Chat Start`);
+  logger.debug(`Auto Process Reported Chat Start`);
   let reported_chat_info_list = undefined;
   try
   {
