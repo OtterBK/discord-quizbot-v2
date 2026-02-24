@@ -1,8 +1,6 @@
 'use strict';
 
 //외부 modules
-const { ThreadChannel } = require('discord.js');
-const { reject } = require('lodash');
 const pg = require('pg');
 
 //로컬 modules
@@ -25,10 +23,7 @@ const sendQuery = (query_string, values=[]) =>
 {
   if(is_initialized == false)
   {
-    return new Promise((resolve, reject) => 
-    {
-      resolve(undefined);
-    });
+    return Promise.resolve(undefined);
   }
 
   return pool.query(query_string, values)
@@ -45,23 +40,19 @@ const sendQuery = (query_string, values=[]) =>
 
 exports.initialize = () => 
 {
-  return new Promise((resolve, reject) => 
-  {
-    pool.connect(err => 
+  return pool.query('SELECT 1')
+    .then(() =>
     {
-      if (err) 
-      {
-        logger.error(`Failed to connect db err: ${err}`);
-        is_initialized = false;
-      }
-      else 
-      {
-        logger.info(`Connected to db!`);
-        is_initialized = true;
-      }
-      resolve(is_initialized);
+      logger.info(`Connected to db!`);
+      is_initialized = true;
+      return is_initialized;
+    })
+    .catch((err) =>
+    {
+      logger.error(`Failed to connect db err: ${err}`);
+      is_initialized = false;
+      return is_initialized;
     });
-  });
 };
 
 exports.executeQuery = async (query, values) => 
@@ -148,12 +139,14 @@ exports.updateQuizInfo = async (key_fields, value_fields, quiz_id) =>
     placeholders += `$${i}` + (i == value_fields.length ? '' : ',');
   }
 
+  const quiz_id_parameter_index = value_fields.length + 1;
+
   const query_string = 
   `UPDATE tb_quiz_info set (${key_fields}) = (${placeholders}) 
-    where quiz_id = ${quiz_id}
+    where quiz_id = $${quiz_id_parameter_index}
     returning quiz_id`;
 
-  return sendQuery(query_string, value_fields);
+  return sendQuery(query_string, [...value_fields, quiz_id]);
 
 };
 
@@ -217,12 +210,14 @@ exports.updateQuestionInfo = async (key_fields, value_fields, question_id) =>
     placeholders += `$${i}` + (i == value_fields.length ? '' : ',');
   }
 
+  const question_id_parameter_index = value_fields.length + 1;
+
   const query_string = 
   `UPDATE tb_question_info set (${key_fields}) = (${placeholders}) 
-    where question_id = ${question_id}
+    where question_id = $${question_id_parameter_index}
     returning question_id`;
 
-  return sendQuery(query_string, value_fields);
+  return sendQuery(query_string, [...value_fields, question_id]);
 };
 
 /** User QuestioN Info */ 
