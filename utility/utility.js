@@ -497,3 +497,11 @@ exports.removeMarkdownSpecialChars = (str) =>
   const markdownSpecialChars = /[*`_~#\[\]\(\)\{\}><|!.\-+]/g;
   return str.replace(markdownSpecialChars, '');
 };
+
+// 닉네임 마크다운 인젝션 & 멘션 방지 함수
+exports.sanitizeName = (name) => {
+    if (!name) return name;
+    // 1. 백틱(`)을 작은따옴표(')로 변경하여 코드블럭 탈출 방지
+    // 2. @ 기호 뒤에 눈에 보이지 않는 공백(Zero-width space)을 삽입하여 멘션 기능 무력화
+    return name.replace(/`/g, "'").replace(/@/g, "@\u200b");
+};

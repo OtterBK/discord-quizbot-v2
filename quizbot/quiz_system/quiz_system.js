@@ -970,11 +970,11 @@ const MultiplayerSessionMixin = Base => class extends Base
 
     if(this.isIgnoreChat())
     {
-      this.sendMessage(`\`\`\`🔸 ${who} 님이 전체 채팅을 껐습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``);
+      this.sendMessage(`\`\`\`🔸 ${utility.sanitizeName(who)} 님이 전체 채팅을 껐습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``);
     }
     else
     {
-      this.sendMessage(`\`\`\`🔸 ${who} 님이 전체 채팅을 켰습니다.\`\`\``);
+      this.sendMessage(`\`\`\`🔸 ${utility.sanitizeName(who)} 님이 전체 채팅을 켰습니다.\`\`\``);
     }
   }
 
@@ -1931,7 +1931,7 @@ class QuizLifeCycle
         }
         this.quiz_session.forceStop();
         let force_stop_message = text_contents.quiz_play_ui.force_stop;
-        force_stop_message = force_stop_message.replace("${who_stopped}", interaction.member.user.username);
+        force_stop_message = force_stop_message.replace("${who_stopped}", utility.sanitizeName(interaction.member.user.username));
         interaction.channel.send({content: force_stop_message});
         return;
       }
@@ -4248,10 +4248,12 @@ class Question extends QuizLifeCycleWithUtility
   async checkAutoHint(audio_play_time) 
   {
     const option_data = this.quiz_session.option_data;
-    if(option_data.quiz.hint_type != OPTION_TYPE.HINT_TYPE.AUTO) //자동 힌트 사용 중이 아니라면
+    if(this.quiz_session.isMultiplayerSession() == false && option_data.quiz.hint_type != OPTION_TYPE.HINT_TYPE.AUTO) //싱글 퀴즈에서 자동 힌트 사용 중이 아니라면
     {
       return;
     }   
+
+    //멀티플레이는 자동 힌트도 무조건 되게함
 
     const hint_timer_wait = audio_play_time / 2; //절반 지나면 힌트 표시할거임
     const hint_timer = setTimeout(() => 
@@ -4489,7 +4491,7 @@ class Question extends QuizLifeCycleWithUtility
       if(this.checkAnswerHit(message_content) == false) //오답
       {
         let reply_message = "```";
-        reply_message += `🔸 ${requester.displayName}: [ ${message_content} ]... 오답입니다!`;
+        reply_message += `🔸 ${utility.sanitizeName(requester.displayName)}: [ ${message_content} ]... 오답입니다!`;
 
         if(remain_chance == 0) //라스트 찬스였음
         {
@@ -4514,7 +4516,7 @@ class Question extends QuizLifeCycleWithUtility
             
       this.submittedCorrectAnswer(requester);
 
-      let message = "```" + `${requester.displayName}: [ ${message_content} ]... 정답입니다!` + "```";
+      let message = "```" + `${utility.sanitizeName(requester.displayName)}: [ ${message_content} ]... 정답입니다!` + "```";
       interaction.explicit_replied = true;
       interaction.reply({content: message})
         .catch(err => 
@@ -4625,7 +4627,7 @@ class Question extends QuizLifeCycleWithUtility
       current_question['hint_vote_count'] = current_question['hint_vote_count'] == undefined ? 1 : current_question['hint_vote_count'] + 1;
 
       let hint_vote_message = text_contents.quiz_play_ui.hint_vote;
-      hint_vote_message = hint_vote_message.replace("${who_voted}", member.displayName);
+      hint_vote_message = hint_vote_message.replace("${who_voted}", utility.sanitizeName(member.displayName));
       hint_vote_message = hint_vote_message.replace("${current_vote_count}", current_question['hint_vote_count'] );
       hint_vote_message = hint_vote_message.replace("${vote_criteria}", vote_criteria);
       this.quiz_session.sendMessage({content: hint_vote_message});
@@ -4678,7 +4680,7 @@ class Question extends QuizLifeCycleWithUtility
       current_question['skip_vote_count'] = current_question['skip_vote_count'] == undefined ? 1 : current_question['skip_vote_count'] + 1;
 
       let skip_vote_message = text_contents.quiz_play_ui.skip_vote;
-      skip_vote_message = skip_vote_message.replace("${who_voted}", member.displayName);
+      skip_vote_message = skip_vote_message.replace("${who_voted}", utility.sanitizeName(member.displayName));
       skip_vote_message = skip_vote_message.replace("${current_vote_count}", current_question['skip_vote_count']);
       skip_vote_message = skip_vote_message.replace("${vote_criteria}", vote_criteria);
       this.quiz_session.sendMessage({content: skip_vote_message});

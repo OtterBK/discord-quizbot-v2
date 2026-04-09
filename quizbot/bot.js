@@ -50,6 +50,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
+  allowedMentions: { parse: [], repliedUser: true }, // 모든 멘션 완전 차단 (빈 배열)
 });
 client.cluster = new ClusterClient(client); // initialize the Client, so we access the .broadcastEval()
 
