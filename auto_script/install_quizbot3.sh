@@ -12,9 +12,9 @@ print_emphasized() {
     echo -e "\e[1;32m$1\e[0m"
 }
 
-# Prompt for install path
+# Prompt for install path (Added -e for Tab completion)
 while [ -z "$INSTALL_PATH" ]; do
-    read -p "📁 Enter installation path (required): " INSTALL_PATH
+    read -e -p "📁 Enter installation path (required): " INSTALL_PATH
     if [ ! -d "$INSTALL_PATH" ]; then
         echo "📂 Directory does not exist. Creating it now..."
         mkdir -p "$INSTALL_PATH"
@@ -27,9 +27,9 @@ while [ -z "$INSTALL_PATH" ]; do
     fi
 done
 
-# Node.js version
-read -p "🧩 Enter Node.js version (default: 18): " NODE_VERSION
-NODE_VERSION="${NODE_VERSION:-18}"
+# Node.js version (Default changed to 22)
+read -p "🧩 Enter Node.js version (default: 22): " NODE_VERSION
+NODE_VERSION="${NODE_VERSION:-22}"
 
 # Cron registration
 read -p "🔁 Do you want to register cron jobs? (y/N): " REGISTER_CRON_INPUT
@@ -39,8 +39,8 @@ else
     REGISTER_CRON=false
 fi
 
-# Database dump
-read -p "🗄 If you have a database backup file (.sql), enter full path (or press Enter to use default base.sql): " BACKUP_FILE
+# Database dump (Added -e for Tab completion)
+read -e -p "🗄 If you have a database backup file (.sql), enter full path (or press Enter to use default base.sql): " BACKUP_FILE
 if [ -n "$BACKUP_FILE" ] && [ ! -f "$BACKUP_FILE" ]; then
     echo "❌ File not found. Will try to use default base.sql later."
     BACKUP_FILE=""

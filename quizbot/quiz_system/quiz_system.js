@@ -209,7 +209,6 @@ exports.forceStopSession = (guild) =>
   if(quiz_session != undefined)
   {
     quiz_session.forceStop();
-    delete quiz_session_map[guild_id];
     logger.debug(`destroy quiz_session by force stop ${guild.id}`);
   }
 
@@ -538,7 +537,10 @@ class QuizSession
     const guild_id = this.guild_id;
 
     this.audio_playlist = []; //audio play 리스트(그냥 audio resource list라고 보면 되지)
-    this.audio_player.stop(true); //stop 걸어주고
+    if(this.audio_player)
+    {
+      this.audio_player.stop(true); //stop 걸어주고
+    }
 
     let free_stream_count = 0;
     if(SYSTEM_CONFIG.explicit_close_audio_stream) //오디오 STREAM 명시적으로 닫음
@@ -699,7 +701,7 @@ class QuizSession
     const target_cycle = this.getCycle(cycle_type);
     if(target_cycle == undefined)
     {
-      logger.error(`Failed to go to cycle, guild_id:${this.quiz_session.guild_id}, cycle_type: ${cycle_type}, cycle_info: ${this.cycle_info}`);
+      logger.error(`Failed to go to cycle, guild_id:${this.guild_id}, cycle_type: ${cycle_type}, cycle_info: ${this.cycle_info}`);
       return;
     }
     this.current_cycle_type = cycle_type;
@@ -4867,7 +4869,7 @@ class QuestionIntro extends Question
 
     //오디오 재생 부분
     const resource = current_question['audio_resource'];
-    const audio_play_time = (current_question['audio_length'] ?? option_data.quiz.audio_play_time) + 1000; //인트로 퀴는 1초 더 준다.
+    const audio_play_time = (current_question['audio_length'] ?? option_data.quiz.audio_play_time) + 1000; //인트로 퀴즈는 1초 더 준다.
 
     this.startAudioList(resource); //인트로 퀴즈는 fadeIn, fadeout 안 쓴다.
 

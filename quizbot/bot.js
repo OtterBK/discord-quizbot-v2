@@ -504,6 +504,10 @@ client.on(CUSTOM_EVENT_TYPE.messageCreate, async (message) =>
   }
 
   let guildID = message.guild.id;
+  if(!guildID) //DM이면
+  {
+    return;
+  }
 
   const quiz_session = quiz_system.getQuizSession(guildID);
   if (quiz_session != undefined) 
