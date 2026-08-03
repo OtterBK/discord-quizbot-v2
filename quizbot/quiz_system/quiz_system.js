@@ -209,7 +209,6 @@ exports.forceStopSession = (guild) =>
   if(quiz_session != undefined)
   {
     quiz_session.forceStop();
-    delete quiz_session_map[guild_id];
     logger.debug(`destroy quiz_session by force stop ${guild.id}`);
   }
 
@@ -538,7 +537,10 @@ class QuizSession
     const guild_id = this.guild_id;
 
     this.audio_playlist = []; //audio play 리스트(그냥 audio resource list라고 보면 되지)
-    this.audio_player.stop(true); //stop 걸어주고
+    if(this.audio_player)
+    {
+      this.audio_player.stop(true); //stop 걸어주고
+    }
 
     let free_stream_count = 0;
     if(SYSTEM_CONFIG.explicit_close_audio_stream) //오디오 STREAM 명시적으로 닫음
@@ -699,7 +701,7 @@ class QuizSession
     const target_cycle = this.getCycle(cycle_type);
     if(target_cycle == undefined)
     {
-      logger.error(`Failed to go to cycle, guild_id:${this.quiz_session.guild_id}, cycle_type: ${cycle_type}, cycle_info: ${this.cycle_info}`);
+      logger.error(`Failed to go to cycle, guild_id:${this.guild_id}, cycle_type: ${cycle_type}, cycle_info: ${this.cycle_info}`);
       return;
     }
     this.current_cycle_type = cycle_type;
@@ -970,11 +972,11 @@ const MultiplayerSessionMixin = Base => class extends Base
 
     if(this.isIgnoreChat())
     {
-      this.sendMessage(`\`\`\`🔸 ${who} 님이 전체 채팅을 껐습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``);
+      this.sendMessage(`\`\`\`🔸 ${utility.sanitizeName(who)} 님이 전체 채팅을 껐습니다.\n'/채팅전환' 명령어로 켜거나 끌 수 있습니다.\`\`\``);
     }
     else
     {
-      this.sendMessage(`\`\`\`🔸 ${who} 님이 전체 채팅을 켰습니다.\`\`\``);
+      this.sendMessage(`\`\`\`🔸 ${utility.sanitizeName(who)} 님이 전체 채팅을 켰습니다.\`\`\``);
     }
   }
 
@@ -1931,7 +1933,7 @@ class QuizLifeCycle
         }
         this.quiz_session.forceStop();
         let force_stop_message = text_contents.quiz_play_ui.force_stop;
-        force_stop_message = force_stop_message.replace("${who_stopped}", interaction.member.user.username);
+        force_stop_message = force_stop_message.replace("${who_stopped}", utility.sanitizeName(interaction.member.user.username));
         interaction.channel.send({content: force_stop_message});
         return;
       }
@@ -4248,10 +4250,12 @@ class Question extends QuizLifeCycleWithUtility
   async checkAutoHint(audio_play_time) 
   {
     const option_data = this.quiz_session.option_data;
-    if(option_data.quiz.hint_type != OPTION_TYPE.HINT_TYPE.AUTO) //자동 힌트 사용 중이 아니라면
+    if(this.quiz_session.isMultiplayerSession() == false && option_data.quiz.hint_type != OPTION_TYPE.HINT_TYPE.AUTO) //싱글 퀴즈에서 자동 힌트 사용 중이 아니라면
     {
       return;
     }   
+
+    //멀티플레이는 자동 힌트도 무조건 되게함
 
     const hint_timer_wait = audio_play_time / 2; //절반 지나면 힌트 표시할거임
     const hint_timer = setTimeout(() => 
@@ -4489,7 +4493,7 @@ class Question extends QuizLifeCycleWithUtility
       if(this.checkAnswerHit(message_content) == false) //오답
       {
         let reply_message = "```";
-        reply_message += `🔸 ${requester.displayName}: [ ${message_content} ]... 오답입니다!`;
+        reply_message += `🔸 ${utility.sanitizeName(requester.displayName)}: [ ${message_content} ]... 오답입니다!`;
 
         if(remain_chance == 0) //라스트 찬스였음
         {
@@ -4514,7 +4518,7 @@ class Question extends QuizLifeCycleWithUtility
             
       this.submittedCorrectAnswer(requester);
 
-      let message = "```" + `${requester.displayName}: [ ${message_content} ]... 정답입니다!` + "```";
+      let message = "```" + `${utility.sanitizeName(requester.displayName)}: [ ${message_content} ]... 정답입니다!` + "```";
       interaction.explicit_replied = true;
       interaction.reply({content: message})
         .catch(err => 
@@ -4625,7 +4629,7 @@ class Question extends QuizLifeCycleWithUtility
       current_question['hint_vote_count'] = current_question['hint_vote_count'] == undefined ? 1 : current_question['hint_vote_count'] + 1;
 
       let hint_vote_message = text_contents.quiz_play_ui.hint_vote;
-      hint_vote_message = hint_vote_message.replace("${who_voted}", member.displayName);
+      hint_vote_message = hint_vote_message.replace("${who_voted}", utility.sanitizeName(member.displayName));
       hint_vote_message = hint_vote_message.replace("${current_vote_count}", current_question['hint_vote_count'] );
       hint_vote_message = hint_vote_message.replace("${vote_criteria}", vote_criteria);
       this.quiz_session.sendMessage({content: hint_vote_message});
@@ -4678,7 +4682,7 @@ class Question extends QuizLifeCycleWithUtility
       current_question['skip_vote_count'] = current_question['skip_vote_count'] == undefined ? 1 : current_question['skip_vote_count'] + 1;
 
       let skip_vote_message = text_contents.quiz_play_ui.skip_vote;
-      skip_vote_message = skip_vote_message.replace("${who_voted}", member.displayName);
+      skip_vote_message = skip_vote_message.replace("${who_voted}", utility.sanitizeName(member.displayName));
       skip_vote_message = skip_vote_message.replace("${current_vote_count}", current_question['skip_vote_count']);
       skip_vote_message = skip_vote_message.replace("${vote_criteria}", vote_criteria);
       this.quiz_session.sendMessage({content: skip_vote_message});
@@ -4865,7 +4869,7 @@ class QuestionIntro extends Question
 
     //오디오 재생 부분
     const resource = current_question['audio_resource'];
-    const audio_play_time = (current_question['audio_length'] ?? option_data.quiz.audio_play_time) + 1000; //인트로 퀴는 1초 더 준다.
+    const audio_play_time = (current_question['audio_length'] ?? option_data.quiz.audio_play_time) + 1000; //인트로 퀴즈는 1초 더 준다.
 
     this.startAudioList(resource); //인트로 퀴즈는 fadeIn, fadeout 안 쓴다.
 
