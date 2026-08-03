@@ -12,6 +12,12 @@ const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../config/system_settin
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('../../utility/logger.js')('QuizSystem');
 
+//session/quiz_session.js, session/multiplayer_session.js로 분리 (REFACTOR_PLAN.md Phase 2)
+//quiz_system.js는 이제 세션 생성/조회용 facade 함수만 갖고, 실제 세션 클래스 구현은
+//전부 session/, lifecycle/ 하위로 옮겨졌다.
+const { NormalQuizSession, DummyQuizSession } = require('./session/quiz_session.js');
+const { MultiplayerLobbySession, MultiplayerQuizSession } = require('./session/multiplayer_session.js');
+
 //#endregion
 
 //#region 상수 타입 정의
@@ -42,7 +48,7 @@ exports.initialize = (client) =>
   return true;
 };
 
-exports.checkReadyForStartQuiz = (guild, owner) => 
+exports.checkReadyForStartQuiz = (guild, owner) =>
 {
   let result = false;
   let reason = '';
@@ -63,7 +69,7 @@ exports.checkReadyForStartQuiz = (guild, owner) =>
   return { 'result': result, 'reason': reason };
 };
 
-exports.getQuizSession = (guild_id) => 
+exports.getQuizSession = (guild_id) =>
 {
 
   if(session_registry.quiz_session_map.hasOwnProperty(guild_id) == false)
@@ -101,12 +107,12 @@ exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SE
   return quiz_session;
 };
 
-exports.getLocalQuizSessionCount = () => 
+exports.getLocalQuizSessionCount = () =>
 {
   return Object.keys(session_registry.quiz_session_map).length;
 };
 
-exports.getMultiplayerQuizSessionCount = () => 
+exports.getMultiplayerQuizSessionCount = () =>
 {
   let multiplayer_session_count = 0;
   for(const quiz_session of Object.values(session_registry.quiz_session_map))
@@ -117,10 +123,10 @@ exports.getMultiplayerQuizSessionCount = () =>
     }
   }
 
-  return multiplayer_session_count; 
+  return multiplayer_session_count;
 };
 
-exports.startFFmpegAgingManager = () => 
+exports.startFFmpegAgingManager = () =>
 {
   return ffmpegAgingManager();
 };
@@ -148,7 +154,7 @@ exports.relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀�
   return handled;
 };
 
-exports.forceStopSession = (guild) => 
+exports.forceStopSession = (guild) =>
 {
   logger.info(`${guild.id} called force stop session`);
 
@@ -178,7 +184,7 @@ function ffmpegAgingManager() //TODO ps-node 모듈을 이용한 방식으로 �
   const ffmpeg_aging_for_oldkey_value = SYSTEM_CONFIG.FFMPEG_AGING_MANAGER_CRITERIA * 1000; //last updated time이 일정 값 이전인 ffmpeg는 종료할거임
   const ffmpeg_aging_manager = setInterval(()=>
   {
-      
+
     const criteria_value = Date.now() - ffmpeg_aging_for_oldkey_value; //이거보다 이전에 update 된 것은 삭제
     logger.info(`Aginging FFmpeg... targets: ${ffmpeg_aging_map.size} ,criteria: ${criteria_value}`);
 
@@ -197,7 +203,7 @@ function ffmpegAgingManager() //TODO ps-node 모듈을 이용한 방식으로 �
       }
     }
 
-    target_keys.forEach(key => 
+    target_keys.forEach(key =>
     {
       ffmpeg_aging_map.delete(key);
     });
@@ -207,13 +213,5 @@ function ffmpegAgingManager() //TODO ps-node 모듈을 이용한 방식으로 �
 
   return ffmpeg_aging_manager;
 }
-
-//#region 퀴즈 게임용 세션
-//session/quiz_session.js로 분리 (REFACTOR_PLAN.md Phase 2)
-const { QuizSession, NormalQuizSession, DummyQuizSession } = require('./session/quiz_session.js');
-
-
-//session/multiplayer_session.js로 분리 (REFACTOR_PLAN.md Phase 2)
-const { MultiplayerLobbySession, MultiplayerQuizSession } = require('./session/multiplayer_session.js');
 
 //#endregion
