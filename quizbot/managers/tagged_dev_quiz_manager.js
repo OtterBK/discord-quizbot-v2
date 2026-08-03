@@ -86,12 +86,13 @@ exports.getQuestionListByTags = (tags_value, limit=0) => //0 == unlimited
     [total_question_list[i], total_question_list[j]] = [total_question_list[j], total_question_list[i]];
   }
 
+  const total_question_count = total_question_list.length;
+
   if(limit <= 0)
   {
-    return total_question_list;
+    return [total_question_count, total_question_list];
   }
 
-  const total_question_count = total_question_list.length;
   //limit만큼만 반환
   return [total_question_count, total_question_list.slice(0, limit)];
 };
