@@ -68,3 +68,12 @@
 - 실제 동작: 다른 모든 서버 신호(`LEAVED_GAME`, `JOINED_LOBBY`, `KICKED_PARTICIPANT` 등)는 `guild_info.toJsonObject()`로 필요한 필드만 뽑아 보내는데, `SYNC_FAILED_DETECTED`만 `MultiplayerGuildInfo` 인스턴스를 그대로 payload에 넣음(114-117번째 줄 주석에 "통신은 무조건 json으로 하도록 하자"는 원칙이 명시돼 있는데 이 지점만 예외). 실제 수신 측(`quiz_system/session/multiplayer_session.js`의 `onReceivedSyncFailedDetected`)은 `.guild_name`/`.guild_id`만 읽어서 지금 당장 오류로 이어지진 않지만, `syncing`/`hint`/`skip` 같은 불필요한 내부 필드까지 IPC로 새어나가고 있음.
 - 기대 동작: 다른 신호들과 통일해서 `failed_guild_info.toJsonObject()`를 보내야 함.
 - 상태: 보류 — 지금 당장 기능 문제는 없어 보이지만(수신측이 plain 필드만 사용), payload 필드를 줄이는 변경이라 혹시 다른 소비자가 생기기 전에 논의 후 처리.
+
+### [Phase 3] `onSignalReceived`의 `isClientSignal` 검증이 항상 통과함 (죽은 방어 로직)
+
+- 파일/위치: `quizbot/managers/multiplayer_manager.js:51-86`
+- 발견일: 2026-08-04
+- 재현 조건: 항상 (모든 `onSignalReceived` 호출).
+- 실제 동작: `isClientSignal(signal)`을 호출할 때 `signal.signal_type`이 아니라 `signal` 객체 전체를 넘김. `isClientSignal`은 내부에서 `signal & 0x80`을 계산하는데, 객체에 비트 연산을 하면 `NaN`으로 강제 변환되고 `NaN & 0x80`은 `0`이 되어 `(0) === 0`이 항상 `true`. 즉 "서버 시그널이 잘못 들어왔는지" 검증하는 가드(53번째 줄)가 절대 `false`가 될 수 없어 사실상 죽은 방어 코드임. 짝을 이루는 `isServerSignal`(78-81)도 코드베이스 어디서도 호출되지 않는 죽은 함수.
+- 기대 동작: `isClientSignal(signal.signal_type)`처럼 실제 숫자 값을 넘겨야 비트 검증이 의미가 있음.
+- 상태: 보류 — 실제로 이 경로에 `SERVER_SIGNAL` 값이 잘못 들어온 사례가 없어 보여 지금까지 관측 가능한 장애는 없었던 것으로 보임. 다만 IPC 신호 검증이라는, REFACTOR_PLAN.md가 특히 조심하라고 명시한 영역이라 동작을 바꾸는 수정은 검증 없이 하지 않고 기록만 남김 (지금 고치면 "지금까지 통과되던 무언가"가 갑자기 거부될 수 있어 실제 운영 신호 트래픽으로 먼저 확인 필요).
