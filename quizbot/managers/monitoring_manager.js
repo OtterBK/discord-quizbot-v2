@@ -44,22 +44,20 @@ function getMemoryUsage()
   return ((used_memory / total_memory) * 100).toFixed(2); // Convert to percentage
 }
 
-function calculateAverageCpuUsage()
+function calculateAverageCpuUsage(history, now)
 {
-  const now = Date.now();
-
   // Filter the history to keep only relevant entries within the average duration
-  cpu_usage_history = cpu_usage_history.filter(entry => now - entry.timestamp <= SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION);
+  const relevant_history = history.filter(entry => now - entry.timestamp <= SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION);
 
   // Ensure enough history is available to calculate an average
-  if (cpu_usage_history.length === 0 || (now - cpu_usage_history[0].timestamp) < SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION)
+  if (relevant_history.length === 0 || (now - relevant_history[0].timestamp) < SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION)
   {
     return null;
   }
 
   // Calculate the average CPU usage
-  const sum = cpu_usage_history.reduce((acc, entry) => acc + entry.usage, 0);
-  return (sum / cpu_usage_history.length).toFixed(2);
+  const sum = relevant_history.reduce((acc, entry) => acc + entry.usage, 0);
+  return (sum / relevant_history.length).toFixed(2);
 }
 
 function logCpuUsageToFile(cpu_usage, memory_usage)
@@ -89,7 +87,7 @@ function monitorCpuUsage()
   // Remove history entries older than the average duration
   cpu_usage_history = cpu_usage_history.filter(entry => Date.now() - entry.timestamp <= SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION);
 
-  const average_usage = calculateAverageCpuUsage();
+  const average_usage = calculateAverageCpuUsage(cpu_usage_history, Date.now());
 
   logCpuUsageToFile(cpu_usage, memory_usage);
 
@@ -105,4 +103,4 @@ function startMonitoring()
   setInterval(monitorCpuUsage, SYSTEM_CONFIG.MONITORING_CHECK_INTERVAL);
 }
 
-module.exports = { startMonitoring }; 
+module.exports = { startMonitoring, getCpuUsage, getMemoryUsage, calculateAverageCpuUsage, getLogFilePath };
