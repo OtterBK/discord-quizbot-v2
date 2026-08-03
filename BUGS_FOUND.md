@@ -49,3 +49,22 @@
 - 실제 동작: `feedback_manager.addQuizLike(this.quiz_id, guild_id)`로 2개 인자만 전달하지만 `addQuizLike`의 시그니처는 `(quiz_id, guild_id, user_id)`. `user_id`가 `undefined`로 들어가 `addQuizLike` 내부 가드(`user_id == undefined`)에 걸려 항상 `false`를 반환하게 됨.
 - 기대 동작: `user_id`까지 전달되어야 함.
 - 상태: 보류 — `@Deprecated` 표시된 죽은 코드라 런타임 영향 없음. 삭제할지, 시그니처만 맞춰둘지는 별도 논의 필요.
+
+### [Phase 3] `MultiplayerSession.changeHost`가 세션을 새 host_id로 재등록하지 않음 (진행 중인 게임에 영향)
+
+- 파일/위치: `quizbot/managers/multiplayer_manager.js:1039-1055` (수정 전 기준)
+- 발견일: 2026-08-04
+- 재현 조건: 진행 중인 멀티플레이 게임에서 방장(host) 서버가 중도 퇴장하고 다른 참가자가 1명 이상 남아있는 경우. `processLeaveGame()`(1183-1229)이 `this.session_owner_guild_id === guild_id`(나간 사람이 방장)이고 남은 참가자가 있으면 `changeHost(new_host_guild_info)`를 호출함.
+- 실제 동작: `changeHost()`가 `delete multiplayer_sessions[previous_session_id]`로 예전 host_id 키는 지우지만, 새 host_id로 다시 등록하는 코드가 `multiplayer_sessions[this.getSessionId()];`처럼 값만 읽고 버리는 표현식으로 끝나 있어(대입 없음) 세션이 레지스트리 어디에도 남지 않게 됨. 이후 해당 세션에 대한 모든 `CLIENT_SIGNAL`(힌트/스킵/정답 제출/동기화/채팅 등)이 `multiplayer_sessions[session_id]`로 조회하다 실패해 게임이 조용히 먹통이 됨.
+- 기대 동작: `multiplayer_sessions[this.getSessionId()] = this;`로 새 host_id 아래 다시 등록되어야 함.
+- 상태: 수정 완료 — `= this;` 대입 추가.
+- 비고: 리팩토링과 무관하게 기존 코드에 있던 버그. 라이브 서버 영향 범위가 궁금하면, 서버 로그에서 "The host changed to" 이후 해당 세션 관련 신호 처리가 끊기는 패턴이 있었는지 확인해볼 만함.
+
+### [Phase 3] `syncFailedDetected`가 `MultiplayerGuildInfo`를 `.toJsonObject()` 없이 그대로 전송
+
+- 파일/위치: `quizbot/managers/multiplayer_manager.js:1130-1150`
+- 발견일: 2026-08-04
+- 재현 조건: 멀티플레이 동기화 실패가 감지되는 경우 (`syncFailedDetected` 호출).
+- 실제 동작: 다른 모든 서버 신호(`LEAVED_GAME`, `JOINED_LOBBY`, `KICKED_PARTICIPANT` 등)는 `guild_info.toJsonObject()`로 필요한 필드만 뽑아 보내는데, `SYNC_FAILED_DETECTED`만 `MultiplayerGuildInfo` 인스턴스를 그대로 payload에 넣음(114-117번째 줄 주석에 "통신은 무조건 json으로 하도록 하자"는 원칙이 명시돼 있는데 이 지점만 예외). 실제 수신 측(`quiz_system/session/multiplayer_session.js`의 `onReceivedSyncFailedDetected`)은 `.guild_name`/`.guild_id`만 읽어서 지금 당장 오류로 이어지진 않지만, `syncing`/`hint`/`skip` 같은 불필요한 내부 필드까지 IPC로 새어나가고 있음.
+- 기대 동작: 다른 신호들과 통일해서 `failed_guild_info.toJsonObject()`를 보내야 함.
+- 상태: 보류 — 지금 당장 기능 문제는 없어 보이지만(수신측이 plain 필드만 사용), payload 필드를 줄이는 변경이라 혹시 다른 소비자가 생기기 전에 논의 후 처리.

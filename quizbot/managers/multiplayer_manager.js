@@ -1049,7 +1049,7 @@ class MultiplayerSession
     this.sendSignal(signal);
 
     delete multiplayer_sessions[previous_session_id];
-    multiplayer_sessions[this.getSessionId()];
+    multiplayer_sessions[this.getSessionId()] = this;
 
     logger.info(`The host changed to ${previous_session_id} -> ${this.getSessionId()}`);
   }
