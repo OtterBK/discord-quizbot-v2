@@ -9,6 +9,7 @@
 
 const logger = require('../../utility/logger.js')('MultiplayerManager');
 const { IPC_MESSAGE_TYPE } = require('./ipc_manager.js');
+const { SERVER_SIGNAL } = require('./multiplayer_signal.js');
 
 let cluster_manager = undefined;
 exports.multiplayer_sessions = {}; //
@@ -31,4 +32,30 @@ exports.broadcast = (signal) =>
       ipc_message_type: IPC_MESSAGE_TYPE.MULTIPLAYER_SIGNAL,
       signal: signal
     });
+};
+
+//quiz_session.js(MultiplayerSession.delete/finish)와 multiplayer_manager.js(handleCreateLobby)
+//양쪽에서 부르는 함수라, multiplayer_sessions/broadcast를 이미 갖고 있는 이 registry
+//모듈로 옮겼다 - MultiplayerSession쪽 파일이 signal_handlers 쪽 파일을 다시 require하는
+//순환참조를 피하기 위함 (quiz_system.js Phase 2에서 겪은 것과 같은 패턴).
+exports.sendMultiplayerLobbyCount = () =>
+{
+  let lobby_count = 0;
+  for(const session of Object.values(exports.multiplayer_sessions))
+  {
+    if(session.isIngame())
+    {
+      continue;
+    }
+
+    ++lobby_count;
+  }
+
+  const signal = {
+    signal_type: SERVER_SIGNAL.UPDATED_LOBBY_COUNT,
+    lobby_count: lobby_count,
+  };
+  exports.broadcast(signal);
+
+  logger.info(`Sending Update lobby count: ${lobby_count}`);
 };
