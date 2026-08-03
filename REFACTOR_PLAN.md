@@ -121,10 +121,10 @@ QuizLifeCycle → QuizLifeCycleWithUtility
 
 ### Phase 0 — 준비 단계
 - [x] `notes/` 폴더 생성 및 `deprecated_system_func.js` 이동 (완료)
-- [ ] `refactor/` 브랜치 전략, 커밋 컨벤션 문서화
-- [ ] `BUGS_FOUND.md`, `RELOCATED_COMMENTS.md` 템플릿 생성
-- [ ] 기존 코드 스타일 전수 관찰 후 `eslint.config.js`(flat config) 작성 및 `npm run lint` 스크립트 추가
-- [ ] `node:test` 기반 테스트 스캐폴딩 준비 (디렉터리 구조, 예시 테스트 1개) — **단, `npm test`/`node --test` 실제 실행은 사용자가 테스트용 봇 토큰/DB 값을 `config/private_config.json`에 채우고 실행을 허가하기 전까지 보류** (섹션 2.5)
+- [x] `refactor/` 브랜치 전략, 커밋 컨벤션 문서화 → `CONTRIBUTING_REFACTOR.md`
+- [x] `BUGS_FOUND.md`, `RELOCATED_COMMENTS.md` 템플릿 생성
+- [x] 기존 코드 스타일 전수 관찰 후 `eslint.config.js`(flat config) 작성 및 `npm run lint` 스크립트 추가 (`npm run lint` 기준 0 error / 161 warning — 기존 관행이라 warn 처리, 각 Phase 진행 중 정리)
+- [x] `node:test` 기반 테스트 스캐폴딩 준비 (`test/` 디렉터리, 예시 테스트 `test/utility/utility.test.js`) — 사용자가 테스트용 봇 토큰/DB 값을 `config/private_config.json`에 채우고 실행을 허가하여(2026-08-03) 섹션 2.5 보류 원칙 해제, `npm test` 실행 확인 완료 (3 pass)
 
 ### Phase 1 — 저위험 모듈로 방법론 검증
 대상: `quizbot/managers/tagged_dev_quiz_manager.js`(112줄), `monitoring_manager.js`(108줄), `feedback_manager.js`(149줄) 등 소규모 매니저
