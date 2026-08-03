@@ -98,11 +98,6 @@ exports.getQuizSession = (guild_id) =>
 exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SESSION_TYPE.NORMAL) =>
 {
   const guild_id = guild.id;
-  if(session_registry.quiz_session_map.hasOwnProperty(guild_id))
-  {
-    const prev_quiz_session = session_registry.quiz_session_map[guild_id];
-    prev_quiz_session.free();
-  }
 
   let quiz_session = undefined;
   if(quiz_session_type === QUIZ_SESSION_TYPE.DUMMY)
@@ -122,7 +117,7 @@ exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SE
     quiz_session = new NormalQuizSession(guild, owner, channel, quiz_info);
   }
 
-  session_registry.quiz_session_map[guild_id] = quiz_session;
+  session_registry.replaceSession(guild_id, quiz_session);
 
   return quiz_session;
 };
@@ -1257,7 +1252,10 @@ class MultiplayerLobbySession extends MultiplayerSessionMixin(DummyQuizSession) 
   transitToActiveQuizSession(finalized_quiz_info) //Lobby에서 게임 진행할 진짜 QuizSession 으로 전환
   {
     logger.debug(`transit to active quiz session from multiplayer session. guild_id: ${this.guild_id}`);
-    return exports.startQuiz(this.guild, this.owner, this.channel, finalized_quiz_info, QUIZ_SESSION_TYPE.MULTIPLAYER); //진짜 퀴즈 세션 생성 -> 해당 함수에서 어차피 Lobby는 free됨
+    //같은 파일의 형제 클래스(MultiplayerQuizSession)를 직접 생성 -> 나중에 이 클래스들을
+    //파일로 쪼갤 때 상위 facade(quiz_system.js의 startQuiz)를 거치지 않아도 되게 함
+    const quiz_session = new MultiplayerQuizSession(this.guild, this.owner, this.channel, finalized_quiz_info);
+    return session_registry.replaceSession(this.guild_id, quiz_session); //해당 함수에서 어차피 Lobby는 free됨
   }
 }
 

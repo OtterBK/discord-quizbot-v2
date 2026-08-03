@@ -86,3 +86,45 @@ test('forceStopSession: 세션을 registry에서 제거하고 forceStop()을 호
   assert.equal(force_stop_called, true);
   assert.equal(session_registry.quiz_session_map.hasOwnProperty('guild_1'), false);
 });
+
+test('replaceSession: 기존 세션이 없으면 그냥 새 세션을 등록한다', () =>
+{
+  resetRegistry();
+  const new_session = { name: 'new' };
+
+  const result = session_registry.replaceSession('guild_1', new_session);
+
+  assert.equal(result, new_session);
+  assert.equal(session_registry.quiz_session_map['guild_1'], new_session);
+});
+
+test('replaceSession: 기존 세션이 있으면 free()로 정리하고 새 세션으로 교체한다', () =>
+{
+  resetRegistry();
+  let old_session_freed = false;
+  session_registry.quiz_session_map['guild_1'] = { free: () => { old_session_freed = true; } };
+  const new_session = { name: 'new' };
+
+  session_registry.replaceSession('guild_1', new_session);
+
+  assert.equal(old_session_freed, true);
+  assert.equal(session_registry.quiz_session_map['guild_1'], new_session);
+});
+
+test('startQuiz: MULTIPLAYER_LOBBY 세션이 실제 퀴즈로 전환될 때 상위 startQuiz를 거치지 않고도 registry가 교체된다', () =>
+{
+  //MultiplayerLobbySession.transitToActiveQuizSession()이 exports.startQuiz를 거치지 않고
+  //session_registry.replaceSession을 직접 호출하도록 바꾼 부분에 대한 회귀 방지 테스트.
+  //(discord.js voice 연결 등 무거운 의존성 때문에 실제 세션 생성자를 그대로 쓰지 못하므로,
+  //여기서는 replaceSession이 세션 종류와 무관하게 정상 동작하는지만 확인한다.)
+  resetRegistry();
+  let lobby_freed = false;
+  session_registry.quiz_session_map['guild_1'] = { free: () => { lobby_freed = true; } };
+  const fake_multiplayer_quiz_session = { isMultiplayerSession: () => true };
+
+  const result = session_registry.replaceSession('guild_1', fake_multiplayer_quiz_session);
+
+  assert.equal(lobby_freed, true);
+  assert.equal(result, fake_multiplayer_quiz_session);
+  assert.equal(session_registry.quiz_session_map['guild_1'], fake_multiplayer_quiz_session);
+});

@@ -7,3 +7,21 @@
 
 exports.quiz_session_map = {};
 exports.bot_client = undefined;
+
+//기존 세션이 있으면 free() 하고 새 세션으로 교체 등록한다.
+//quiz_system.js의 startQuiz(범용 팩토리)와, MultiplayerLobbySession이 실제 퀴즈
+//세션으로 전환할 때(같은 파일 내 형제 클래스를 직접 생성) 양쪽에서 공통으로 쓰는
+//로직이라 여기로 뽑아둔다 - 상위 facade를 거치지 않고도 registry 교체가 가능해야
+//나중에 클래스들을 파일로 쪼갤 때 순환참조가 생기지 않는다.
+exports.replaceSession = (guild_id, new_session) =>
+{
+  if(exports.quiz_session_map.hasOwnProperty(guild_id))
+  {
+    const prev_quiz_session = exports.quiz_session_map[guild_id];
+    prev_quiz_session.free();
+  }
+
+  exports.quiz_session_map[guild_id] = new_session;
+
+  return new_session;
+};
