@@ -44,8 +44,7 @@ exports.QUIZ_SESSION_TYPE = QUIZ_SESSION_TYPE;
 
 //#region global 변수 정의
 /** global 변수 **/
-let quiz_session_map = {};
-let bot_client = undefined;
+const session_registry = require('./session_registry.js');
 
 //#endregion
 
@@ -59,7 +58,7 @@ exports.initialize = (client) =>
     logger.error(`Failed to Initialize Quiz system. ${'Client is undefined'}`);
     return false;
   }
-  bot_client = client;
+  session_registry.bot_client = client;
 
   return true;
 };
@@ -88,20 +87,20 @@ exports.checkReadyForStartQuiz = (guild, owner) =>
 exports.getQuizSession = (guild_id) => 
 {
 
-  if(quiz_session_map.hasOwnProperty(guild_id) == false)
+  if(session_registry.quiz_session_map.hasOwnProperty(guild_id) == false)
   {
     return undefined;
   }
 
-  return quiz_session_map[guild_id];
+  return session_registry.quiz_session_map[guild_id];
 };
 
 exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SESSION_TYPE.NORMAL) =>
 {
   const guild_id = guild.id;
-  if(quiz_session_map.hasOwnProperty(guild_id))
+  if(session_registry.quiz_session_map.hasOwnProperty(guild_id))
   {
-    const prev_quiz_session = quiz_session_map[guild_id];
+    const prev_quiz_session = session_registry.quiz_session_map[guild_id];
     prev_quiz_session.free();
   }
 
@@ -123,20 +122,20 @@ exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SE
     quiz_session = new NormalQuizSession(guild, owner, channel, quiz_info);
   }
 
-  quiz_session_map[guild_id] = quiz_session;
+  session_registry.quiz_session_map[guild_id] = quiz_session;
 
   return quiz_session;
 };
 
 exports.getLocalQuizSessionCount = () => 
 {
-  return Object.keys(quiz_session_map).length;
+  return Object.keys(session_registry.quiz_session_map).length;
 };
 
 exports.getMultiplayerQuizSessionCount = () => 
 {
   let multiplayer_session_count = 0;
-  for(const quiz_session of Object.values(quiz_session_map))
+  for(const quiz_session of Object.values(session_registry.quiz_session_map))
   {
     if(quiz_session.isMultiplayerSession())
     {
@@ -158,7 +157,7 @@ exports.relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀�
   const guild_ids = multiplayer_signal.guild_ids;
   for(const guild_id of guild_ids)
   {
-    const quiz_session = quiz_session_map[guild_id];
+    const quiz_session = session_registry.quiz_session_map[guild_id];
     if(quiz_session != undefined)
     {
       try
@@ -180,9 +179,9 @@ exports.forceStopSession = (guild) =>
   logger.info(`${guild.id} called force stop session`);
 
   const guild_id = guild.id;
-  const quiz_session = quiz_session_map[guild_id];
+  const quiz_session = session_registry.quiz_session_map[guild_id];
 
-  delete quiz_session_map[guild_id];
+  delete session_registry.quiz_session_map[guild_id];
 
   if(quiz_session != undefined)
   {
@@ -550,7 +549,7 @@ class QuizSession
       // cycle.free();
     }
 
-    delete quiz_session_map[this.guild_id];
+    delete session_registry.quiz_session_map[this.guild_id];
 
     this.guild = null;
     this.owner = null;
@@ -1287,7 +1286,7 @@ class MultiplayerQuizSession extends MultiplayerSessionMixin(QuizSession)
 
   getGuildState()
   {
-    const permissions = this.voice_channel?.permissionsFor(bot_client.user);
+    const permissions = this.voice_channel?.permissionsFor(session_registry.bot_client.user);
 
     if(!permissions)
     {
@@ -4394,7 +4393,7 @@ class Question extends QuizLifeCycleWithUtility
   {
     const option_data = this.quiz_session.option_data;
 
-    if(message.author == bot_client.user) return;
+    if(message.author == session_registry.bot_client.user) return;
 
     if(option_data.quiz.use_message_intent == OPTION_TYPE.DISABLED) return; //Message Intent 안쓴다면 return
 
@@ -5913,7 +5912,7 @@ class Finish extends QuizLifeCycle
         
     this.quiz_session.free();
 
-    delete quiz_session_map[guild_id];
+    delete session_registry.quiz_session_map[guild_id];
   }
 }
 //#endregion
