@@ -343,13 +343,13 @@ const executeDownloadProcess = async (audio_url, yt_dlp_option) =>
   let stderr = '';
 
   // 표준 출력 스트림 데이터 수집
-  stdout = subprocess.stdout.on('data', (data) => 
+  subprocess.stdout.on('data', (data) =>
   {
     stdout += data.toString();
   });
 
   // 표준 오류 스트림 데이터 수집
-  stderr = subprocess.stderr.on('data', (data) => 
+  subprocess.stderr.on('data', (data) =>
   {
     stderr += data.toString();
   });
@@ -634,9 +634,10 @@ module.exports = {
   downloadAudioCache,
   reWriteCacheInfo,
   forceCaching,
-  //아래 3개는 순수 함수라 유닛테스트를 위해 추가로 export함 (REFACTOR_PLAN.md Phase 5).
+  //아래 4개는 유닛테스트를 위해 추가로 export함 (REFACTOR_PLAN.md Phase 5/TS 전환 전 점검).
   //monitoring_manager.js에서 calculateAverageCpuUsage를 export한 것과 동일한 패턴.
   getHashedPath,
   getDownloadResultType,
   getExpectedErrorType,
+  executeDownloadProcess,
 };
