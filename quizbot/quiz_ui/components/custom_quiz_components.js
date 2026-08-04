@@ -121,6 +121,27 @@ const quiz_delete_confirm_admin_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Danger),
   );
 
+//관리자 패널 메인 메뉴
+const admin_panel_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_ban_list')
+      .setLabel('밴 목록 관리')
+      .setStyle(ButtonStyle.Danger),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_report')
+      .setLabel('신고처리')
+      .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_quiz_manage')
+      .setLabel('퀴즈 관리')
+      .setStyle(ButtonStyle.Primary),
+  );
+
 //퀴즈 만들기
 const modal_quiz_info = new ModalBuilder()
   .setCustomId('modal_quiz_info')
@@ -452,6 +473,7 @@ module.exports = {
   question_select_menu_comp,
   quiz_delete_confirm_comp,
   quiz_delete_confirm_admin_comp,
+  admin_panel_comp,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,

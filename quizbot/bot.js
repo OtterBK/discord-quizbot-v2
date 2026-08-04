@@ -358,10 +358,50 @@ const create_quiz_handler = async (interaction) =>
   }
 
   const uiHolder = quizbot_ui.createQuizToolUIHolder(interaction);
-  interaction.explicit_replied = true; 
+  interaction.explicit_replied = true;
   interaction.reply({
     content:
       `\`\`\`🔸 개인 메시지로 퀴즈 제작 화면을 보내드렸어요!\n퀴즈봇과의 개인 메시지를 확인해주세요 🛠\`\`\``,
+    flags: MessageFlags.Ephemeral,
+  });
+};
+
+const quizmgr_btn_component = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('btn_quizmgr')
+    .setLabel('내부 도구 열기')
+    .setStyle(ButtonStyle.Success)
+);
+//관리자 전용 패널 진입점. 어드민이 아니면 아무 응답도 하지 않고 그대로 return한다
+//(reply/deferReply 등 일체 호출 안 함 -> 3초 후 자연스럽게 인터랙션 타임아웃) -
+//명령어가 존재한다는 것, 권한이 없다는 것조차 티내지 않기 위함(의도된 동작).
+const quiz_manager_panel_handler = async (interaction) =>
+{
+  if (interaction.user.id !== PRIVATE_CONFIG.ADMIN_ID)
+  {
+    return;
+  }
+
+  if(interaction.guild)
+  {
+    //샤딩돼 있어서 길드에서 요청할경우 ui_holder_map 주소가 달라 못찾음
+    interaction.explicit_replied = true;
+    interaction.reply({
+      content: `\`\`\`🔸 개인 메시지를 확인해주세요.\`\`\``,
+      flags: MessageFlags.Ephemeral,
+    });
+    interaction.member.send({
+      content: `\`\`\`🔸 여기서 다시 한번 '/quizmgr' 를 입력하시거나 버튼을 클릭하세요!\`\`\``,
+      components: [quizmgr_btn_component],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  quizbot_ui.createAdminPanelUIHolder(interaction);
+  interaction.explicit_replied = true;
+  interaction.reply({
+    content: `\`\`\`🔸 개인 메시지를 확인해주세요.\`\`\``,
     flags: MessageFlags.Ephemeral,
   });
 };
@@ -406,13 +446,22 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   if (
     main_command === '퀴즈만들기' ||
     interaction.customId == 'btn_create_quiz_tool'
-  ) 
+  )
   {
     await create_quiz_handler(interaction);
     return;
   }
 
-  if (main_command === '퀴즈정리') 
+  if (
+    main_command === 'quizmgr' ||
+    interaction.customId == 'btn_quizmgr'
+  )
+  {
+    await quiz_manager_panel_handler(interaction);
+    return;
+  }
+
+  if (main_command === '퀴즈정리')
   {
     clear_quiz_handler(interaction);
     return;

@@ -6,11 +6,13 @@ const { RESTJSONErrorCodes, MessageFlags } = require('discord.js');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../config/system_setting.js');
+const PRIVATE_CONFIG = require('../../config/private_config.json');
 const logger = require('../../utility/logger.js')('QuizUI');
 
 const { QuizbotUI } = require('./common-ui.js');
 const { MainUI } = require("./main-ui.js");
 const { UserQuizListUI } = require("./user-quiz-list-ui.js");
+const { AdminPanelUI } = require("./admin-panel-ui.js");
 const { MultiplayerQuizLobbyUI } = require('./multiplayer-quiz-lobby-ui.js');
 const { SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
 
@@ -81,7 +83,31 @@ const createQuizToolUIHolder = (interaction) =>
   return uiHolder;
 };
 
-const getUIHolder = (holder_id) => 
+//관리자 전용 패널 (호출부인 bot.js의 quiz_manager_panel_handler에서 이미 어드민 여부를
+//확인하지만, 여기서도 한 번 더 확인한다 - 방어적 이중 체크)
+const createAdminPanelUIHolder = (interaction) =>
+{
+  const user_id = interaction.user.id ?? interaction.member.id;
+  if(user_id !== PRIVATE_CONFIG?.ADMIN_ID)
+  {
+    return undefined;
+  }
+
+  if(ui_holder_map.hasOwnProperty(user_id))
+  {
+    const prev_uiHolder = ui_holder_map[user_id];
+    prev_uiHolder.free();
+  }
+  const uiHolder = new UIHolder(interaction, new AdminPanelUI(), UI_HOLDER_TYPE.PRIVATE);
+  uiHolder.holder_id = user_id;
+  ui_holder_map[user_id] = uiHolder;
+
+  uiHolder.updateUI();
+
+  return uiHolder;
+};
+
+const getUIHolder = (holder_id) =>
 {
   if(ui_holder_map.hasOwnProperty(holder_id) === false)
   {
@@ -545,4 +571,4 @@ class UIHolder
 
 //#endregion
 
-module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, getUIHolder, relayMultiplayerSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };
+module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, createAdminPanelUIHolder, getUIHolder, relayMultiplayerSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };

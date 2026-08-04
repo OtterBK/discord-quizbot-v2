@@ -55,6 +55,10 @@ const commands = [
   new SlashCommandBuilder()
     .setName('신고처리')
     .setDescription('관리자 명령어'),
+
+  new SlashCommandBuilder()
+    .setName('quizmgr')
+    .setDescription('퀴즈봇 내부 도구'),
 ];
 
 //길드에 명령어 등록용
