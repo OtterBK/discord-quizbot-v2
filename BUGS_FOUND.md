@@ -87,3 +87,30 @@
 - 기대 동작: 같은 chat_id로 재호출 시 `chat_content_cache[chat_id]`(캐시 객체)의 `cached_time`이 갱신되어야 함.
 - 상태: 수정 완료 — `chat_cache.js`에서 `getChatCacheContent(chat_id)` 대신 `chat_content_cache[chat_id]`(캐시 객체 자체)를 참조하도록 수정.
 - 비고: Phase 5에서 `quizbot/managers/report/*.js`를 분리하며 새 파일에 `'use strict'`를 붙였다가, 이 버그가 조용한 무시(sloppy mode) 대신 `TypeError`로 바뀌어 표면화되는 것을 테스트로 발견했다. 분리 파일에서는 원본과 동일하게 `'use strict'`를 다시 제거해 "구조 이동만" 원칙을 지켰고(별도 `refactor:` 커밋), 이 버그 자체는 국소적이고 명확해 이번 Phase 내에서 바로 수정했다.
+
+### [Phase 5] `executeDownloadProcess`가 yt-dlp stdout/stderr를 수집할 때 스트림 객체로 초기화를 덮어씀
+
+- 파일/위치: `quizbot/managers/audio_cache_manager.js:341-355`
+- 발견일: 2026-08-04
+- 재현 조건: 항상 (모든 `downloadAudioCache` 호출 시 내부적으로 실행됨).
+- 실제 동작: `stdout = subprocess.stdout.on('data', (data) => { stdout += data.toString(); })`처럼 작성돼 있는데, `EventEmitter.on(...)`은 리스너 등록 후 스트림 자기 자신(`this`)을 반환한다. 즉 `stdout`(문자열로 초기화됐던 변수)이 이 대입문 실행 즉시 `subprocess.stdout` 스트림 **객체**로 덮어써진다. 이후 첫 `'data'` 이벤트가 발생해 콜백이 `stdout += data.toString()`을 실행하면, `+=`가 스트림 객체를 문자열로 강제 변환(`[object Object]` 등)한 뒤 첫 데이터 청크와 이어붙인 값을 다시 `stdout`에 대입한다 — 이때부터는 `stdout`이 진짜 문자열이 되어 이후 청크들은 정상적으로 누적되지만, 최종 결과 문자열 맨 앞(혹은 첫 청크가 걸린 위치)에 `[object Object]` 같은 쓰레기 문자열이 섞여 들어간다. `stderr`도 동일한 패턴.
+- 기대 동작: `stdout`/`stderr`는 순수 문자열 누적이어야 하며, `.on('data', ...)`의 반환값을 변수에 대입하면 안 됨 (예: `subprocess.stdout.on('data', (data) => { stdout += data.toString(); });`처럼 반환값을 버려야 함).
+- 상태: 보류 — `getDownloadResultType`/`getExpectedErrorType`가 줄 단위(`split('\n')`)로 `[download]`/`ERROR:` 접두 문자열을 검사하는데, 쓰레기 문자열이 첫 청크의 시작 부분에 섞여 들어가면 마침 그 청크에 판정 대상 줄(예: 성공 판정용 `Destination:` 줄)이 걸려 있을 경우 `line.startsWith('[download]')` 매칭이 실패해 성공/실패 오판정으로 이어질 수 있다. 실제 청크 경계는 네트워크/버퍼링에 따라 달라 재현이 불안정하고, 오디오 다운로드라는 핵심 경로라 실제 yt-dlp 실행 검증 없이 고치는 위험을 피하기 위해 기록만 남김.
+
+### [Phase 5] `convertToWebm`의 원본 파일 삭제 실패 로그가 `ENOENT`일 때만 남음 (조건 반대로 보임)
+
+- 파일/위치: `quizbot/managers/audio_cache_manager.js:526-532`
+- 발견일: 2026-08-04
+- 재현 조건: 변환 후 원본(webm이 아닌) 캐시 파일을 `fs.unlink`로 지우는 과정에서 `ENOENT`가 아닌 다른 에러(권한 문제, 파일 잠김 등)가 발생하는 경우.
+- 실제 동작: `fs.unlink(cache_file_path, err => { if(err != null && err.code == 'ENOENT') { console.log(\`Failed to unlink...\`); } })` — `err.code == 'ENOENT'`(파일이 이미 없음, 사실상 가장 무해한 케이스)일 때만 로그를 남기고, 그 외의 실제로 문제가 될 수 있는 에러(권한 오류 등)는 조용히 무시된다.
+- 기대 동작: 조건이 반대로 보임 — `if(err != null)`처럼 `ENOENT`를 포함해 모든 에러를 로그하거나, 반대로 `ENOENT`만 무시하고 나머지는 로그하는(`if(err != null && err.code != 'ENOENT')`) 형태가 자연스러워 보임.
+- 상태: 보류 — 캐시 정리 실패는 디스크 공간이 서서히 낭비되는 정도의 낮은 파급력이라 우선순위가 낮고, 의도를 단정하기 어려워(원래 의도가 정말 "ENOENT일 때만 알림"이었을 가능성도 배제 못함) 기록만 남김.
+
+### [Phase 5] `reWriteCacheInfo`의 `fs.writeFileSync` 4번째 인자(콜백)가 항상 무시됨 (죽은 코드)
+
+- 파일/위치: `quizbot/managers/audio_cache_manager.js:143-149`
+- 발견일: 2026-08-04
+- 재현 조건: 항상 (모든 `reWriteCacheInfo` 호출).
+- 실제 동작: `fs.writeFileSync(info_file_path, JSON.stringify(cache_info), 'utf-8', (err) => {...})`처럼 4번째 인자로 에러 콜백을 넘기고 있는데, `fs.writeFileSync`는 동기 함수라 콜백을 받지 않는다(3번째 인자까지만 유효: `path, data, options`). 4번째 인자는 조용히 무시되며, 쓰기 중 에러가 나면 이 콜백이 아니라 예외가 그 자리에서 던져진다.
+- 기대 동작: 콜백은 어차피 호출되지 않으므로 삭제하거나, 진짜 비동기 에러 핸들링이 필요하면 `fs.writeFile`로 바꿔야 함.
+- 상태: 보류 — 이미 `reWriteCacheInfo` 전체가 `try/catch`로 감싸져 있어 `writeFileSync`가 던지는 예외는 정상적으로 `catch(err) { logger.error(...) }`로 처리되고 있음. 즉 에러 핸들링 자체는 (다른 경로로) 이미 되고 있어 기능적 영향은 없고, 죽은 콜백 인자만 정리하면 되는 사소한 코드 정리 건이라 이번 Phase 범위(구조 분리) 밖으로 보고 기록만 남김.
