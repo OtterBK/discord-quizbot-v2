@@ -1,5 +1,3 @@
-'use strict';
-
 //utility.js에서 분리 (REFACTOR_PLAN.md Phase 5)
 //로컬 퀴즈 디렉터리 로딩/파싱 관련. 세 함수가 서로 this.xxx(...)로 호출하고 있어서
 //(원본이 exports.xxx = (...) => {...} 화살표 함수를 module 최상위 this === module.exports를

@@ -1,5 +1,3 @@
-'use strict';
-
 //utility.js에서 분리 (REFACTOR_PLAN.md Phase 5)
 //서버 네트워크 인터페이스 조회 관련.
 //로직/주석은 원본과 동일 (동작 변경 없음).

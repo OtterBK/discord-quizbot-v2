@@ -1,5 +1,3 @@
-'use strict';
-
 //components.js에서 분리 (REFACTOR_PLAN.md Phase 4)
 //멀티플레이(서버 간 대결) 로비 관련 컴포넌트.
 //로직/주석은 원본과 동일 (동작 변경 없음).

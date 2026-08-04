@@ -1,5 +1,3 @@
-'use strict';
-
 //components.js에서 분리 (REFACTOR_PLAN.md Phase 4)
 //오마카세 퀴즈 관련 컴포넌트. modal_quiz_setting은 오마카세 전용은 아니고
 //quiz-info-ui.js(기본 제공 퀴즈 시작 화면)에서도 쓰이지만, 원본 파일에서

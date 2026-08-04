@@ -1,5 +1,3 @@
-'use strict';
-
 //utility.js에서 분리 (REFACTOR_PLAN.md Phase 5)
 //BGM/오디오 재생, 오디오 메타데이터 파싱 관련.
 //로직/주석은 원본과 동일 (동작 변경 없음).

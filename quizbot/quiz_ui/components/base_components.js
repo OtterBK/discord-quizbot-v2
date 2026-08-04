@@ -1,5 +1,3 @@
-'use strict';
-
 //components.js에서 분리 (REFACTOR_PLAN.md Phase 4)
 //기본 퀴즈 UI들 - 페이지네이션, 메인 화면, 서버 옵션 설정 등 여러 화면에서
 //공통으로 쓰이는/기초적인 컴포넌트.

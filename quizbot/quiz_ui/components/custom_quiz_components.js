@@ -1,5 +1,3 @@
-'use strict';
-
 //components.js에서 분리 (REFACTOR_PLAN.md Phase 4)
 //커스텀 퀴즈(유저 제작 퀴즈) 관련 컴포넌트 - 퀴즈 목록/정보/문제 CRUD 화면에서 사용.
 //로직/주석은 원본과 동일 (동작 변경 없음).
