@@ -47,7 +47,7 @@ const insertChatCache = (chat_id, content) =>
     return;
   }
 
-  const prev_cache = getChatCacheContent(chat_id);
+  const prev_cache = chat_content_cache[chat_id];
   if(prev_cache !== undefined)
   {
     prev_cache.cached_time = Date.now();
