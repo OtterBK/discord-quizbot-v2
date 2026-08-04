@@ -39,7 +39,7 @@
 - 재현 조건: `@Deprecated` 표시된 `createDynamicQuizFeedbackComponent`/`do_event` 경로가 실제로 호출되는 경우 (grep 결과 코드베이스 어디서도 호출되지 않음 — 죽은 코드).
 - 실제 동작: `do_event`가 `exports.addQuizLikeAuto(guild_id, interaction.member, target_quiz.quiz_id, target_quiz.quiz_title)`로 호출하는데, `addQuizLikeAuto`의 시그니처는 `(interaction, quiz_id, quiz_title)`. 즉 첫 인자로 `interaction` 객체가 아닌 `guild_id`(문자열)가 들어가 함수 내부 `interaction.guild.id` 접근에서 `TypeError`가 발생함.
 - 기대 동작: 호출 시그니처가 일치해야 함.
-- 상태: 보류 — 두 함수 모두 `@Deprecated` 표시된 죽은 코드(어디서도 호출 안 됨)라 런타임 영향 없음. 삭제할지, 시그니처만 맞춰둘지는 별도 논의 필요.
+- 상태: 해결(삭제) — Phase 6에서 사용자 확인 후 `createDynamicQuizFeedbackComponent`/`do_event`(및 이 둘만 쓰던 `feedback_quiz_info_map`)를 통째로 삭제해 버그 자체가 코드베이스에서 사라짐. 원문은 `DEPRECATED_CODE_REMOVED.md` 참고.
 
 ### [Phase 1] `UserQuizInfo.addLike`에서 `user_id` 인자 누락 (죽은 코드)
 
@@ -48,7 +48,7 @@
 - 재현 조건: `@Deprecated` 표시된 `UserQuizInfo.addLike(guild_id, user_id)`가 실제로 호출되는 경우 (grep 결과 어디서도 호출되지 않음 — 죽은 코드).
 - 실제 동작: `feedback_manager.addQuizLike(this.quiz_id, guild_id)`로 2개 인자만 전달하지만 `addQuizLike`의 시그니처는 `(quiz_id, guild_id, user_id)`. `user_id`가 `undefined`로 들어가 `addQuizLike` 내부 가드(`user_id == undefined`)에 걸려 항상 `false`를 반환하게 됨.
 - 기대 동작: `user_id`까지 전달되어야 함.
-- 상태: 보류 — `@Deprecated` 표시된 죽은 코드라 런타임 영향 없음. 삭제할지, 시그니처만 맞춰둘지는 별도 논의 필요.
+- 상태: 해결(삭제) — Phase 6에서 사용자 확인 후 `UserQuizInfo.addLike` 메서드를 통째로 삭제해 버그 자체가 코드베이스에서 사라짐. 원문은 `DEPRECATED_CODE_REMOVED.md` 참고.
 
 ### [Phase 3] `MultiplayerSession.changeHost`가 세션을 새 host_id로 재등록하지 않음 (진행 중인 게임에 영향)
 
@@ -77,6 +77,7 @@
 - 실제 동작: `isClientSignal(signal)`을 호출할 때 `signal.signal_type`이 아니라 `signal` 객체 전체를 넘김. `isClientSignal`은 내부에서 `signal & 0x80`을 계산하는데, 객체에 비트 연산을 하면 `NaN`으로 강제 변환되고 `NaN & 0x80`은 `0`이 되어 `(0) === 0`이 항상 `true`. 즉 "서버 시그널이 잘못 들어왔는지" 검증하는 가드(53번째 줄)가 절대 `false`가 될 수 없어 사실상 죽은 방어 코드임. 짝을 이루는 `isServerSignal`(78-81)도 코드베이스 어디서도 호출되지 않는 죽은 함수.
 - 기대 동작: `isClientSignal(signal.signal_type)`처럼 실제 숫자 값을 넘겨야 비트 검증이 의미가 있음.
 - 상태: 보류 — 실제로 이 경로에 `SERVER_SIGNAL` 값이 잘못 들어온 사례가 없어 보여 지금까지 관측 가능한 장애는 없었던 것으로 보임. 다만 IPC 신호 검증이라는, REFACTOR_PLAN.md가 특히 조심하라고 명시한 영역이라 동작을 바꾸는 수정은 검증 없이 하지 않고 기록만 남김 (지금 고치면 "지금까지 통과되던 무언가"가 갑자기 거부될 수 있어 실제 운영 신호 트래픽으로 먼저 확인 필요).
+- 비고: 짝을 이루던 `isServerSignal`(코드베이스 어디서도 호출되지 않던 죽은 함수)은 Phase 6에서 사용자 확인 후 삭제 완료 (`DEPRECATED_CODE_REMOVED.md` 참고). `isClientSignal`의 인자 버그 자체는 여전히 보류 상태.
 
 ### [Phase 5] `insertChatCache`가 이미 캐시된 chat_id에 대해 `cached_time`을 갱신하지 못함
 

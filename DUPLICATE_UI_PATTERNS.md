@@ -6,8 +6,8 @@
 
 ## 죽은 export (사용처 없음)
 
-- `note_ui_component` (`base_components.js`) — 저장소 전체에서 이 이름을 import/구조분해하는 곳이 없음. 삭제 후보지만, `@Deprecated` 표기 없이 조용히 죽은 코드라 실수로 빠진 건지 의도적으로 남겨둔 건지 불분명 — 삭제 전 원 개발자(사용자) 확인 필요.
-- `createOptionValueComponents` (`base_components.js`) — 외부에서 import하는 곳 없음, `option_value_components` 객체를 만들 때 파일 내부에서만 쓰임. 함수 자체를 export할 필요가 없어 보이지만, export를 없애면 소비하는 곳이 20개 파일 중 어딘가 구조분해로 끌어다 쓰고 있을 가능성을 다시 한번 grep으로 재확인 후 처리.
+- ~~`note_ui_component` (`base_components.js`)~~ — 사용자 확인 후 Phase 6에서 삭제 완료 (원문/사유는 `DEPRECATED_CODE_REMOVED.md` 참고).
+- `createOptionValueComponents` (`base_components.js`) — 외부에서 import하는 곳 없음, `option_value_components` 객체를 만들 때 파일 내부에서만 쓰임(즉 함수 자체는 죽지 않았고 내부적으로 계속 호출됨). 사용자 결정(2026-08-04): export만 정리하기보다 **그대로 둔다** — 함수는 유효하게 쓰이고 있어 note_ui_component와는 성격이 다름.
 
 ## 중복 UI 생성 로직 후보 (통합 대상)
 
