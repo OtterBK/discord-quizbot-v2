@@ -36,3 +36,12 @@
   - `quizbot/` 전체에서 `new ffmpeg(...)`(fluent-ffmpeg로 프로세스 생성)를 호출하는 곳은 `audio_cache_manager.js:513`(`convertToWebm`) 단 한 곳뿐인데, 여기서도 `ffmpeg_aging_map`에 등록하는 코드가 없음.
   - `quiz_system.js`가 import하는 `ffmpeg-static`(`pathToFfmpeg`)은 직접 프로세스를 스폰하는 데 쓰이는 게 아니라 `process.env.FFMPEG_PATH`를 설정하는 용도로만 쓰임 — `@discordjs/voice`(prism-media)가 내부적으로 오디오 트랜스코딩할 때 참조하는 ffmpeg 바이너리 경로를 알려주기 위함으로 추정됨. 즉 `@discordjs/voice`가 내부적으로 스폰하는 ffmpeg 프로세스는 애초에 이 코드가 핸들을 쥐고 있지 않아 Map으로 추적 자체가 불가능한 구조.
   - 결론: `ffmpeg_aging_map`이 원래 추적하려던 대상이 정확히 무엇이었는지 코드만으로는 특정 불가. `@discordjs/voice`가 자체적으로 프로세스 생명주기를 관리한다면 이 코드는 애초에 불필요했을 가능성이 있고, 반대로 과거에는 직접 프로세스를 스폰해 추적하다가 라이브러리 전환 과정에서 등록 코드만 누락됐을 가능성도 있음. **정적 코드 분석만으로는 실제 운영 환경에서 ffmpeg 좀비 프로세스가 쌓이는지 확인 불가** — 운영 서버에서 ffmpeg 프로세스 개수를 모니터링해봐야 확정 가능. 이번 점검에서는 추측성 재구현(ps-node 기반)을 하지 않고 조사 결과만 기록.
+  - 추가 확인: `bot.js`에서 애초에 `ffmpegAgingManager()`를 시작하는 호출 자체가 주석 처리돼 있음(`// quiz_system.startFFmpegAgingManager();`). 즉 이 기능은 맵이 비어있는 문제 이전에 **인터벌 자체가 실행되지 않고 있음** — 코드가 완전히 꺼져있는 상태라 실제 운영 영향은 없음. 우선순위를 "낮음"으로 하향.
+
+### [main-ui.js/multiplayer-quiz-select-ui.js/report_manual_processing.js] 매 렌더링/요청마다 동기 파일 읽기 — 수정 완료
+
+- 발견일: 2026-08-04
+- 상태: 수정 완료
+- 세부 내용:
+  1. **`main-ui.js`의 `loadVersionInfo()`** — `MainUI`(메인 메뉴)가 생성될 때마다 `fs.existsSync`+`fs.readFileSync`를 2회 동기 호출하고 있었음. 다만 조사 결과 대상 경로(`SYSTEM_CONFIG.version_info_path`/`fixed_notice_path`)가 `config/system_setting.js`에서 이미 주석 처리(`undefined`)돼 있어("이제 안쓴다", "애매하네 걍 쓰지말자") **실제로는 아무 파일도 읽지 않는 죽은 코드**였음(`fs.existsSync(undefined)`는 안전하게 `false`를 반환). 성능 개선이 아니라 죽은 코드 제거로 처리 — `loadVersionInfo()`와 그 호출부, 이제 안 쓰는 `fs` require를 삭제.
+  2. **`BANNED_USER_PATH`(banned_user.txt) 반복 동기 읽기 + 무한 증가** — `multiplayer-quiz-select-ui.js`의 `checkMultiplayerBan`(로비 생성/참가 시마다 호출, 개발자 TODO: "나중에 시간마다 조회하는 방식으로 변경할 것")과 `report/report_manual_processing.js`의 `applyGuildBan`이 각각 독립적으로 파일을 동기 읽기하고 있었고, 밴 목록은 `appendFileSync`로만 추가되고 정리되지 않아 운영 기간이 길어질수록 파일/배열이 계속 커지는 구조였음. `quizbot/managers/multiplayer_ban_manager.js`(신규)로 통합해 메모리에 `Set`으로 캐싱하고, 10분마다 주기 재조회 + `banGuild()` 호출 시 즉시 캐시 갱신(주기 대기 없이 바로 반영)하도록 변경. `checkMultiplayerBan`/`applyGuildBan`은 이 매니저로 위임.
