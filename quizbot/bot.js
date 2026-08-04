@@ -329,29 +329,14 @@ const create_quiz_tool_btn_component = new ActionRowBuilder().addComponents(
     .setLabel('퀴즈만들기')
     .setStyle(ButtonStyle.Success)
 );
-const create_quiz_handler = async (interaction) => 
+const create_quiz_handler = async (interaction) =>
 {
-  //나중에 시간마다 조회하는 방식으로 변경할 것
-  if (fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH)) 
+  //퀴즈만들기 ban 시스템
+  if (ban_manager.isBanned([interaction.user.id]))
   {
-    //퀴즈만들기 ban 시스템
-    const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
-      encoding: 'utf8',
-      flag: 'r',
-    });
-    const user_id = interaction.user.id;
-
-    const banned_list_array = banned_list.split('\n');
-
-    for (const banned_id of banned_list_array) 
-    {
-      if (banned_id.trim() == user_id) 
-      {
-        interaction.explicit_replied = true;
-        interaction.reply({ content: `something wrong` });
-        return;
-      }
-    }
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🔸 퀴즈 생성 권한이 영구적으로 제한되었습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+    return;
   }
 
   if(interaction.guild)
