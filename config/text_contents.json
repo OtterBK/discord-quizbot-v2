@@ -372,7 +372,8 @@
         "quiz_maker_ui":
         {
             "confirm_quiz_delete": "정말 해당 퀴즈를 삭제할까요?",
-            "quiz_deleted": "퀴즈를 삭제했습니다.\r삭제한 퀴즈 ID: "
+            "quiz_deleted": "퀴즈를 삭제했습니다.\r삭제한 퀴즈 ID: ",
+            "quiz_deleted_and_banned": "퀴즈를 삭제하고 제작자를 영구밴했습니다.\r삭제한 퀴즈 ID: "
         }
     }
 }

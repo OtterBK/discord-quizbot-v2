@@ -100,6 +100,27 @@ const quiz_delete_confirm_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Danger),
   );
 
+//관리자 전용: 퀴즈 삭제 + 제작자 영구밴을 함께 처리할 수 있는 확인 컴포넌트
+const quiz_delete_confirm_admin_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('quiz_delete_cancel')
+      .setLabel('아니요, 퀴즈를 삭제하지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('quiz_delete_confirmed')
+      .setLabel('네, 퀴즈만 삭제합니다.')
+      .setStyle(ButtonStyle.Danger),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('quiz_delete_confirmed_and_ban')
+      .setLabel('삭제 + 제작자 영구밴')
+      .setStyle(ButtonStyle.Danger),
+  );
+
 //퀴즈 만들기
 const modal_quiz_info = new ModalBuilder()
   .setCustomId('modal_quiz_info')
@@ -430,6 +451,7 @@ module.exports = {
   quiz_tags_select_menu,
   question_select_menu_comp,
   quiz_delete_confirm_comp,
+  quiz_delete_confirm_admin_comp,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,

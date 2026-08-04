@@ -7,11 +7,13 @@ const { MessageFlags } = require('discord.js');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_TYPE, QUIZ_MAKER_TYPE, ANSWER_TYPE } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const PRIVATE_CONFIG = require('../../config/private_config.json');
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const feedback_manager = require('../managers/feedback_manager.js');
+const ban_manager = require('../managers/ban_manager.js');
 const {
   quiz_info_comp,
   quiz_edit_comp,
@@ -19,6 +21,7 @@ const {
   quiz_tags_select_menu,
   question_select_menu_comp,
   quiz_delete_confirm_comp,
+  quiz_delete_confirm_admin_comp,
   modal_quiz_info,
   modal_question_info,
 } = require('./components.js');
@@ -325,10 +328,12 @@ class UserQuizInfoUI extends QuizInfoUI
   
     if(interaction.customId === 'quiz_delete') //퀴즈 삭제 버튼
     {
-      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\`\`\``, components: [quiz_delete_confirm_comp], flags: MessageFlags.Ephemeral });
+      const is_admin = interaction.user.id === PRIVATE_CONFIG?.ADMIN_ID;
+      const confirm_comp = is_admin ? quiz_delete_confirm_admin_comp : quiz_delete_confirm_comp; //어드민이면 삭제+영구밴 옵션도 보여줌
+      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\`\`\``, components: [confirm_comp], flags: MessageFlags.Ephemeral });
       return;
     }
-  
+
     if(interaction.customId === 'quiz_delete_confirmed') //퀴즈 정말정말정말로 삭제 버튼
     {
       this.freeHolder(); //더 이상 UI 못 쓰도록
@@ -337,7 +342,23 @@ class UserQuizInfoUI extends QuizInfoUI
       user_quiz_info.delete();
       return;
     }
-  
+
+    if(interaction.customId === 'quiz_delete_confirmed_and_ban') //퀴즈 삭제 + 제작자 영구밴 버튼 (어드민 전용)
+    {
+      if(interaction.user.id !== PRIVATE_CONFIG?.ADMIN_ID) //버튼은 어드민에게만 보이지만, 서버측에서도 한번 더 확인
+      {
+        return;
+      }
+
+      ban_manager.banId(user_quiz_info.data.creator_id);
+
+      this.freeHolder(); //더 이상 UI 못 쓰도록
+      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.quiz_id}` + "```", flags: MessageFlags.Ephemeral });
+      interaction.message.delete();
+      user_quiz_info.delete();
+      return;
+    }
+
     if(interaction.customId === 'quiz_delete_cancel') //퀴즈 삭제 취소 버튼
     {
       interaction.message.delete();
