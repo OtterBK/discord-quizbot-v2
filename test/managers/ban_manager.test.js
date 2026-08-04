@@ -71,3 +71,47 @@ test('banId: 이미 밴된 id면 파일에 다시 쓰지 않고 false를 반환�
   assert.equal(result, false);
   assert.equal(append_called, false);
 });
+
+test('getBannedIdList: 현재 캐시된 밴 목록을 배열로 반환한다', (t) =>
+{
+  t.mock.method(fs, 'existsSync', () => true);
+  t.mock.method(fs, 'readFileSync', () => 'guild_1\nuser_2\n');
+
+  ban_manager.initialize();
+
+  assert.deepEqual(ban_manager.getBannedIdList().sort(), ['guild_1', 'user_2']);
+});
+
+test('unbanId: 밴된 id를 해제하면 캐시에서 즉시 제거되고 파일 전체를 다시 쓴다', (t) =>
+{
+  t.mock.method(fs, 'existsSync', () => true);
+  t.mock.method(fs, 'readFileSync', () => 'guild_1\nguild_2\nguild_3\n');
+
+  ban_manager.initialize();
+
+  let written_content = undefined;
+  t.mock.method(fs, 'writeFileSync', (path, content) => { written_content = content; });
+
+  const result = ban_manager.unbanId('guild_2');
+
+  assert.equal(result, true);
+  assert.equal(ban_manager.isBanned(['guild_2']), false); //캐시에서 즉시 반영
+  assert.equal(ban_manager.isBanned(['guild_1']), true); //나머지는 그대로
+  assert.doesNotMatch(written_content, /guild_2/); //재작성된 파일 내용에도 없어야 함
+});
+
+test('unbanId: 밴돼있지 않은 id면 아무것도 쓰지 않고 false를 반환한다', (t) =>
+{
+  t.mock.method(fs, 'existsSync', () => true);
+  t.mock.method(fs, 'readFileSync', () => 'guild_1\n');
+
+  ban_manager.initialize();
+
+  let write_called = false;
+  t.mock.method(fs, 'writeFileSync', () => { write_called = true; });
+
+  const result = ban_manager.unbanId('never_banned');
+
+  assert.equal(result, false);
+  assert.equal(write_called, false);
+});
