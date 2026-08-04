@@ -260,7 +260,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
       }
 
       if(best_quiz_of_week === undefined
-        || best_quiz_of_week.data.played_count < quiz_info.data.played_count)
+        || best_quiz_of_week.data.played_count_of_week < quiz_info.data.played_count_of_week)
       {
         best_quiz_of_week = quiz_info;
       }
