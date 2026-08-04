@@ -242,18 +242,6 @@ const quiz_info_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Secondary),
   );
 
-const note_ui_component = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('notice')
-      .setLabel('공지사항')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('patch_note')
-      .setLabel('패치노트')
-      .setStyle(ButtonStyle.Secondary),
-  );
-
 const only_back_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -317,7 +305,6 @@ module.exports = {
   option_value_components,
   createOptionValueComponents,
   quiz_info_comp,
-  note_ui_component,
   only_back_comp,
   sort_by_select_menu,
 };

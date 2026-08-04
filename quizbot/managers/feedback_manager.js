@@ -3,7 +3,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('
 
 //로컬 모듈
 const db_manager = require('./db_manager.js');
-const {  SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../config/system_setting.js');
+const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const logger = require('../../utility/logger.js')('FeedbackManager');
 
 const LikeInfoColumn = 
@@ -23,9 +23,6 @@ LikeInfoColumn.forEach((field) =>
   like_info_key_fields += `${field}`;
 });
 
-//@Deprecated
-const feedback_quiz_info_map = {}; //dynamic quiz feedback을 위해 사용
-
 //퀴즈 피드백 Component
 exports.quiz_feedback_comp = new ActionRowBuilder()
   .addComponents(
@@ -35,15 +32,6 @@ exports.quiz_feedback_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary)
       .setEmoji("👍"),
   );
-
-//@Deprecated
-//퀴즈 id별 custom_id 설정한 comp 생성
-exports.createDynamicQuizFeedbackComponent = (guild_id, quiz_id, quiz_title, creator_name) => 
-{
-  feedback_quiz_info_map[guild_id] = {quiz_id: quiz_id, quiz_title: quiz_title, creator_name: creator_name};
-
-  return exports.quiz_feedback_comp;
-};
 
 exports.addQuizLikeAuto = async (interaction, quiz_id, quiz_title) =>
 { 
@@ -122,29 +110,4 @@ exports.checkAlreadyLike = async (quiz_id, user_id) =>
   }
 
   return true; //exists
-};
-
-exports.do_event = (event_name, interaction) =>
-{
-  if(interaction.custom_id != 'like')
-  {
-    return false;
-  }
-
-  const guild_id = interaction.guild.id;
-  if(feedback_quiz_info_map.hasOwnProperty(guild_id) == false)
-  {
-    return false;
-  }
-
-  if(event_name != CUSTOM_EVENT_TYPE.interactionCreate)
-  {
-    return false;
-  }
-
-  const target_quiz = feedback_quiz_info_map[guild_id];
-
-  exports.addQuizLikeAuto(guild_id, interaction.member, target_quiz.quiz_id, target_quiz.quiz_title);
-
-  return true;
 };

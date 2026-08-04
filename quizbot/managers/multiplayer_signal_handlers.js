@@ -2,7 +2,7 @@
 
 //multiplayer_manager.js에서 분리 (REFACTOR_PLAN.md Phase 3)
 //클라이언트(각 클러스터)에서 들어오는 CLIENT_SIGNAL을 받아 처리/응답하는 부분.
-//IPC 신호 검증/디스패치(onSignalReceived, isServerSignal/isClientSignal)와
+//IPC 신호 검증/디스패치(onSignalReceived, isClientSignal)와
 //신호별 처리(handle*)를 모아둔다. multiplayer_manager.js는 이 모듈을 통해
 //얇은 facade 역할만 한다.
 //로직/주석은 원본과 동일 (동작 변경 없음).
@@ -63,12 +63,7 @@ exports.onSignalReceived = (signal) =>
   }
 };
 
-function isServerSignal(signal) 
-{
-  return (signal & 0x80) !== 0;  // 최상위 비트가 1이면 서버 시그널
-}
-
-function isClientSignal(signal) 
+function isClientSignal(signal)
 {
   return (signal & 0x80) === 0;  // 최상위 비트가 0이면 클라이언트 시그널
 }

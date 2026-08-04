@@ -17,8 +17,9 @@ const omakase_components = require('../../quizbot/quiz_ui/components/omakase_com
 const multiplayer_components = require('../../quizbot/quiz_ui/components/multiplayer_components.js');
 const report_components = require('../../quizbot/quiz_ui/components/report_components.js');
 
-test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 56개)', () =>
+test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 55개)', () =>
 {
+  // 죽은 export였던 note_ui_component는 Phase 6에서 삭제됨 (DEPRECATED_CODE_REMOVED.md 참고)
   const expected_names = [
     ...Object.keys(base_components),
     ...Object.keys(custom_quiz_components),
@@ -29,7 +30,7 @@ test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출�
 
   const actual_names = Object.keys(components).sort();
 
-  assert.equal(actual_names.length, 56);
+  assert.equal(actual_names.length, 55);
   assert.deepEqual(actual_names, expected_names);
 });
 

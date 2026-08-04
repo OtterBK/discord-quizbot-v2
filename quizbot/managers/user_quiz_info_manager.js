@@ -4,7 +4,6 @@
 //로컬 modules
 const db_manager = require('./db_manager.js');
 const logger = require('../../utility/logger.js')('UserQuizInfoManager');
-const feedback_manager = require('./feedback_manager.js');
 
 //만약 fields 추가 및 수정되면 여기에 그냥 넣으면 된다
 const QuizInfoColumn = 
@@ -167,12 +166,6 @@ class UserQuizInfo //유저 제작 퀴즈 정보
   async updateModifiedTime()
   {
     db_manager.updateQuizInfoModifiedTime(this.quiz_id);
-  }
-
-  //@Deprecated
-  async addLike(guild_id, user_id)
-  {
-    return await feedback_manager.addQuizLike(this.quiz_id, guild_id);
   }
 }
 
