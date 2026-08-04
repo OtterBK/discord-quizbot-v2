@@ -6,11 +6,33 @@
 //대신 순수 로직인 getHashedPath/getDownloadResultType/getExpectedErrorType 3개를
 //monitoring_manager.js의 calculateAverageCpuUsage와 동일한 패턴으로 테스트용 export를
 //추가해(REFACTOR_PLAN.md 2.4) 유닛테스트를 붙인다.
+//executeDownloadProcess도 같은 패턴으로 export해, youtube-dl-exec(youtubedl.exec)를
+//mock 처리하고 실제 Node EventEmitter로 stdout/stderr를 흉내내 stdout/stderr 수집
+//버그(BUGS_FOUND.md) 회귀 테스트를 붙인다.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { EventEmitter } = require('node:events');
 
 const audio_cache_manager = require('../../quizbot/managers/audio_cache_manager.js');
+const youtubedl = require('youtube-dl-exec');
+
+//youtube-dl-exec의 실제 subprocess처럼 stdout/stderr(EventEmitter)를 갖고,
+//await 가능한(Promise인) 가짜 subprocess를 만든다. resolve/reject를 외부에서 호출해
+//테스트 코드가 원하는 시점에 다운로드 완료/실패를 흉내낼 수 있게 한다.
+function createFakeSubprocess()
+{
+  let resolve_subprocess, reject_subprocess;
+  const subprocess = new Promise((resolve, reject) =>
+  {
+    resolve_subprocess = resolve;
+    reject_subprocess = reject;
+  });
+  subprocess.stdout = new EventEmitter();
+  subprocess.stderr = new EventEmitter();
+
+  return { subprocess, resolve_subprocess, reject_subprocess };
+}
 
 test('getHashedPath: target의 첫 글자를 대문자로 캐시 루트 아래 하위 경로로 만든다', () =>
 {
@@ -82,4 +104,42 @@ test('getExpectedErrorType: ERROR: 줄에서 Video unavailable/Private video/Mus
 test('getExpectedErrorType: ERROR: 줄이 있어도 알려진 패턴이 아니면 ERROR다', () =>
 {
   assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: something totally unexpected`), 1 /* ERROR */);
+});
+
+test('executeDownloadProcess: stdout를 여러 청크로 나눠 받아도 [object Object] 같은 쓰레기 문자열이 섞이지 않는다 (BUGS_FOUND.md 회귀 테스트)', async (t) =>
+{
+  const { subprocess, resolve_subprocess } = createFakeSubprocess();
+  t.mock.method(youtubedl, 'exec', () => subprocess);
+
+  const result_promise = audio_cache_manager.executeDownloadProcess('https://example.com/watch?v=abc123', {});
+
+  //executeDownloadProcess는 호출 즉시(첫 await 전까지) stdout/stderr에 리스너를 붙이므로
+  //바로 이어서 data 이벤트를 여러 청크로 나눠 emit해도 안전하다.
+  subprocess.stdout.emit('data', Buffer.from('[download] '));
+  subprocess.stdout.emit('data', Buffer.from('Destination: video.webm\n'));
+  resolve_subprocess();
+
+  const result = await result_promise;
+
+  assert.equal(result.result_type, 0 /* SUCCESS */);
+  assert.equal(result.result_message, '[download] Destination: video.webm\n');
+  assert.doesNotMatch(result.result_message, /\[object/);
+});
+
+test('executeDownloadProcess: stderr도 여러 청크로 나눠 받아도 쓰레기 문자열 없이 에러 타입을 판별한다', async (t) =>
+{
+  const { subprocess, reject_subprocess } = createFakeSubprocess();
+  t.mock.method(youtubedl, 'exec', () => subprocess);
+
+  const result_promise = audio_cache_manager.executeDownloadProcess('https://example.com/watch?v=abc123', {});
+
+  subprocess.stderr.emit('data', Buffer.from('ERROR: [youtube] abc123: '));
+  subprocess.stderr.emit('data', Buffer.from('Private video\n'));
+  reject_subprocess(new Error('yt-dlp exited with code 1'));
+
+  const result = await result_promise;
+
+  assert.equal(result.result_type, 7 /* PRIVATE_VIDEO */);
+  assert.equal(result.error_message, 'ERROR: [youtube] abc123: Private video\n');
+  assert.doesNotMatch(result.error_message, /\[object/);
 });
