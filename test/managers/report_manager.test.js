@@ -17,6 +17,7 @@ const chat_cache = require('../../quizbot/managers/report/chat_cache.js');
 const report_processing_core = require('../../quizbot/managers/report/report_processing_core.js');
 const report_manual_processing = require('../../quizbot/managers/report/report_manual_processing.js');
 const db_manager = require('../../quizbot/managers/db_manager.js');
+const multiplayer_ban_manager = require('../../quizbot/managers/multiplayer_ban_manager.js');
 
 test('report_manager.js: 원본과 동일하게 initialize/checkReportEvent 2개만 재수출한다', () =>
 {
@@ -166,12 +167,9 @@ test('report_processing_core.applyBan: 기존 밴 이력이 없으면 count부�
   assert.ok(ban_history.ban_expiration_timestamp >= before + 24 * 60 * 60 * 1000);
 });
 
-test('report_manual_processing.processFollowUpAction: ps_flwup_guild_ban_이면 report_state의 client로 guild를 조회한다 (fs는 mock 처리해 실제 banned_user.txt를 건드리지 않는다)', async (t) =>
+test('report_manual_processing.processFollowUpAction: ps_flwup_guild_ban_이면 report_state의 client로 guild를 조회하고 multiplayer_ban_manager로 밴한다 (실제 banned_user.txt는 건드리지 않는다)', async (t) =>
 {
-  const fs = require('fs');
-  t.mock.method(fs, 'existsSync', () => true);
-  t.mock.method(fs, 'readFileSync', () => '');
-  t.mock.method(fs, 'appendFileSync', () => undefined);
+  t.mock.method(multiplayer_ban_manager, 'banGuild', () => true);
 
   let fetched_guild_id = undefined;
   const fake_client = {
