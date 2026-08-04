@@ -96,7 +96,8 @@
 - 재현 조건: 항상 (모든 `downloadAudioCache` 호출 시 내부적으로 실행됨).
 - 실제 동작: `stdout = subprocess.stdout.on('data', (data) => { stdout += data.toString(); })`처럼 작성돼 있는데, `EventEmitter.on(...)`은 리스너 등록 후 스트림 자기 자신(`this`)을 반환한다. 즉 `stdout`(문자열로 초기화됐던 변수)이 이 대입문 실행 즉시 `subprocess.stdout` 스트림 **객체**로 덮어써진다. 이후 첫 `'data'` 이벤트가 발생해 콜백이 `stdout += data.toString()`을 실행하면, `+=`가 스트림 객체를 문자열로 강제 변환(`[object Object]` 등)한 뒤 첫 데이터 청크와 이어붙인 값을 다시 `stdout`에 대입한다 — 이때부터는 `stdout`이 진짜 문자열이 되어 이후 청크들은 정상적으로 누적되지만, 최종 결과 문자열 맨 앞(혹은 첫 청크가 걸린 위치)에 `[object Object]` 같은 쓰레기 문자열이 섞여 들어간다. `stderr`도 동일한 패턴.
 - 기대 동작: `stdout`/`stderr`는 순수 문자열 누적이어야 하며, `.on('data', ...)`의 반환값을 변수에 대입하면 안 됨 (예: `subprocess.stdout.on('data', (data) => { stdout += data.toString(); });`처럼 반환값을 버려야 함).
-- 상태: 보류 — `getDownloadResultType`/`getExpectedErrorType`가 줄 단위(`split('\n')`)로 `[download]`/`ERROR:` 접두 문자열을 검사하는데, 쓰레기 문자열이 첫 청크의 시작 부분에 섞여 들어가면 마침 그 청크에 판정 대상 줄(예: 성공 판정용 `Destination:` 줄)이 걸려 있을 경우 `line.startsWith('[download]')` 매칭이 실패해 성공/실패 오판정으로 이어질 수 있다. 실제 청크 경계는 네트워크/버퍼링에 따라 달라 재현이 불안정하고, 오디오 다운로드라는 핵심 경로라 실제 yt-dlp 실행 검증 없이 고치는 위험을 피하기 위해 기록만 남김.
+- 상태: 수정 완료 — `subprocess.stdout.on(...)`/`subprocess.stderr.on(...)`의 반환값을 더 이상 `stdout`/`stderr`에 대입하지 않도록 수정. `youtube-dl-exec`(`youtubedl.exec`)를 mock 처리하고 실제 Node `EventEmitter`로 stdout/stderr를 흉내내 여러 청크로 나눠 emit해도 `[object Object]` 같은 쓰레기 문자열이 섞이지 않는지 회귀 테스트로 검증 (`test/managers/audio_cache_manager.test.js`). 수정 전 상태로 되돌려서 테스트가 실제로 실패하는 것도 확인함.
+- 비고: `executeDownloadProcess`는 테스트를 위해 `getHashedPath`/`getDownloadResultType`/`getExpectedErrorType`와 동일한 패턴으로 export를 추가함 (원본에는 없던 export이지만 동작 변경은 없음).
 
 ### [Phase 5] `convertToWebm`의 원본 파일 삭제 실패 로그가 `ENOENT`일 때만 남음 (조건 반대로 보임)
 
