@@ -160,6 +160,7 @@ quizbot/quiz_system/
 
 ### Phase 4 — UI 레이어 (`quiz_ui/components.js` 1,186줄 및 관련 UI 파일들)
 - 버튼/컴포넌트 팩토리 함수 단위 분리, 중복 UI 생성 로직 통합
+- 사용자 결정(2026-08-04): 이번 Phase는 **구조 분리만** 먼저 진행. 중복 UI 생성 로직 통합/죽은 export 정리는 `DUPLICATE_UI_PATTERNS.md`에 기록만 해두고 별도 논의 후 처리.
 
 ### Phase 5 — 나머지 매니저/유틸 (`report_manager.js`, `audio_cache_manager.js`, `db_manager.js`, `utility/utility.js` 등)
 - 개별 파일 규모가 상대적으로 작아 Phase 1~4보다 빠르게 진행 가능
