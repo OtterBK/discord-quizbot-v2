@@ -91,6 +91,15 @@ test('network_utility: getIPv4Address/getIPv6Address는 배열을 반환한다',
   assert.ok(Array.isArray(network_utility.getIPv6Address()));
 });
 
+test('misc_utility: convertTagsValueToString은 태그 사이에만 ", "를 넣고 마지막에 trailing comma를 남기지 않는다', () =>
+{
+  const FAKE_TAG_INFO = { NONE: 0, A: 1, B: 2, C: 4 };
+
+  assert.equal(misc_utility.convertTagsValueToString(1 | 2, FAKE_TAG_INFO), 'A, B');
+  assert.equal(misc_utility.convertTagsValueToString(1, FAKE_TAG_INFO), 'A');
+  assert.equal(misc_utility.convertTagsValueToString(0, FAKE_TAG_INFO), '');
+});
+
 test('audio_utility: playBGM(COUNTDOWN_LONG)은 misc_utility.getRandom으로 롱타이머 목록에서 하나를 고른다 (원본의 exports.getRandom(...) 호출이 분리 후 misc_utility.getRandom(...)으로 재배선됨)', async (t) =>
 {
   const { BGM_TYPE } = require('../../config/system_setting.js');
