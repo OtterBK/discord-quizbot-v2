@@ -28,12 +28,13 @@ const { UserQuizInfoUI } = require("./user-quiz-info.ui.js");
 /** Quiz 제작 UI 관련, 전부 개인 메시지로 처리됨 */
 class UserQuizListUI extends QuizBotControlComponentUI
 {
-  constructor(creator)
+  constructor(creator, show_all_quizzes = false)
   {
     super();
 
     this.creator = creator;
     this.creator_id = creator.id;
+    this.show_all_quizzes = show_all_quizzes; //true면 전체 유저의 퀴즈를 조회 (관리자 패널에서 사용)
 
     this.initializeEmbed();
     this.initializeComponents();
@@ -90,12 +91,12 @@ class UserQuizListUI extends QuizBotControlComponentUI
     this.loadUserQuiz(); //퀴즈 목록 재로드
   }
 
-  //DB에서 특정 유저 퀴즈가져오기
+  //DB에서 특정 유저 퀴즈가져오기 (show_all_quizzes면 전체 조회, 관리자 패널 전용)
   async loadUserQuiz()
   {
-    let creator_id = this.creator_id;
-
-    const user_quiz_list = await loadUserQuizListFromDB(creator_id);
+    const user_quiz_list = this.show_all_quizzes
+      ? await loadUserQuizListFromDB(undefined) //전체 조회
+      : await loadUserQuizListFromDB(this.creator_id);
 
     if(user_quiz_list.length === 0)
     {
@@ -108,18 +109,6 @@ class UserQuizListUI extends QuizBotControlComponentUI
     {
       quiz_info.name = quiz_info.data.quiz_title;
       this.cur_contents.push(quiz_info);
-    }
-
-    //어드민일 경우
-    if(PRIVATE_CONFIG?.ADMIN_ID !== undefined && PRIVATE_CONFIG.ADMIN_ID === creator_id) 
-    {
-      logger.warn(`Matched to Admin ID ${creator_id}, Loading User Quiz List as Undefined`);
-      const all_quiz_list = await loadUserQuizListFromDB(undefined); //전체 조회
-      for(const quiz_info of all_quiz_list)
-      {
-        quiz_info.name = quiz_info.data.quiz_title;
-        this.cur_contents.push(quiz_info);
-      }
     }
 
     this.displayContents();
