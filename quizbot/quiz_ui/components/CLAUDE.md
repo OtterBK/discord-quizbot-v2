@@ -1,0 +1,13 @@
+# quizbot/quiz_ui/components/
+
+`quiz_ui/components.js`(상위 디렉터리)가 이 5개 파일을 spread로 재수출하는 얇은 facade. 20개+ 소비 파일이 `const { x, y } = require(".../components.js")` 형태로 구조분해해서 쓰기 때문에, 재수출 이름은 원본과 정확히 동일해야 함(테스트로 export 개수까지 고정해둠, `test/quiz_ui/components.test.js`).
+
+**공통 패턴**: 여기 정의된 discord.js 빌더 인스턴스(`ActionRowBuilder`/`ButtonBuilder`/`ModalBuilder` 등)는 **롱리브드 싱글턴**임 — 매번 새로 만드는 게 아니라 모듈 로드 시 한 번만 생성됨. 값을 채워서 보내야 하는 경우(예: 모달에 기존 값 미리 채우기) 반드시 `cloneDeep()`으로 복사한 뒤 수정해야 함 — 원본 싱글턴을 직접 mutate하면 다른 곳에서도 그 변경이 보임(버그의 흔한 원인).
+
+- **`base_components.js`** — 기본 퀴즈 UI(페이지네이션 버튼, 메인 화면, 서버 옵션 설정). `option_value_components`는 서버 설정 옵션별(9개) select row를 담은 객체, `createOptionValueComponents(option_name)`가 만듦 — 내부적으로만 쓰이지만(외부에서 직접 호출 안 함) export는 그대로 남아있음(의도적으로 정리 안 함, `DUPLICATE_UI_PATTERNS.md` 참고).
+- **`custom_quiz_components.js`** — 유저 제작 퀴즈(CRUD) 관련. `quiz_delete_confirm_comp`(일반 유저용, 취소/삭제 2버튼)와 `quiz_delete_confirm_admin_comp`(관리자 전용, 취소/삭제/삭제+영구밴 3버튼)가 같이 있음 — `user-quiz-info.ui.js`가 `interaction.user.id === PRIVATE_CONFIG.ADMIN_ID` 여부로 어느 걸 보여줄지 분기함. `admin_panel_comp`(밴 목록 관리/신고처리/퀴즈 관리 3버튼, `/quizmgr` 관리자 패널 메인 메뉴)도 여기 있음.
+- **`omakase_components.js`** — 오마카세(랜덤 조합) 퀴즈 관련. `modal_quiz_setting`은 오마카세 전용이 아니라 `quiz-info-ui.js`(기본 제공 퀴즈 시작 화면)에서도 쓰이지만, 원본 파일에서 이 구역에 있던 걸 그대로 유지함. **중요**: `modal_quiz_setting`/`modal_omakase_quiz_setting`/`modal_multiplayer_quiz_setting` 세 모달이 **일부러 같은 `customId: 'modal_quiz_setting'`을 공유**함 — 셋 다 같은 핸들러(`applyQuizSetting`)로 라우팅되게 하기 위함. 여길 고칠 때 이 customId 공유를 절대 깨뜨리면 안 됨(회귀 테스트로 고정돼 있음).
+- **`multiplayer_components.js`** — 서버 간 대결(멀티플레이) 로비 관련 컴포넌트.
+- **`report_components.js`** — 신고 관련. `modal_chat_report` 1개만 있음.
+
+**알려진 이슈**: `DUPLICATE_UI_PATTERNS.md`에 이 5개 파일 전체를 대상으로 한 중복 UI 생성 로직 후보 10건이 기록돼 있음(번호 버튼 로우 반복, 동적 태그 select 루프 반복, 모달 보일러플레이트 반복 등) — 사용자 결정으로 **통합 작업은 보류 중**, 새로 손댈 때 참고만 할 것. 죽은 export였던 `note_ui_component`는 삭제됨(`DEPRECATED_CODE_REMOVED.md`).
