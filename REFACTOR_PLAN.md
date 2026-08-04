@@ -164,6 +164,8 @@ quizbot/quiz_system/
 
 ### Phase 5 — 나머지 매니저/유틸 (`report_manager.js`, `audio_cache_manager.js`, `db_manager.js`, `utility/utility.js` 등)
 - 개별 파일 규모가 상대적으로 작아 Phase 1~4보다 빠르게 진행 가능
+- 완료(2026-08-04): `db_manager.js`(테이블 도메인별 5개 파일), `utility/utility.js`(도메인별 4개 파일), `report_manager.js`(원본 주석 구획 8개를 그대로 파일 경계로 승격)는 구조 분리 완료. `audio_cache_manager.js`는 함수 간 호출이 강하게 얽힌 단일 파이프라인이라(원본에 `//#region` 등 구분 없음) **구조 분리는 하지 않기로 결정** — 대신 순수 함수 3개(`getHashedPath`/`getDownloadResultType`/`getExpectedErrorType`)만 테스트용으로 export 추가.
+- 이 Phase 진행 중 새 분리 파일에 원본에 없던 `'use strict'`를 실수로 붙였다가 sloppy-mode에서 조용히 무시되던 기존 버그가 표면화되는 걸 발견 → Phase 4(`quiz_ui/components/*.js`)와 Phase 5(`utility/util/*.js`, `managers/report/*.js`) 모두에서 원본과 동일하게 `'use strict'` 제거로 정정 (BUGS_FOUND.md Phase 5 항목 참고).
 
 ### Phase 6 — 최종 정리
 - Phase 1~5 진행 중 추가로 발견되는 죽은 코드/레거시 조각을 `notes/` 이동 또는 제거로 정리
