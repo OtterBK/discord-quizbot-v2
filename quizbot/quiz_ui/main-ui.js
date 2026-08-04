@@ -1,9 +1,5 @@
 'use strict';
 
-//#region 필요한 외부 모듈
-const fs = require('fs');
-//#endregion
-
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
@@ -90,27 +86,9 @@ class MainUI extends QuizbotUI
         // icon_url: 'https://user-images.githubusercontent.com/28488288/208116143-24828069-91e7-4a67-ac69-3bf50a8e1a02.png',
       },
     };
-
-    this.loadVersionInfo();    
   }
 
-  loadVersionInfo()
-  {
-    if(fs.existsSync(SYSTEM_CONFIG.version_info_path)) //TODO 음... 패치 일자 실시간으로 가져오기에는 좀 부담스러운데, 나중에 Manager를 하나 두자
-    {
-      const version_info = fs.readFileSync(SYSTEM_CONFIG.version_info_path, {encoding: 'utf8', flag:'r'});
-      this.embed.footer.text = `${text_contents.main_menu.footer} ${version_info}`;
-      this.embed.footer.icon_url = undefined;
-    }
-
-    if(fs.existsSync(SYSTEM_CONFIG.fixed_notice_path)) 
-    {
-      const fixed_notice = fs.readFileSync(SYSTEM_CONFIG.fixed_notice_path, {encoding: 'utf8', flag:'r'});
-      this.embed.description += `\`\`\`${fixed_notice}\`\`\``;
-    }
-  }
-
-  initializeComponents() 
+  initializeComponents()
   {
     this.components = [select_btn_component, main_ui_component]; //MAIN UI에서는 control component는 필요없다.
   }
