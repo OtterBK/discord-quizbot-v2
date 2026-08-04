@@ -8,7 +8,7 @@ const { MessageFlags } = require('discord.js');
 //#region 로컬 modules
 const ipc_manager = require('../managers/ipc_manager.js');
 const { CLIENT_SIGNAL, SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
-const multiplayer_ban_manager = require('../managers/multiplayer_ban_manager.js');
+const ban_manager = require('../managers/ban_manager.js');
 
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
@@ -276,7 +276,7 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
   checkMultiplayerBan(list)
   {
     //멀티플레이 ban 시스템
-    return multiplayer_ban_manager.isBanned(list);
+    return ban_manager.isBanned(list);
   }
 }
 

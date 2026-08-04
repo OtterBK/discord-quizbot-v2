@@ -4,13 +4,14 @@
 //요청마다 동기 파일 읽기를 하지 않도록 한다.
 //원래 multiplayer-quiz-select-ui.js의 checkMultiplayerBan에 있던 개발자 TODO
 //("나중에 시간마다 조회하는 방식으로 변경할 것")를 반영한 매니저.
-//밴 목록에는 길드 ID뿐 아니라 유저 ID도 섞여 들어갈 수 있어(수동으로 파일에 추가하는 경우
-//포함) isBanned는 특정 타입에 종속되지 않고 문자열 id 목록을 그대로 받는다.
+//길드 ID(멀티플레이 밴)와 유저 ID(퀴즈 생성 영구밴)를 모두 같은 목록으로 관리하므로
+//(원래 이름이었던 multiplayer_ban_manager에서 이걸 반영해 ban_manager로 리네임)
+//isBanned/banId는 특정 타입에 종속되지 않고 문자열 id를 그대로 받는다.
 
 const fs = require('fs');
 
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
-const logger = require('../../utility/logger.js')('MultiplayerBanManager');
+const logger = require('../../utility/logger.js')('BanManager');
 
 const REFRESH_INTERVAL = 600000; //10분마다 파일에서 다시 읽어옴 (외부에서 직접 파일을 수정하는 경우 대비)
 
@@ -47,19 +48,19 @@ exports.isBanned = (id_list) =>
   return id_list.some(id => banned_id_set.has(id));
 };
 
-exports.banGuild = (guild_id) =>
+exports.banId = (id) =>
 {
-  if(banned_id_set.has(guild_id))
+  if(banned_id_set.has(id))
   {
-    logger.info(`Guild ${guild_id} is already banned`);
+    logger.info(`${id} is already banned`);
     return false; // 이미 등록된 경우
   }
 
-  fs.appendFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, `${guild_id}\n`, {
+  fs.appendFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, `${id}\n`, {
     encoding: 'utf8',
   });
-  banned_id_set.add(guild_id);
+  banned_id_set.add(id);
 
-  logger.info(`Guild ${guild_id} is banned`);
+  logger.info(`${id} is banned`);
   return true;
 };

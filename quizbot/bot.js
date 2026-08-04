@@ -36,7 +36,7 @@ const tagged_dev_quiz_manager = require('./managers/tagged_dev_quiz_manager.js')
 const audio_cache_manager = require('./managers/audio_cache_manager.js');
 const multiplayer_chat_manager = require('./managers/multiplayer_chat_manager.js');
 const report_manager = require('./managers/report_manager.js');
-const multiplayer_ban_manager = require('./managers/multiplayer_ban_manager.js');
+const ban_manager = require('./managers/ban_manager.js');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
 const { startMonitoring } = require('./managers/monitoring_manager.js');
 
@@ -126,8 +126,8 @@ client.on('ready', () =>
   logger.info(`Initializing Report Manager`);
   report_manager.initialize(client);
 
-  logger.info(`Initializing Multiplayer Ban Manager`);
-  multiplayer_ban_manager.initialize();
+  logger.info(`Initializing Ban Manager`);
+  ban_manager.initialize();
 
   ///////////
   logger.info(`Register commands...`);

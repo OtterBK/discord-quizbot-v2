@@ -9,7 +9,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, S
 const PRIVATE_CONFIG = require('../../../config/private_config.json');
 const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
-const multiplayer_ban_manager = require('../multiplayer_ban_manager.js');
+const ban_manager = require('../ban_manager.js');
 
 const report_state = require('./report_state.js');
 const report_chat_info = require('./report_chat_info.js');
@@ -292,7 +292,7 @@ const processFollowUpAction = async (interaction) =>
 /** 제재 후 후속 조치 */
 const applyGuildBan = async (guild_id) =>
 {
-  return multiplayer_ban_manager.banGuild(guild_id);
+  return ban_manager.banId(guild_id);
 };
 
 module.exports = { sendReportLog, sendReportProcessingUI, processReportLog, processFollowUpAction, applyGuildBan };
