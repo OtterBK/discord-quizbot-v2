@@ -628,4 +628,15 @@ const forceCaching = async (audio_url_list_path, thread_index=0) =>
   return new_cached_count;
 };
 
-module.exports = { getAudioCache, getAudioCacheInfo, downloadAudioCache, reWriteCacheInfo, forceCaching };
+module.exports = {
+  getAudioCache,
+  getAudioCacheInfo,
+  downloadAudioCache,
+  reWriteCacheInfo,
+  forceCaching,
+  //아래 3개는 순수 함수라 유닛테스트를 위해 추가로 export함 (REFACTOR_PLAN.md Phase 5).
+  //monitoring_manager.js에서 calculateAverageCpuUsage를 export한 것과 동일한 패턴.
+  getHashedPath,
+  getDownloadResultType,
+  getExpectedErrorType,
+};
