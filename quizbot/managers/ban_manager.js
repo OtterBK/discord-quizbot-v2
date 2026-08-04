@@ -64,3 +64,25 @@ exports.banId = (id) =>
   logger.info(`${id} is banned`);
   return true;
 };
+
+exports.getBannedIdList = () =>
+{
+  return Array.from(banned_id_set);
+};
+
+exports.unbanId = (id) =>
+{
+  if(!banned_id_set.has(id))
+  {
+    return false; // 애초에 밴돼있지 않은 경우
+  }
+
+  banned_id_set.delete(id);
+
+  fs.writeFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, Array.from(banned_id_set).join('\n') + (banned_id_set.size > 0 ? '\n' : ''), {
+    encoding: 'utf8',
+  });
+
+  logger.info(`${id} is unbanned`);
+  return true;
+};
