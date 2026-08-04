@@ -2,13 +2,13 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
-const fs = require('fs');
 const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
 const ipc_manager = require('../managers/ipc_manager.js');
 const { CLIENT_SIGNAL, SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
+const multiplayer_ban_manager = require('../managers/multiplayer_ban_manager.js');
 
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
@@ -275,29 +275,8 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
   checkMultiplayerBan(list)
   {
-    //나중에 시간마다 조회하는 방식으로 변경할 것
-    if (!fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH)) 
-    {
-      return false;
-    }
-
     //멀티플레이 ban 시스템
-    const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
-      encoding: 'utf8',
-      flag: 'r',
-    });
-
-    const banned_list_array = banned_list.split('\n');
-
-    for (const banned_id of banned_list_array) 
-    {
-      if (list.includes(banned_id.trim())) 
-      {
-        return true;
-      }
-    }
-
-    return false;
+    return multiplayer_ban_manager.isBanned(list);
   }
 }
 

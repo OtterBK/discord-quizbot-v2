@@ -4,13 +4,12 @@
 //applyGuildBan 두 곳에 중복으로 붙어 있던 것도 그대로 유지했다.
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
-const fs = require('fs');
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, MessageFlags} = require('discord.js');
 
 const PRIVATE_CONFIG = require('../../../config/private_config.json');
-const { SYSTEM_CONFIG } = require('../../../config/system_setting.js');
 const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
+const multiplayer_ban_manager = require('../multiplayer_ban_manager.js');
 
 const report_state = require('./report_state.js');
 const report_chat_info = require('./report_chat_info.js');
@@ -293,33 +292,7 @@ const processFollowUpAction = async (interaction) =>
 /** 제재 후 후속 조치 */
 const applyGuildBan = async (guild_id) =>
 {
-  // 밴 리스트 파일이 없으면 새로 생성
-  if (!fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH)) 
-  {
-    fs.writeFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, '');
-  }
-
-  // 파일 읽기
-  const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
-    encoding: 'utf8',
-    flag: 'r',
-  });
-
-  const banned_list_array = banned_list.split('\n').map(line => line.trim()).filter(Boolean);
-  // 이미 밴된 경우 처리
-  if(banned_list_array.includes(guild_id)) 
-  {
-    logger.info(`Guild ${guild_id} is already banned`);
-    return false; // 이미 등록된 경우
-  }
-  // 새로 추가
-  fs.appendFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, `${guild_id}\n`, {
-    encoding: 'utf8',
-  });
-
-  logger.info(`Guild ${guild_id} is banned`);
-
-  return true;
+  return multiplayer_ban_manager.banGuild(guild_id);
 };
 
 module.exports = { sendReportLog, sendReportProcessingUI, processReportLog, processFollowUpAction, applyGuildBan };

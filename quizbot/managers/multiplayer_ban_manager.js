@@ -1,0 +1,65 @@
+'use strict';
+
+//BANNED_USER_PATH(resources/banned_user.txt)에 있는 밴 목록을 메모리에 캐싱해,
+//요청마다 동기 파일 읽기를 하지 않도록 한다.
+//원래 multiplayer-quiz-select-ui.js의 checkMultiplayerBan에 있던 개발자 TODO
+//("나중에 시간마다 조회하는 방식으로 변경할 것")를 반영한 매니저.
+//밴 목록에는 길드 ID뿐 아니라 유저 ID도 섞여 들어갈 수 있어(수동으로 파일에 추가하는 경우
+//포함) isBanned는 특정 타입에 종속되지 않고 문자열 id 목록을 그대로 받는다.
+
+const fs = require('fs');
+
+const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
+const logger = require('../../utility/logger.js')('MultiplayerBanManager');
+
+const REFRESH_INTERVAL = 600000; //10분마다 파일에서 다시 읽어옴 (외부에서 직접 파일을 수정하는 경우 대비)
+
+let banned_id_set = new Set();
+
+const loadBannedIdListFromDisk = () =>
+{
+  if(!fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH))
+  {
+    fs.writeFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, '');
+  }
+
+  const banned_list = fs.readFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, {
+    encoding: 'utf8',
+    flag: 'r',
+  });
+
+  banned_id_set = new Set(banned_list.split('\n').map(line => line.trim()).filter(Boolean));
+};
+
+exports.initialize = () =>
+{
+  loadBannedIdListFromDisk();
+
+  const refresh_timer = setInterval(() =>
+  {
+    loadBannedIdListFromDisk();
+  }, REFRESH_INTERVAL);
+  refresh_timer.unref(); //이 타이머 하나만으로 프로세스가 종료되지 않는 걸 막지 않도록 함 (테스트에서 initialize()를 여러 번 호출해도 프로세스가 안 걸리게)
+};
+
+exports.isBanned = (id_list) =>
+{
+  return id_list.some(id => banned_id_set.has(id));
+};
+
+exports.banGuild = (guild_id) =>
+{
+  if(banned_id_set.has(guild_id))
+  {
+    logger.info(`Guild ${guild_id} is already banned`);
+    return false; // 이미 등록된 경우
+  }
+
+  fs.appendFileSync(SYSTEM_CONFIG.BANNED_USER_PATH, `${guild_id}\n`, {
+    encoding: 'utf8',
+  });
+  banned_id_set.add(guild_id);
+
+  logger.info(`Guild ${guild_id} is banned`);
+  return true;
+};
