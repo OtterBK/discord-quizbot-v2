@@ -109,6 +109,10 @@ class UserQuizInfoUI extends QuizInfoUI
       return;
     }
   
+    //통계성 항목(날짜/플레이수/추천수/인증/태그)은 예전엔 볼드+백틱을 섞은 하나의 긴 description
+    //문자열이었는데, embed fields로 분리해 표로 보이도록 함 (UI_IMPROVEMENT_PROPOSAL.md 3번 항목)
+    const tags_string = utility.convertTagsValueToString(user_quiz_info.data.tags_value);
+
     this.embed = {
       color: 0x05f1f1,
       title: `**${user_quiz_info.data.quiz_title}**`,
@@ -120,11 +124,19 @@ class UserQuizInfoUI extends QuizInfoUI
         text: user_quiz_info.data.creator_name ?? '',
         icon_url: user_quiz_info.data.creator_icon_url ?? '',
       },
+      fields: [
+        { name: '📅 만들어진 날짜', value: user_quiz_info.data.birthtime.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }), inline: true },
+        { name: '🔄 업데이트 날짜', value: user_quiz_info.data.modified_time.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }), inline: true },
+        { name: '🏳 플레이한 서버', value: `${user_quiz_info.data.played_count ?? 0}곳`, inline: true },
+        { name: '👍 추천한 유저수', value: `${user_quiz_info.data.like_count ?? 0}명`, inline: true },
+        { name: '🏅 인증여부 (추천 10개↑ 시 자동 인증)', value: user_quiz_info.data.certified ? '⭕' : '❌', inline: true },
+        { name: '🏷 퀴즈 태그', value: tags_string === '' ? '선택 안함' : tags_string, inline: false }, //Discord embed field value는 빈 문자열 불가라 fallback 필요
+      ],
     };
-  
+
     let description = '';
     description += `⚒️ 퀴즈 제작: **${(user_quiz_info.data.creator_name ?? '')}**\n`;
-  
+
     description += `🏷 한줄 소개: ${user_quiz_info.data.simple_description ? `**${user_quiz_info.data.simple_description}**` : ''}\n`;
     if(this.readonly)
     {
@@ -135,31 +147,22 @@ class UserQuizInfoUI extends QuizInfoUI
     {
       description += `📦 문제 개수: **${user_quiz_info.question_list.length}개 [최대 50개]**\n`;
     }
-    description += "\n\n\n";
-  
-    description += `📖 퀴즈 설명:\n${user_quiz_info.data.description ?? ''}\n\n\n\n`;
-  
-    description += "`만들어진 날짜: " + user_quiz_info.data.birthtime.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) + "`\n";
-    description += "`업데이트 날짜: " + user_quiz_info.data.modified_time.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) + "`\n";
-      
-    description += "`플레이한 서버: " + (user_quiz_info.data.played_count ?? 0) + "곳`\n";
-    description += "`추천한 유저수: " + (user_quiz_info.data.like_count ?? 0) + "명`\n";
-    description += "`인증여부(추천 10개↑ 시 자동 인증): " + (user_quiz_info.data.certified ? "⭕" : "❌") + "`\n\n";
-  
-    description += "`퀴즈 태그 목록: " + utility.convertTagsValueToString(user_quiz_info.data.tags_value) + "`\n\n";
-  
+    description += "\n\n";
+
+    description += `📖 퀴즈 설명:\n${user_quiz_info.data.description ?? ''}\n`;
+
     if(user_quiz_info.data.is_private)
     {
-      description += "\n\n__**❗ 퀴즈를 다 만드신 후에는 꼭 [공개]로 설정해주세요!**__";
+      description += "\n__**❗ 퀴즈를 다 만드신 후에는 꼭 [공개]로 설정해주세요!**__\n";
     }
-  
+
     // description = description.replace('${quiz_type_name}', `${user_quiz_info.data.type_name}`);
     // description = description.replace('${quiz_size}', `${user_quiz_info.data.quiz_size}`);
     // description = description.replace('${quiz_description}', `${user_quiz_info.data.description}`);
-      
+
     if(this.readonly)
     {
-      description += '`⚠️ 퀴즈 도중에는 설정을 변경하실 수 없습니다.\n\n`';
+      description += '\n`⚠️ 퀴즈 도중에는 설정을 변경하실 수 없습니다.`';
       this.components = [quiz_info_comp, feedback_manager.quiz_feedback_comp]; //게임 시작 가능한 comp, 퀴즈 feedback comp
     }
     else

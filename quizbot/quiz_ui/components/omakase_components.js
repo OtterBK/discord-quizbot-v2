@@ -36,7 +36,7 @@ const request_basket_reopen_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('load_basket_items')
-      .setLabel('최근 장바구니 불러오기')
+      .setLabel('최근 장바구니로 덮어쓰기')
       .setStyle(ButtonStyle.Primary),
   );
 

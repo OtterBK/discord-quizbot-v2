@@ -380,7 +380,9 @@ class QuizInfoUI extends QuizbotUI
 
     const is_offed = interaction.fields.getTextInputValue('txt_input_certified_quiz_filter_off');
 
-    const use_certified_filter = (is_offed === ''); //쨋든 뭐라도 들어가있으면 off임
+    //예전엔 뭐라도 입력만 하면(스페이스 하나 실수로 입력해도) off로 처리돼서 오입력 위험이 있었음.
+    //명확한 긍정 응답을 입력했을 때만 off로 처리하도록 변경
+    const use_certified_filter = !['네', '예', 'ㅇ', 'y', 'Y'].includes(is_offed.trim());
     
     if(this.quiz_info['certified_filter'] === use_certified_filter)
     {

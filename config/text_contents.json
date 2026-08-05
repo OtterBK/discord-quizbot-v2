@@ -247,7 +247,7 @@
         "quiz_tool_guide_ui":
         {
             "title": "🛠 퀴즈 만들기",
-            "description": "🔸 직접 퀴즈를 만드시려면\n__**/퀴즈만들기**__ 명령어를 입력해주세요!\n\n🔹 퀴즈 제작에 참여해주셔서 정말 감사합니다!\n퀴즈봇은 유저분들에게 최대한 다양한 퀴즈 제작 방식을\n제공하기 위해 노력하겠습니다.\n\n\n",
+            "description": "🔸 퀴즈 제작 툴은 개인 메시지(DM)에서 진행돼요.\n__**/퀴즈만들기**__ 명령어를 입력하시면 바로 시작할 수 있어요!\n\n🔹 퀴즈 제작에 참여해주셔서 정말 감사합니다!\n퀴즈봇은 유저분들에게 최대한 다양한 퀴즈 제작 방식을\n제공하기 위해 노력하겠습니다.\n\n\n",
             "fields1" : 
             {
                 "name" : "🔹 문의 사항",
@@ -263,7 +263,7 @@
         {
             "title": "⚙ 서버 옵션 설정",
             "pre_description": " \n \n옵션 정보를 불러오는 중입니다... \n \n",
-            "description": " \n \n🎧 노래 재생 시간 : **${audio_play_time}초**\n \n💡 힌트 요청 방식 : **${hint_type}**\n \n⏭ 스킵 요청 방식 : **${skip_type}**\n \n📋 유사 정답 사용 여부 : **${use_similar_answer}**\n \n📊 점수 채점 방식 : **${score_type}**\n \n✂ 정밀 오디오 자르기 : **${improved_audio_cut}**\n \n⌨ 메시지 입력 감지 : **${use_message_intent}**\n \n🥇 점수판 표시 인원 : **${score_show_max}**\n \n✏ 정답 제출 기회 : **${max_chance}**\n \n \n",
+            "description": " \n \n🎧 노래 재생 시간 : **${audio_play_time}초**\n \n💡 힌트 요청 방식 : **${hint_type}**\n \n⏭ 스킵 요청 방식 : **${skip_type}**\n \n📋 유사 정답 사용 여부 : **${use_similar_answer}**\n \n📊 점수 채점 방식 : **${score_type}**\n \n✂ 정밀 오디오 자르기 : **${improved_audio_cut}**\n \n⌨ 메시지 입력 감지 : **${use_message_intent}**\n \n🥇 점수판 표시 인원 : **${score_show_max}**\n \n✏ 정답 제출 기회 : **${max_chance}**\n \n \n`⚠️ 저장하지 않고 뒤로가기를 누르면 변경사항이 사라집니다.`\n \n",
 
             "select_menu": {
                 "title": "어떤 옵션을 설정할까요?",

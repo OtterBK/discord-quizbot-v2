@@ -480,7 +480,9 @@ class UserQuestionInfoUI extends QuizbotUI
     user_question_info.data.hint = input_hint ?? "";
     user_question_info.data.hint_image_url = input_hint_image_url ?? "";
     user_question_info.data.question_audio_repeat = this.redefineRepeatCount(input_question_audio_repeat);
-    user_question_info.data.use_answer_timer = (input_use_answer_timer.length === 0 ? false : true);
+    //예전엔 뭐라도 입력만 하면(스페이스 하나 실수로 입력해도) 사용으로 처리돼서 오입력 위험이 있었음.
+    //명확한 긍정 응답을 입력했을 때만 사용으로 처리하도록 변경
+    user_question_info.data.use_answer_timer = ['사용', '네', '예', 'y', 'Y'].includes(input_use_answer_timer.trim());
   }
 
   applyQuestionAnsweringInfo(user_question_info, modal_interaction)

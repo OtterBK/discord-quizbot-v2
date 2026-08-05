@@ -91,7 +91,7 @@ const modal_complex_page_jump = new ModalBuilder() //검색과 이동을 한번�
       .addComponents(
         new TextInputBuilder()
           .setCustomId('txt_input_keyword')
-          .setLabel('어떤 단어로 검색할까요?')
+          .setLabel('어떤 단어로 검색할까요? (최대 10자)')
           .setStyle(TextInputStyle.Short)
           .setMinLength(1)
           .setMaxLength(10)
