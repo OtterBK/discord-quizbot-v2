@@ -101,25 +101,29 @@ const quiz_delete_confirm_comp = new ActionRowBuilder()
   );
 
 //관리자 전용: 퀴즈 삭제 + 제작자 영구밴을 함께 처리할 수 있는 확인 컴포넌트
-const quiz_delete_confirm_admin_comp = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('quiz_delete_cancel')
-      .setLabel('아니요, 퀴즈를 삭제하지 않습니다.')
-      .setStyle(ButtonStyle.Success),
-  )
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('quiz_delete_confirmed')
-      .setLabel('네, 퀴즈만 삭제합니다.')
-      .setStyle(ButtonStyle.Danger),
-  )
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('quiz_delete_confirmed_and_ban')
-      .setLabel('삭제 + 제작자 영구밴')
-      .setStyle(ButtonStyle.Danger),
-  );
+//영구밴 버튼은 일반 삭제보다 훨씬 되돌리기 어려운 동작이라, 오클릭 방지를 위해 별도 행으로 분리해둠
+const quiz_delete_confirm_admin_comp = [
+  new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('quiz_delete_cancel')
+        .setLabel('아니요, 퀴즈를 삭제하지 않습니다.')
+        .setStyle(ButtonStyle.Success),
+    )
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('quiz_delete_confirmed')
+        .setLabel('네, 퀴즈만 삭제합니다.')
+        .setStyle(ButtonStyle.Danger),
+    ),
+  new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('quiz_delete_confirmed_and_ban')
+        .setLabel('⚠️ 삭제 + 제작자 영구밴 (해제 전까지 되돌릴 수 없음)')
+        .setStyle(ButtonStyle.Danger),
+    ),
+];
 
 //관리자 패널 메인 메뉴
 const admin_panel_comp = new ActionRowBuilder()
@@ -241,7 +245,7 @@ const modal_question_info = new ModalBuilder()
       .addComponents(
         new TextInputBuilder()
           .setCustomId('txt_input_question_image_url')
-          .setLabel('문제와 함께 표시할 이미지입니다. [.WebP 형식은 사용 불가')
+          .setLabel('문제와 함께 표시할 이미지입니다. [WebP 형식은 사용 불가]')
           .setStyle(TextInputStyle.Short)
           .setRequired(false)
           .setMaxLength(500)
@@ -418,7 +422,7 @@ const question_answer_type_select_menu = new ActionRowBuilder()
       .addOptions(
         new StringSelectMenuOptionBuilder()
           .setLabel('주관식')
-          .setDescription('플레이어는 메세지로 정답을 입력하는 방식입니다.')
+          .setDescription('플레이어는 메시지로 정답을 입력하는 방식입니다.')
           .setDefault(true)
           .setValue('answer_type_short_answer'),
 

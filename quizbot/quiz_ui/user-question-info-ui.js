@@ -3,7 +3,7 @@
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
 const ytdl = require('discord-ytdl-core');
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, ButtonStyle } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
@@ -44,6 +44,7 @@ class UserQuestionInfoUI extends QuizbotUI
     this.question_list = quiz_info.question_list;
     this.current_question_info = undefined;
     this.current_question_index = question_index;
+    this.pending_question_delete_confirm = false; //문제 삭제는 오클릭 방지를 위해 2번 눌러야 실제로 삭제됨
 
     this.initializeEmbed();
     this.initializeComponents();
@@ -76,11 +77,27 @@ class UserQuestionInfoUI extends QuizbotUI
     
 
     this.question_answer_type_select_menu = question_answer_type_select_menu;
-    this.components = [question_edit_comp, this.question_answer_type_select_menu, cloneDeep(question_edit_comp2), question_control_btn_component]; //문제 관련 comp
+    this.question_edit_comp2 = cloneDeep(question_edit_comp2); //'현재 문제 삭제' 버튼 라벨을 확인 단계에서 바꿔치기해야 해서 인스턴스별로 참조를 들고 있음
+    this.components = [question_edit_comp, this.question_answer_type_select_menu, this.question_edit_comp2, question_control_btn_component]; //문제 관련 comp
   }
 
-  onInteractionCreate(interaction) 
+  /** '현재 문제 삭제' 버튼을 처음 상태(삭제 확인 대기 아님)로 되돌림 */
+  resetQuestionDeleteConfirm()
   {
+    this.pending_question_delete_confirm = false;
+    this.question_edit_comp2.components[1]
+      .setLabel('현재 문제 삭제')
+      .setStyle(ButtonStyle.Danger);
+  }
+
+  onInteractionCreate(interaction)
+  {
+    //삭제 확인 대기 중이었는데 다른 버튼/메뉴를 눌렀다면, 오클릭 방지를 위해 확인 대기 상태를 해제
+    if(this.pending_question_delete_confirm === true && interaction.customId !== 'question_delete')
+    {
+      this.resetQuestionDeleteConfirm();
+    }
+
     if(interaction.isModalSubmit())
     {
       return this.doModalSubmitEvent(interaction);
@@ -193,6 +210,16 @@ class UserQuestionInfoUI extends QuizbotUI
 
     if(interaction.customId === 'question_delete')
     {
+      if(this.pending_question_delete_confirm !== true) //확인 절차 없이 원클릭으로 바로 삭제되던 것을 2클릭 확인 방식으로 변경
+      {
+        this.pending_question_delete_confirm = true;
+        this.question_edit_comp2.components[1]
+          .setLabel('⚠️ 정말 삭제하려면 한 번 더 눌러주세요');
+        return this;
+      }
+
+      this.resetQuestionDeleteConfirm();
+
       const index_to_remove = this.question_list.indexOf(this.current_question_info);
       if(index_to_remove !== -1)
       {

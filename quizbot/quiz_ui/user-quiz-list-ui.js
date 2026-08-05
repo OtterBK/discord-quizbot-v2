@@ -218,7 +218,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
   {
     if(user.id !== user_quiz_info.data.creator_id && user.id !== PRIVATE_CONFIG?.ADMIN_ID) //어드민이면 다 수정 할 수 있음
     {
-      user.send({content: `\`\`\`🔸 당신은 해당 퀴즈를 수정할 권한이 없습니다. quiz_id: ${user_quiz_info.data.quiz_id}\`\`\``, flags: MessageFlags.Ephemeral});
+      user.send({content: `\`\`\`🔸 당신은 [ ${user_quiz_info.data.quiz_title} ] 퀴즈를 수정할 권한이 없습니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 

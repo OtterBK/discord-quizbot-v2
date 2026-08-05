@@ -329,15 +329,16 @@ class UserQuizInfoUI extends QuizInfoUI
     if(interaction.customId === 'quiz_delete') //퀴즈 삭제 버튼
     {
       const is_admin = interaction.user.id === PRIVATE_CONFIG?.ADMIN_ID;
-      const confirm_comp = is_admin ? quiz_delete_confirm_admin_comp : quiz_delete_confirm_comp; //어드민이면 삭제+영구밴 옵션도 보여줌
-      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\`\`\``, components: [confirm_comp], flags: MessageFlags.Ephemeral });
+      //어드민이면 삭제+영구밴 옵션도 보여줌 (quiz_delete_confirm_admin_comp는 오클릭 방지를 위해 여러 행으로 분리된 배열)
+      const confirm_comp = is_admin ? quiz_delete_confirm_admin_comp : [quiz_delete_confirm_comp];
+      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\n[ ${user_quiz_info.data.quiz_title} ]\`\`\``, components: confirm_comp, flags: MessageFlags.Ephemeral });
       return;
     }
 
     if(interaction.customId === 'quiz_delete_confirmed') //퀴즈 정말정말정말로 삭제 버튼
     {
       this.freeHolder(); //더 이상 UI 못 쓰도록
-      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.quiz_id}` + "```", flags: MessageFlags.Ephemeral });
+      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
       return;
@@ -353,7 +354,7 @@ class UserQuizInfoUI extends QuizInfoUI
       ban_manager.banId(user_quiz_info.data.creator_id);
 
       this.freeHolder(); //더 이상 UI 못 쓰도록
-      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.quiz_id}` + "```", flags: MessageFlags.Ephemeral });
+      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
       return;
