@@ -70,7 +70,7 @@ const quiz_tags_select_menu =  new ActionRowBuilder()
   .addComponents(
     new StringSelectMenuBuilder().
       setCustomId('quiz_tags_select_menu').
-      setPlaceholder('검색용 퀴즈 태그 선택하기 (여러 개 선택 가능)').
+      setPlaceholder('퀴즈에 붙일 태그 선택하기 (여러 개 선택 가능)').
       setMaxValues(Object.keys(QUIZ_TAG).length)
   );
 for(const [tag_name, tag_value] of Object.entries(QUIZ_TAG))
@@ -390,7 +390,7 @@ const question_edit_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
       .setCustomId('request_modal_question_answering_info')
-      .setLabel('정답 이벤트 설정')
+      .setLabel('정답 공개 설정')
       .setStyle(ButtonStyle.Primary),
   )
   .addComponents(

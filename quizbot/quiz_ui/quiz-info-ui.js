@@ -125,7 +125,7 @@ class QuizInfoUI extends QuizbotUI
       tag_info_text += `🔹 퀴즈 장르: \`${custom_quiz_tags_string}\`\n`;
 
       const certified_filter = this.quiz_info['certified_filter'] ?? true;
-      tag_info_text += `🔹 인증 필터: \`${certified_filter ? '인증된 퀴즈만 출제' : '모든 퀴즈 출제' }\`\n\n`;
+      tag_info_text += `🔹 인증(추천 10개↑) 필터: \`${certified_filter ? '인증된 퀴즈만 출제' : '모든 퀴즈 출제' }\`\n\n`;
     }
     else
     {
@@ -484,7 +484,7 @@ class QuizInfoUI extends QuizbotUI
     const basket_keys = Object.keys(basket_items);
     if(basket_keys.length === 0)
     {
-      const option = { label: `장바구니가 비어있습니다.`, description: `.`, value: `basket_select_temp` };
+      const option = { label: `장바구니가 비어있습니다.`, value: `basket_select_temp` };
       basket_select_menu_for_current.addOptions(option);
       this.basket_select_component.components[0] = basket_select_menu_for_current;
       return;
@@ -501,7 +501,7 @@ class QuizInfoUI extends QuizbotUI
       let option;
       if(this.readonly)
       {
-        option = { label: `${quiz_title}`, description: `.`, value: `${quiz_id}` };
+        option = { label: `${quiz_title}`, value: `${quiz_id}` };
       }
       else
       {

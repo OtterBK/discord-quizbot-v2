@@ -111,7 +111,7 @@ const modal_omakase_quiz_setting = new ModalBuilder()
       .addComponents(
         new TextInputBuilder()
           .setCustomId('txt_input_certified_quiz_filter_off')
-          .setLabel('인증된 퀴즈 필터를 끌까요? (웬만해선 끄지 마세요.)')
+          .setLabel('인증(추천 10개↑) 필터를 끌까요? (웬만해선 끄지 마세요)')
           .setStyle(TextInputStyle.Short)
           .setRequired(false)
           .setMaxLength(1)
@@ -189,7 +189,7 @@ const omakase_basket_readonly_select_menu = new StringSelectMenuBuilder().
 
 const omakase_basket_select_menu = new StringSelectMenuBuilder().
   setCustomId('basket_select_menu').
-  setPlaceholder('장바구니에 담긴 퀴즈 확인하기');
+  setPlaceholder('선택하여 장바구니에서 제거하기');
 
 const omakase_basket_select_row = new ActionRowBuilder()
   .addComponents(

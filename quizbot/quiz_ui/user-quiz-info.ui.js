@@ -142,11 +142,11 @@ class UserQuizInfoUI extends QuizInfoUI
     description += "`만들어진 날짜: " + user_quiz_info.data.birthtime.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) + "`\n";
     description += "`업데이트 날짜: " + user_quiz_info.data.modified_time.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) + "`\n";
       
-    description += "`플레이한 서버: " + (user_quiz_info.data.played_count ?? 0) + "개`\n";
-    description += "`추천한 유저수: " + (user_quiz_info.data.like_count ?? 0) + "개`\n";
-    description += "`인증여부: " + (user_quiz_info.data.certified ? "⭕" : "❌") + "`\n\n";
+    description += "`플레이한 서버: " + (user_quiz_info.data.played_count ?? 0) + "곳`\n";
+    description += "`추천한 유저수: " + (user_quiz_info.data.like_count ?? 0) + "명`\n";
+    description += "`인증여부(추천 10개↑ 시 자동 인증): " + (user_quiz_info.data.certified ? "⭕" : "❌") + "`\n\n";
   
-    description += "`퀴즈태그 목록: " + utility.convertTagsValueToString(user_quiz_info.data.tags_value) + "`\n\n";
+    description += "`퀴즈 태그 목록: " + utility.convertTagsValueToString(user_quiz_info.data.tags_value) + "`\n\n";
   
     if(user_quiz_info.data.is_private)
     {
@@ -164,9 +164,13 @@ class UserQuizInfoUI extends QuizInfoUI
     }
     else
     {
-      this.embed.title += user_quiz_info.data.is_private ? ` **[비공개🔒]**` : ` **[공개]**`;
-  
-      this.components = [quiz_edit_comp, quiz_tags_select_menu]; //퀴즈 수정 가능한 comp
+      this.embed.title += user_quiz_info.data.is_private ? ` **[🔒비공개]**` : ` **[공개]**`;
+
+      //quiz_edit_comp는 롱리브드 싱글턴이라 직접 mutate하면 다른 편집 세션에도 영향을 주므로 clone해서 씀
+      //(공개/비공개 토글 버튼이 현재 상태가 아니라 "누르면 바뀔 상태"를 라벨에 보여주도록)
+      const quiz_edit_comp_instance = cloneDeep(quiz_edit_comp);
+      quiz_edit_comp_instance.components[1].setLabel(user_quiz_info.data.is_private ? '🔓 퀴즈 공개로 전환' : '🔒 퀴즈 비공개로 전환');
+      this.components = [quiz_edit_comp_instance, quiz_tags_select_menu]; //퀴즈 수정 가능한 comp
   
       let temp_question_select_menu_comp = undefined;
       let temp_question_select_menu = undefined;

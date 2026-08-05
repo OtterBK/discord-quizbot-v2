@@ -138,11 +138,11 @@ const control_btn_component = new ActionRowBuilder()
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('back')
-      .setLabel('뒤로')
+      .setLabel('뒤로가기')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('request_modal_page_jump')
-      .setLabel('점프')
+      .setLabel('페이지 이동')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('next')
