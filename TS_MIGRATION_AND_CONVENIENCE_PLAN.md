@@ -27,26 +27,56 @@
   테스트가 안 끝난 유일한 영역이라, 여기서 나중에 문제가 생기면 "원래 버그인지 TS 전환이 만든 버그인지"
   구분이 안 됨.
 
-### A-2. 선행 작업 — 빌드 파이프라인 결정
+### A-2. 선행 작업 — 빌드 파이프라인 (완료, 실제 구현 내용)
 
-TS로 파일을 바꾸기 전에 먼저 정해야 하는 것들:
+**착수 전 확인**: 최신 TypeScript(7.x)는 컴파일러 자체가 Go로 재작성돼서 `ts-node` 등 관련 툴 생태계가
+TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@^6`, `@types/node@^22`(실제 런타임 Node
+버전에 맞춤)로 고정**.
 
-1. **빌드 방식**: `ts-node`로 즉석 실행 vs `tsc`로 `dist/`에 컴파일 후 실행. `discord-hybrid-sharding`이
-   클러스터 자식 프로세스를 **파일 경로로 spawn**하는 구조(`index.js`가 `quizbot/bot.js` 경로를 알고
-   있어야 함)라, 컴파일 산출물 경로가 바뀌면 이 경로도 같이 맞춰야 함. **`tsc` 컴파일 방식을 권장**
-   (`ts-node`는 멀티 클러스터 프로세스마다 매번 컴파일 오버헤드가 붙어 운영 환경에는 부적합).
-2. `tsconfig.json` 초안: `allowJs: true`, `checkJs: false`(처음엔 `.js` 파일 타입 검사는 끔 — 안 그러면
-   전환 안 한 파일들에서 에러 폭탄), `outDir: "dist"`, `module: "commonjs"`, `target`은 현재 Node 버전
-   기준으로 설정.
-3. `package.json` 스크립트(`npm start` 등)와 `index.js`의 클러스터 spawn 경로를 `dist/` 기준으로 조정.
-4. **이 선행 작업만 끝낸 뒤, 파일 내용은 하나도 안 바꾼 상태로 빌드→실행이 기존과 동일하게 되는지부터
-   확인.** (여기서 문제 생기면 이후 전환 작업 전체가 흔들리므로 반드시 첫 검증 포인트로 삼음)
+**실제로 구현하면서 계획과 달라진/추가된 것들**(전부 직접 재현 스크립트로 원인을 확인한 뒤 결정):
+
+1. **자원 경로 문제** — `config/system_setting.js`가 `${__dirname}/../resources/...`로 경로를 계산해서
+   `dist/`로 컴파일하면 깨짐. `process.cwd()` 대신(운영 서버의 실제 시작 스크립트 내용을 알 수 없어 CWD를
+   가정하는 게 위험 판단) `package.json` 위치를 탐색하는 `findProjectRoot()`로 교체. `config/text_contents.json`/
+   `private_config.json`처럼 `require()`로 불러오는 JSON 2개는 별도 처리(아래 4번 참고).
+2. **`tsc`가 `module:commonjs` 출력에 `'use strict'`를 자동 삽입하는 문제** — `moduleDetection: "force"`가
+   원인이었음(격리 재현으로 확인). 이 옵션은 import/export 문법이 없는 순수 CommonJS 파일도 "모듈"로
+   취급하는데, TS는 모듈로 분류된 파일은 `alwaysStrict` 설정과 무관하게 항상 `'use strict'`를 강제로 넣음.
+   그런데 이 옵션을 **완전히 빼면 이번엔 여러 `.ts` 파일이 흔한 top-level 이름(`fs`, `logger`,
+   `SYSTEM_CONFIG` 등)을 똑같이 쓸 때 "같은 전역 스코프에 중복 선언"으로 충돌 에러가 남**(파일이 2개
+   이상 되는 순간부터 필연적으로 발생 — 직접 재현해서 확인).
+   → **결론: `.ts`로 전환한 파일은 이제부터 항상 strict mode가 된다는 걸 받아들이고**(TS의 구조적
+   한계로, 회피 방법 없음 — `import ... = require(...)` 같은 우회도 시도해봤으나 마찬가지로 strict가
+   강제됨), `moduleDetection: "force"`는 유지하되 **아직 `.ts`로 전환 안 한 `.js` 파일은 tsc의 컴파일
+   대상에서 아예 제외**해서 이 영향을 안 받게 함(아래 4번).
+3. **`this === module.exports` 자기참조 패턴(`quiz_content_loader.ts`)** — 파일이 "모듈"로 강제 분류되면서
+   TS가 top-level `this`를 `undefined` 타입으로 추론해 `this.xxx(...)` 호출에서 타입 에러 발생. 실제
+   Node CommonJS 런타임 동작(모듈 래퍼가 `this`를 `module.exports`로 바인딩)은 전혀 안 바뀌므로,
+   `(this as any).xxx(...)`로 타입 단언만 추가(호출 방식/런타임 동작 자체는 원본과 100% 동일).
+4. **`.ts`/`.js` 완전 분리 빌드** — 위 2번 문제 때문에, `tsconfig.json`의 `include`는 **`**/*.ts`만** 포함
+   (`.js`는 아예 안 건드림). 대신 `scripts/copy-js-assets.js`(새 스크립트)가 아직 전환 안 한 `.js`와
+   `config/*.json`(`text_contents.json`, `private_config.json`)을 dist/에 **원본 그대로(byte-for-byte)**
+   복사. 이러면 tsc가 손도 안 대는 `.js` 파일은 strict 주입도, 스코프 충돌 검사도 절대 안 받음 — 안전.
+5. **ESLint가 `dist/`까지 스캔하면서 경고 개수가 163→320으로 두 배가 됨** — `eslint.config.js`의 `ignores`에
+   `dist/**` 추가로 해결.
+6. **ESLint는 `.ts` 파일을 아예 인식 못함**(TypeScript ESLint 플러그인 미설치) — `.ts`로 전환된 파일은
+   lint 완전 사각지대가 됨. 지금 당장은 넘어가지만, `.ts` 파일이 늘어나기 전에 `@typescript-eslint` 도입을
+   후속 과제로 고려.
+7. `npm test`가 `.ts` 소스를 직접 실행할 수 있어야 해서 `ts-node`를 devDependency로 추가,
+   `"test": "node --require ts-node/register --test"`로 변경(`transpileOnly: true`로 타입체크는 생략,
+   전체 타입체크는 `npm run build`가 담당). `.ts`로 바뀐 파일을 `require()`하던 곳들은 명시적 `.js`
+   확장자를 반드시 제거해야 함(붙이면 이제 없는 파일을 찾다가 실패 — `.ts`/컴파일된 `.js` 양쪽에 다
+   투명하게 대응하려면 확장자 없이 require).
+
+**검증 방식(매 파일 전환마다 반복)**: `npm run build`(0 errors) → `dist/` 산출물의 `'use strict'` 유무가
+의도대로인지(안 바꾼 `.js`는 원본과 동일, 전환한 `.ts`는 이제 항상 strict) → `npm test`(222개) →
+`npm run lint`(0 errors, 경고 수 변화 확인) → 필요시 `node -e`로 실제 함수 호출까지 스모크테스트.
 
 ### A-3. 파일 전환 순서 (저위험 → 고위험)
 
 | 단계 | 대상 | 이유 |
 |---|---|---|
-| 1 | `utility/util/*.js` (순수 함수 위주) | 외부 의존 적고 기존 유닛테스트 있음(`test/utility/`) |
+| 1 | `utility/util/*.js` (순수 함수 위주) — ✅ **완료** | 외부 의존 적고 기존 유닛테스트 있음(`test/utility/`) |
 | 2 | `quizbot/managers/multiplayer_mmr.js`, `db/*.js` | 순수 함수/쿼리 빌더 위주, 부수효과 적고 테스트 있음 |
 | 3 | `quizbot/managers/*.js` (멀티플레이 제외) | ban_manager, feedback_manager, report/* 등 |
 | 4 | `quizbot/quiz_ui/*.js` (멀티플레이 제외) | 화면 클래스 대부분 — 양이 제일 많음 |
@@ -56,6 +86,10 @@ TS로 파일을 바꾸기 전에 먼저 정해야 하는 것들:
 - 매 단계마다 `npm test`/`npm run lint` 통과 + 해당 파일 관련 `node -e` 스모크테스트로 검증(지금까지 계속 써온 방식 그대로).
 - 한 파일을 `.ts`로 바꿀 때 **로직은 그대로 두고 타입만 추가**하는 걸 원칙으로 함 — 리팩터링과 타입 추가를
   같은 커밋에서 섞으면 회귀 원인 추적이 어려워짐(1라운드에서 겪은 `'use strict'` 사고와 같은 종류의 함정).
+- **새 원칙(A-2에서 확정)**: `.ts`로 전환하는 순간 그 파일은 항상 strict mode가 됨. 그러니 전환하기 전에
+  "sloppy mode에만 의존하는 로직이 있는지"(과거 `chat_cache.js` 사고 같은 패턴 — 원시값일 수 있는 값에
+  프로퍼티를 대입하는 등) 한 번 훑어보는 걸 각 파일 전환 체크리스트에 포함. 문제를 발견하면 타입 추가와
+  분리해서 별도 `fix:` 커밋으로 처리(1라운드 방식 그대로).
 
 ---
 

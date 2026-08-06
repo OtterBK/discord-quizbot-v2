@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 
 const utility = require('../../utility/utility.js');
 const quiz_content_loader = require('../../utility/util/quiz_content_loader');
-const audio_utility = require('../../utility/util/audio_utility.js');
+const audio_utility = require('../../utility/util/audio_utility');
 const network_utility = require('../../utility/util/network_utility');
 const misc_utility = require('../../utility/util/misc_utility');
 

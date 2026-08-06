@@ -25,7 +25,7 @@ exports.loadLocalDirectoryQuiz = (contents_path: string, orderby: string = 'none
     const stat = fs.lstatSync(content_path);
     if (stat.isDirectory() == false) return; //폴더만 load함
 
-    let quiz_content: any = this.parseContentInfoFromDirName(content_name);
+    let quiz_content: any = (this as any).parseContentInfoFromDirName(content_name);
     quiz_content['content_path'] = content_path;
     quiz_content['mtime'] = 0;
 
@@ -36,7 +36,7 @@ exports.loadLocalDirectoryQuiz = (contents_path: string, orderby: string = 'none
     {
       if (!stat.isFile()) //퀴즈가 아닌데 폴더 타입이면 하위 디렉터리 읽어옴
       {
-        const sub_contents = this.loadLocalDirectoryQuiz(content_path, orderby);
+        const sub_contents = (this as any).loadLocalDirectoryQuiz(content_path, orderby);
         quiz_content['sub_contents'] = sub_contents;
         let latest_mtime = 0;
         sub_contents.forEach(sub_content =>
@@ -113,7 +113,7 @@ exports.loadLocalDirectoryQuiz = (contents_path: string, orderby: string = 'none
       //아이콘으로 퀴즈 타입 가져오기... icon 방식을 채택한 예전 자신을 원망하자
       const quiz_icon = quiz_content['icon'];
 
-      quiz_content['quiz_type'] = this.getQuizTypeFromIcon(quiz_icon);
+      quiz_content['quiz_type'] = (this as any).getQuizTypeFromIcon(quiz_icon);
 
     }
 

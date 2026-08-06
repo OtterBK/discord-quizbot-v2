@@ -4,6 +4,25 @@
     "lib": ["ES2022"],
     "module": "commonjs",
 
+    //.ts 파일만 tsc가 직접 컴파일한다(아래 include 참고). moduleDetection:"force"는
+    //import/export 문법이 없는 순수 CommonJS .ts 파일도 각자 독립된 모듈 스코프로
+    //취급하게 만듦 - 이게 없으면 여러 .ts 파일이 흔한 top-level 이름(fs, logger,
+    //SYSTEM_CONFIG 등)을 똑같이 쓸 때 "같은 전역 스코프에 중복 선언"으로 취급돼
+    //충돌 에러가 남(파일이 늘어날수록 필연적으로 터짐, 직접 재현해서 확인함).
+    //
+    //단, ES 모듈로 취급된 파일은 TS가 module:commonjs로 내릴 때도 항상
+    //'use strict'를 강제로 넣음(alwaysStrict 설정과 무관하게 - 이것도 직접
+    //재현해서 확인함). 그래서 원본에 'use strict'가 없던(sloppy mode) 파일이
+    //있는 이 코드베이스에서는, "아직 .ts로 전환 안 한 .js 파일"까지 이 설정의
+    //영향을 받으면 안 됨. 그래서 .js는 tsc의 include에서 아예 빼고
+    //scripts/copy-js-assets.js가 완전히 별도로 원본 그대로(byte-for-byte) dist/에
+    //복사한다 - tsc가 손도 안 대므로 strict 주입도, 스코프 충돌 검사도 없음.
+    //
+    //결론: .ts로 전환하는 파일은 이제부터 항상 strict mode가 됨(피할 방법 없음).
+    //전환할 때마다 그 파일이 sloppy-mode에만 의존하는 로직이 없는지 확인 필요
+    //(과거 chat_cache.js에서 실제로 이런 버그가 있었음, BUGS_FOUND.md 참고).
+    "moduleDetection": "force",
+
     "allowJs": true,
     "checkJs": false,
 
@@ -15,23 +34,11 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-
-    //원본 .js 파일 중 'use strict'가 없던 파일들은 코드베이스 관례상 의도적으로 sloppy mode임
-    //(REFACTOR_PLAN.md Phase 4/5에서 실수로 붙였다가 되돌린 이력 있음, CLAUDE.md 참고).
-    //tsc가 module:commonjs 출력에 'use strict'를 자동으로 추가하는 걸 막아서, .ts 전환이
-    //조용히 sloppy -> strict 동작 변경을 만들지 않도록 함. alwaysStrict는 TS 7.0에서 제거
-    //예정인 deprecated 옵션이라 TS 7 업그레이드 시 이 설정 전체를 재검토해야 함.
-    "alwaysStrict": false,
-    "ignoreDeprecations": "6.0"
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "index.js",
-    "quizbot/**/*.js",
     "quizbot/**/*.ts",
-    "utility/**/*.js",
     "utility/**/*.ts",
-    "config/**/*.js",
     "config/**/*.ts"
   ],
   "exclude": [

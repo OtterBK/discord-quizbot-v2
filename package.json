@@ -2,7 +2,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "node --require ts-node/register --test",
-    "build": "tsc"
+    "build": "tsc && node scripts/copy-js-assets.js"
   },
   "ts-node": {
     "transpileOnly": true
