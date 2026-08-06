@@ -4,18 +4,18 @@
 
 const os = require('os');
 
-exports.getIPv6Address = () => 
+exports.getIPv6Address = (): string[] =>
 {
   const networkInterfaces = os.networkInterfaces();
-  const ipv6Addresses = [];
+  const ipv6Addresses: string[] = [];
 
-  for (const interfaceKey in networkInterfaces) 
+  for (const interfaceKey in networkInterfaces)
   {
     const interfaces = networkInterfaces[interfaceKey];
-    for (let i = 0; i < interfaces.length; i++) 
+    for (let i = 0; i < interfaces.length; i++)
     {
       const address = interfaces[i];
-      if (address.family === 'IPv6' && !address.internal) 
+      if (address.family === 'IPv6' && !address.internal)
       {
         ipv6Addresses.push(address.address);
       }
@@ -24,18 +24,18 @@ exports.getIPv6Address = () =>
 
   return ipv6Addresses;
 };
-exports.getIPv4Address = () => 
+exports.getIPv4Address = (): string[] =>
 {
   const networkInterfaces = os.networkInterfaces();
-  const ipv4Addresses = [];
+  const ipv4Addresses: string[] = [];
 
-  for (const interfaceKey in networkInterfaces) 
+  for (const interfaceKey in networkInterfaces)
   {
     const interfaces = networkInterfaces[interfaceKey];
-    for (let i = 0; i < interfaces.length; i++) 
+    for (let i = 0; i < interfaces.length; i++)
     {
       const address = interfaces[i];
-      if (address.family === 'IPv4' && !address.internal) 
+      if (address.family === 'IPv4' && !address.internal)
       {
         ipv4Addresses.push(address.address);
       }

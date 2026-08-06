@@ -10,14 +10,14 @@ const { SYSTEM_CONFIG, QUIZ_TYPE } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('../logger.js')('Utility');
 
-exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') => 
+exports.loadLocalDirectoryQuiz = (contents_path: string, orderby: string = 'none'): any[] =>
 {
   logger.info(`Loading local directory quiz... ${contents_path}`);
 
   let content_list = fs.readdirSync(contents_path);
 
-  let quiz_contents = [];
-  content_list.forEach(content_name => 
+  let quiz_contents: any[] = [];
+  content_list.forEach(content_name =>
   {
 
     const content_path = `${contents_path}/${content_name}`;
@@ -25,38 +25,38 @@ exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') =>
     const stat = fs.lstatSync(content_path);
     if (stat.isDirectory() == false) return; //폴더만 load함
 
-    let quiz_content = this.parseContentInfoFromDirName(content_name);
+    let quiz_content: any = this.parseContentInfoFromDirName(content_name);
     quiz_content['content_path'] = content_path;
     quiz_content['mtime'] = 0;
 
     // 하위 컨텐츠 있으면 추가 파싱 진행
     const is_quiz = quiz_content['is_quiz'];
 
-    if (is_quiz == false) 
+    if (is_quiz == false)
     {
       if (!stat.isFile()) //퀴즈가 아닌데 폴더 타입이면 하위 디렉터리 읽어옴
       {
         const sub_contents = this.loadLocalDirectoryQuiz(content_path, orderby);
         quiz_content['sub_contents'] = sub_contents;
         let latest_mtime = 0;
-        sub_contents.forEach(sub_content => 
+        sub_contents.forEach(sub_content =>
         {
           if ((sub_content.mtime ?? 0) > latest_mtime)
             latest_mtime = sub_content.mtime ?? 0;
         });
       }
     }
-    else 
+    else
     {
       //퀴즈면 info.txt 읽어옴
       const quiz_file_list = fs.readdirSync(content_path);
 
       let quiz_size = 0;
       let description = '';
-      quiz_file_list.forEach(quiz_file_name => 
+      quiz_file_list.forEach(quiz_file_name =>
       {
 
-        if (quiz_file_name.includes("info.txt") == false) 
+        if (quiz_file_name.includes("info.txt") == false)
         {
           quiz_size += 1;
           return;
@@ -66,7 +66,7 @@ exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') =>
         const info_txt_path = `${content_path}/${quiz_file_name}`;
         const info_data = fs.readFileSync(info_txt_path, 'utf8');
 
-        info_data.split('\n').forEach((line) => 
+        info_data.split('\n').forEach((line: string) =>
         {
           if (line.startsWith('&topNickname: ')) //1등 별명
           {
@@ -74,7 +74,7 @@ exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') =>
             return;
           }
 
-          if (line.startsWith('&typeName: ')) 
+          if (line.startsWith('&typeName: '))
           {
             quiz_content['type_name'] = line.replace('&typeName: ', "").trim();
             return;
@@ -122,13 +122,13 @@ exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') =>
   });
 
   //정렬해서 넘겨준다.
-  if (orderby === 'mtime') 
+  if (orderby === 'mtime')
   {
     //파일 생성일로 정렬
     const ordered_quiz_contents = quiz_contents
-      .sort(function (a, b) 
+      .sort(function (a, b)
       {
-        return b.mtime - a.mtime; 
+        return b.mtime - a.mtime;
       });
 
     return ordered_quiz_contents;
@@ -137,7 +137,7 @@ exports.loadLocalDirectoryQuiz = (contents_path, orderby = 'none') =>
   return quiz_contents;
 };
 
-exports.getQuizTypeFromIcon = (quiz_icon) => 
+exports.getQuizTypeFromIcon = (quiz_icon: string): number =>
 {
   if (quiz_icon == text_contents.icon.ICON_TYPE_SONG)
     return QUIZ_TYPE.SONG;
@@ -169,16 +169,16 @@ exports.getQuizTypeFromIcon = (quiz_icon) =>
   return QUIZ_TYPE.SONG; //결국 기본타입은 SONG
 };
 
-exports.parseContentInfoFromDirName = (dir_name) => 
+exports.parseContentInfoFromDirName = (dir_name: string): Record<string, any> =>
 {
-  let content = {};
+  let content: Record<string, any> = {};
 
   content['name'] = dir_name.split("&")[0];
 
   let icon = dir_name.split("icon="); //ICON 만 파싱
   if (icon.length > 1) //icon= 이 있다면
     content['icon'] = icon[1].split("&")[0];
-  else 
+  else
   {
     content['icon'] = text_contents.icon.ICON_QUIZ_DEFAULT;
   }

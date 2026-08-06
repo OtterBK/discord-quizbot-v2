@@ -10,9 +10,9 @@ const PRIVATE_CONFIG = require('../config/private_config.json');
 const { CUSTOM_EVENT_TYPE } = require('../config/system_setting.js');
 const { orderBy } = require('lodash');
 
-const quiz_content_loader = require('./util/quiz_content_loader.js');
+const quiz_content_loader = require('./util/quiz_content_loader');
 const audio_utility = require('./util/audio_utility.js');
-const network_utility = require('./util/network_utility.js');
+const network_utility = require('./util/network_utility');
 const misc_utility = require('./util/misc_utility');
 
 module.exports = {
