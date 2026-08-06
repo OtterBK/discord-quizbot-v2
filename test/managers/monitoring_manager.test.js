@@ -11,7 +11,7 @@ const os = require('os');
 const path = require('path');
 
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
-const monitoring_manager = require('../../quizbot/managers/monitoring_manager.js');
+const monitoring_manager = require('../../quizbot/managers/monitoring_manager');
 
 test('getCpuUsage: 코어별 idle/tick 합산으로 사용률(%)을 계산한다', (t) =>
 {

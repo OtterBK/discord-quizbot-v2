@@ -2,12 +2,12 @@
 //interaction이 신고 관련 이벤트인지 판별하고 해당 핸들러로 라우팅한다.
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
-const report_submission = require('./report_submission.js');
-const report_manual_processing = require('./report_manual_processing.js');
+const report_submission = require('./report_submission');
+const report_manual_processing = require('./report_manual_processing');
 
 /** 신고 관련 이벤트 확인용 */
 
-const isReportChatButton = (interaction) =>
+const isReportChatButton = (interaction: any): boolean =>
 {
   if(interaction.isButton() && interaction.customId.startsWith('chat_report_'))
   {
@@ -17,7 +17,7 @@ const isReportChatButton = (interaction) =>
   return false;
 };
 
-const isReportChatModal = (interaction) =>
+const isReportChatModal = (interaction: any): boolean =>
 {
   if(interaction.isModalSubmit() && interaction.customId.startsWith('modal_chat_report_'))
   {
@@ -27,7 +27,7 @@ const isReportChatModal = (interaction) =>
   return false;
 };
 
-const isReportManageCommand = (interaction) =>
+const isReportManageCommand = (interaction: any): boolean =>
 {
   if(interaction.isCommand() && interaction.commandName === '신고처리')
   {
@@ -37,34 +37,34 @@ const isReportManageCommand = (interaction) =>
   return false;
 };
 
-const isReportProcessButton = (interaction) =>
+const isReportProcessButton = (interaction: any): boolean =>
 {
   if(interaction.isButton() && interaction.customId.startsWith('ps_rpt_'))
   {
     return true;
   }
-  
+
   return false;
 };
 
-const isFollowUpProcessButton = (interaction) =>
+const isFollowUpProcessButton = (interaction: any): boolean =>
 {
   if(interaction.isButton() && interaction.customId.startsWith('ps_flwup_'))
   {
     return true;
   }
-  
+
   return false;
 };
 
-const checkReportEvent = (interaction) =>
+const checkReportEvent = (interaction: any): boolean | undefined =>
 {
   if(isReportChatButton(interaction))
   {
     report_submission.requestReportChatModal(interaction);
     return true;
   }
-    
+
   if(isReportChatModal(interaction))
   {
     report_submission.submitReportChatModal(interaction);

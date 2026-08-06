@@ -9,7 +9,7 @@ const {
   QuizbotUI,
 } = require("./common-ui.js");
 
-const report_manual_processing = require('../managers/report/report_manual_processing.js');
+const report_manual_processing = require('../managers/report/report_manual_processing');
 const { UserQuizListUI } = require("./user-quiz-list-ui.js");
 const { AdminBanListUI } = require("./admin-ban-list-ui.js");
 

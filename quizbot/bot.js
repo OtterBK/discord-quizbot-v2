@@ -32,13 +32,13 @@ const utility = require('../utility/utility.js');
 const logger = require('../utility/logger.js')('Main');
 const db_manager = require('./managers/db_manager.js');
 const ipc_manager = require('./managers/ipc_manager');
-const tagged_dev_quiz_manager = require('./managers/tagged_dev_quiz_manager.js');
+const tagged_dev_quiz_manager = require('./managers/tagged_dev_quiz_manager');
 const audio_cache_manager = require('./managers/audio_cache_manager.js');
 const multiplayer_chat_manager = require('./managers/multiplayer_chat_manager.js');
-const report_manager = require('./managers/report_manager.js');
+const report_manager = require('./managers/report_manager');
 const ban_manager = require('./managers/ban_manager');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
-const { startMonitoring } = require('./managers/monitoring_manager.js');
+const { startMonitoring } = require('./managers/monitoring_manager');
 
 /** global 변수 **/
 

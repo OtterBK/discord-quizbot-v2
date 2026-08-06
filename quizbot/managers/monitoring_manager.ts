@@ -5,7 +5,7 @@ const { sync_objects } = require('./ipc_manager');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const logger = require('../../utility/logger.js')('MonitoringManager');
 
-function getLogFilePath()
+function getLogFilePath(): string
 {
   const now = new Date();
   const year = now.getFullYear();
@@ -14,14 +14,20 @@ function getLogFilePath()
   return path.join(SYSTEM_CONFIG.LOG_PATH, `monitoring_log_${year}_${month}_${day}.csv`);
 }
 
-let cpu_usage_history = [];
+interface CpuUsageEntry
+{
+  timestamp: number;
+  usage: number;
+}
 
-function getCpuUsage()
+let cpu_usage_history: CpuUsageEntry[] = [];
+
+function getCpuUsage(): string
 {
   const cpus = os.cpus();
   let total_idle = 0, total_tick = 0;
 
-  cpus.forEach((core) =>
+  cpus.forEach((core: any) =>
   {
     for (const type in core.times)
     {
@@ -36,7 +42,7 @@ function getCpuUsage()
   return ((1 - idle / total) * 100).toFixed(2); // Convert to percentage
 }
 
-function getMemoryUsage()
+function getMemoryUsage(): string
 {
   const total_memory = os.totalmem();
   const free_memory = os.freemem();
@@ -44,7 +50,7 @@ function getMemoryUsage()
   return ((used_memory / total_memory) * 100).toFixed(2); // Convert to percentage
 }
 
-function calculateAverageCpuUsage(history, now)
+function calculateAverageCpuUsage(history: CpuUsageEntry[], now: number): string | null
 {
   // Filter the history to keep only relevant entries within the average duration
   const relevant_history = history.filter(entry => now - entry.timestamp <= SYSTEM_CONFIG.MONITORING_AVERAGE_DURATION);
@@ -60,8 +66,8 @@ function calculateAverageCpuUsage(history, now)
   return (sum / relevant_history.length).toFixed(2);
 }
 
-function logCpuUsageToFile(cpu_usage, memory_usage)
-{       
+function logCpuUsageToFile(cpu_usage: number, memory_usage: number): void
+{
   const now = new Date();
   const time = now.toLocaleString(); // Human-readable format
   const log_entry = `${time},${cpu_usage},${memory_usage},${sync_objects.get('local_play_count')},${sync_objects.get('multi_play_count')}\n`;
@@ -77,7 +83,7 @@ function logCpuUsageToFile(cpu_usage, memory_usage)
   fs.appendFileSync(log_file_path, log_entry, 'utf8');
 }
 
-function monitorCpuUsage()
+function monitorCpuUsage(): void
 {
   const cpu_usage = parseFloat(getCpuUsage());
   const memory_usage = parseFloat(getMemoryUsage());
@@ -91,14 +97,14 @@ function monitorCpuUsage()
 
   logCpuUsageToFile(cpu_usage, memory_usage);
 
-  if (average_usage !== null && average_usage > SYSTEM_CONFIG.MONITORING_CPU_USAGE_THRESHOLD)
+  if (average_usage !== null && Number(average_usage) > SYSTEM_CONFIG.MONITORING_CPU_USAGE_THRESHOLD)
   {
     logger.warn(`WARNING: Average CPU usage (${average_usage}%) exceeded the threshold (${SYSTEM_CONFIG.MONITORING_CPU_USAGE_THRESHOLD}%).`);
   }
 }
 
 // Start monitoring at the specified interval
-function startMonitoring()
+function startMonitoring(): void
 {
   setInterval(monitorCpuUsage, SYSTEM_CONFIG.MONITORING_CHECK_INTERVAL);
 }

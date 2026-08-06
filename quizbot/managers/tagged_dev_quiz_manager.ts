@@ -1,30 +1,36 @@
 //오마카세 퀴즈에서 Dev 퀴즈 사용을 위해 만든 모듈
 //외부 modules
 const fs = require('fs');
-const path = require('path');
 
 //로컬 modules
 const logger = require('../../utility/logger.js')('DevQuizTagManager');
 const { DEV_QUIZ_TAG, SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const utility = require('../../utility/utility.js');
 
+interface TaggedQuestion
+{
+  quiz_path: string;
+  path: string;
+  title: string;
+  tag: string;
+}
 
-let tagged_question_map;
+let tagged_question_map: Map<number, TaggedQuestion[]>;
 
-exports.initialize = (tagged_quiz_info_path) => 
+exports.initialize = (tagged_quiz_info_path: string): Map<number, TaggedQuestion[]> =>
 {
   const tagged_quiz_info = fs.readFileSync(tagged_quiz_info_path, 'utf-8');
   const data = JSON.parse(tagged_quiz_info);
 
   tagged_question_map = new Map();
 
-  for (const tag_name in data) 
+  for (const tag_name in data)
   {
     const quiz_path_list = data[tag_name];
-        
-    const question_list = [];
-        
-    quiz_path_list.forEach(content_path => 
+
+    const question_list: TaggedQuestion[] = [];
+
+    quiz_path_list.forEach((content_path: string) =>
     {
       const content_names = content_path.split('/');
       const content_name = content_names.length > 1 ? content_names[1] : content_names[0];
@@ -33,13 +39,13 @@ exports.initialize = (tagged_quiz_info_path) =>
       const quiz_path = SYSTEM_CONFIG.DEV_QUIZ_PATH + "/" + content_path + "/";
       const quiz_title = `${quiz_info['name']} `;
 
-      if (fs.existsSync(quiz_path) && fs.lstatSync(quiz_path).isDirectory()) 
+      if (fs.existsSync(quiz_path) && fs.lstatSync(quiz_path).isDirectory())
       {
         const current_question_list = fs.readdirSync(quiz_path, { withFileTypes: true })
-          .filter(dirent => dirent.isDirectory())
-          .map(dirent => 
+          .filter((dirent: any) => dirent.isDirectory())
+          .map((dirent: any) =>
           {
-            const question = {};
+            const question: any = {};
 
             question['quiz_path'] = quiz_path;
             question['path'] = dirent.name;
@@ -47,10 +53,10 @@ exports.initialize = (tagged_quiz_info_path) =>
             question['tag'] = tag_name;
 
             return question;
-                        
+
           }); // 절대 경로로 변환
         question_list.push(...current_question_list);
-      }         
+      }
     });
 
     const tag_value = DEV_QUIZ_TAG[tag_name];
@@ -62,16 +68,16 @@ exports.initialize = (tagged_quiz_info_path) =>
   return tagged_question_map;
 };
 
-exports.getQuestionListByTags = (tags_value, limit=0) => //0 == unlimited
+exports.getQuestionListByTags = (tags_value: number, limit = 0): [number, TaggedQuestion[]] => //0 == unlimited
 {
   if(tags_value == 0)
   {
     return [0, []];
   }
 
-  const total_question_list = [];
+  const total_question_list: TaggedQuestion[] = [];
 
-  for(let [tag_value, question_list] of tagged_question_map)
+  for(const [tag_value, question_list] of tagged_question_map)
   {
     if((tags_value & tag_value) === tag_value)
     {
@@ -97,11 +103,11 @@ exports.getQuestionListByTags = (tags_value, limit=0) => //0 == unlimited
   return [total_question_count, total_question_list.slice(0, limit)];
 };
 
-exports.getQuestionAmountByTags = (tags_value) => 
+exports.getQuestionAmountByTags = (tags_value: number): number =>
 {
   let total_question_count = 0;
 
-  for(let [tag_value, question_list] of tagged_question_map)
+  for(const [tag_value, question_list] of tagged_question_map)
   {
     if((tags_value & tag_value) === tag_value)
     {

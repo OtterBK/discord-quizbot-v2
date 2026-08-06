@@ -7,11 +7,11 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const db_manager = require('../db_manager.js');
 const logger = require('../../../utility/logger.js')('ReportManager');
-const report_state = require('./report_state.js');
-const report_chat_info = require('./report_chat_info.js');
+const report_state = require('./report_state');
+const report_chat_info = require('./report_chat_info');
 
 /** 신고 처리 핵심 */
-const processReportCore = async (chat_id, process_type) =>
+const processReportCore = async (chat_id: string, process_type: number): Promise<[any, any] | undefined> =>
 {
   const chat_info = report_chat_info.extractChatInfo(chat_id);
   if(chat_info === undefined)
@@ -37,10 +37,10 @@ const processReportCore = async (chat_id, process_type) =>
   return [processed_ban_history, processed_report_log_list];
 };
 
-const applyBan = async (user_id, count = 1) =>
+const applyBan = async (user_id: string, count = 1): Promise<any> =>
 {
   const ban_history_result = await db_manager.selectBanHistory(user_id);
-    
+
   let ban_history = null;
   if(ban_history_result.rowCount === 0)
   {
@@ -65,7 +65,7 @@ const applyBan = async (user_id, count = 1) =>
   return ban_history;
 };
 
-const sendProcessedBanResult = async (executor_user, ban_history, chat_id, chat_content) =>
+const sendProcessedBanResult = async (executor_user: any, ban_history: any, chat_id: string, chat_content: string): Promise<void> =>
 {
   if(!executor_user)
   {
@@ -99,14 +99,14 @@ const sendProcessedBanResult = async (executor_user, ban_history, chat_id, chat_
   executor_user.send({content: `\`\`\`${result_message}\`\`\``, components: [follow_up_comp]});
 };
 
-const notifyProcessedReportLog = async (report_log_list) =>
+const notifyProcessedReportLog = async (report_log_list: any): Promise<void> =>
 {
   if(report_log_list === undefined || report_log_list.rowCount === 0)
   {
     return;
   }
 
-  const notified = [];
+  const notified: string[] = [];
   for(const report_log of report_log_list.rows) //신고 처리 결과들 제보자들한테 알림
   {
     if(notified.includes(report_log.reporter_id))
@@ -117,7 +117,7 @@ const notifyProcessedReportLog = async (report_log_list) =>
     const reporter_id = report_log.reporter_id;
     const user = await report_state.getClient().users.fetch(reporter_id);
 
-    if(user) 
+    if(user)
     {
       user.send(`\`\`\`🔹 감사합니다. 신고하신 유저에 대한 제재가 완료됐습니다.\n\n🔸 신고하신 내용:\n${report_log.report_detail}\`\`\``);
     }

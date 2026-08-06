@@ -10,12 +10,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const report_manager = require('../../quizbot/managers/report_manager.js');
-const report_state = require('../../quizbot/managers/report/report_state.js');
-const report_chat_info = require('../../quizbot/managers/report/report_chat_info.js');
-const chat_cache = require('../../quizbot/managers/report/chat_cache.js');
-const report_processing_core = require('../../quizbot/managers/report/report_processing_core.js');
-const report_manual_processing = require('../../quizbot/managers/report/report_manual_processing.js');
+const report_manager = require('../../quizbot/managers/report_manager');
+const report_state = require('../../quizbot/managers/report/report_state');
+const report_chat_info = require('../../quizbot/managers/report/report_chat_info');
+const chat_cache = require('../../quizbot/managers/report/chat_cache');
+const report_processing_core = require('../../quizbot/managers/report/report_processing_core');
+const report_manual_processing = require('../../quizbot/managers/report/report_manual_processing');
 const db_manager = require('../../quizbot/managers/db_manager.js');
 const ban_manager = require('../../quizbot/managers/ban_manager');
 

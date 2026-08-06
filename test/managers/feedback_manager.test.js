@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const db_manager = require('../../quizbot/managers/db_manager.js');
-const feedback_manager = require('../../quizbot/managers/feedback_manager.js');
+const feedback_manager = require('../../quizbot/managers/feedback_manager');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 
 //addQuizLike 내부에서 await 없이 이어지는 updateQuizLikeCount(...).then(...) 체인이

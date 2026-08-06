@@ -12,7 +12,7 @@ const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.L
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
-const feedback_manager = require('../managers/feedback_manager.js');
+const feedback_manager = require('../managers/feedback_manager');
 const ban_manager = require('../managers/ban_manager');
 const {
   quiz_info_comp,

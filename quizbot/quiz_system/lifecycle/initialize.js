@@ -14,7 +14,7 @@ const { SYSTEM_CONFIG, QUIZ_TYPE, ANSWER_TYPE } = require('../../../config/syste
 const text_contents = require('../../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
-const tagged_dev_quiz_manager = require('../../managers/tagged_dev_quiz_manager.js');
+const tagged_dev_quiz_manager = require('../../managers/tagged_dev_quiz_manager');
 const { loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz } = require('../../managers/user_quiz_info_manager.js');
 
 //#region Initialize Cycle

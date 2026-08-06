@@ -7,14 +7,20 @@ const logger = require('../../../utility/logger.js')('ReportManager');
 
 /** 초기화 */
 
-const chat_content_cache = {}; //chat_id, chat_content
+interface ChatCacheEntry
+{
+  content: string;
+  cached_time: number;
+}
+
+const chat_content_cache: Record<string, ChatCacheEntry> = {}; //chat_id, chat_content
 
 /** 채팅 캐시 쪽 */
 
-const cleanUpChatCache = () =>
+const cleanUpChatCache = (): void =>
 {
   const aging_criteria = Date.now() - 300000; //5분
-  const aging_target = [];
+  const aging_target: string[] = [];
 
   const keys = Object.keys(chat_content_cache);
 
@@ -34,13 +40,13 @@ const cleanUpChatCache = () =>
 
   logger.info(`Aging Chat Content Cache size: ${aging_target.length}/${keys.length}`);
 
-  for(const chat_id of aging_target)    
+  for(const chat_id of aging_target)
   {
     delete chat_content_cache[chat_id];
   }
 };
 
-const insertChatCache = (chat_id, content) =>
+const insertChatCache = (chat_id: string, content: string): void =>
 {
   if(chat_id === undefined)
   {
@@ -60,7 +66,7 @@ const insertChatCache = (chat_id, content) =>
   };
 };
 
-const getChatCacheContent = (chat_id) =>
+const getChatCacheContent = (chat_id: string): string | undefined =>
 {
   if(chat_id === undefined)
   {

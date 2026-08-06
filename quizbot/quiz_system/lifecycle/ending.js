@@ -9,7 +9,7 @@ const { SYSTEM_CONFIG, BGM_TYPE } = require('../../../config/system_setting.js')
 const text_contents = require('../../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
-const feedback_manager = require('../../managers/feedback_manager.js');
+const feedback_manager = require('../../managers/feedback_manager');
 
 //#region Ending Cycle
 /** 점수 공개 **/

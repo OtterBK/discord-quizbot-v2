@@ -7,13 +7,13 @@ const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
 const { createProfanityChecker } = require('../../../utility/profanity_checker.js');
 
-const report_state = require('./report_state.js');
-const report_chat_info = require('./report_chat_info.js');
-const report_processing_core = require('./report_processing_core.js');
+const report_state = require('./report_state');
+const report_chat_info = require('./report_chat_info');
+const report_processing_core = require('./report_processing_core');
 
 /** 자동 신고처리용 */
 const profanity_checker = createProfanityChecker(null, { return_matches: true });
-const autoProcessReportLog = async () =>
+const autoProcessReportLog = async (): Promise<void> =>
 {
   logger.debug(`Auto Process Reported Chat Start`);
   let reported_chat_info_list = undefined;
@@ -21,7 +21,7 @@ const autoProcessReportLog = async () =>
   {
     reported_chat_info_list = await db_manager.selectReportChatInfo(100); //자동 처리는 LIMIT을 굳이 제한할 필요는 없다
   }
-  catch(err)
+  catch(err: any)
   {
     logger.error(`select reported chat info list error. err: ${err.stack}`);
     return;
@@ -74,7 +74,7 @@ const autoProcessReportLog = async () =>
     logger.info(`Auto Process Reported Chat Completed. Total: ${total_report_log} Processed: ${processed}`);
     admin_user.send(`\`\`\`자동 신고 처리 완료. 총 ${total_report_log}건 중 ${processed}건 처리됨.\`\`\``);
   }
-  
+
 };
 
 module.exports = { autoProcessReportLog };

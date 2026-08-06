@@ -2,14 +2,14 @@
 //원본이 module.exports = { initialize, checkReportEvent }만 노출했던 것과 동일하게,
 //report_manager.js는 초기화(주기 작업 등록)만 담당하고 checkReportEvent는 그대로 재수출하는
 //얇은 facade로 남긴다.
-const report_state = require('./report/report_state.js');
-const chat_cache = require('./report/chat_cache.js');
-const auto_report_processing = require('./report/auto_report_processing.js');
-const { checkReportEvent } = require('./report/report_event_dispatch.js');
+const report_state = require('./report/report_state');
+const chat_cache = require('./report/chat_cache');
+const auto_report_processing = require('./report/auto_report_processing');
+const { checkReportEvent } = require('./report/report_event_dispatch');
 
 /** 초기화 */
 
-const initialize = (client) =>
+const initialize = (client: any): void =>
 {
   report_state.setClient(client);
 

@@ -12,13 +12,13 @@ const {
   modal_chat_report,
 } = require("../../quiz_ui/components.js");
 
-const report_state = require('./report_state.js');
-const chat_cache = require('./chat_cache.js');
-const report_chat_info = require('./report_chat_info.js');
+const report_state = require('./report_state');
+const chat_cache = require('./chat_cache');
+const report_chat_info = require('./report_chat_info');
 
 /** 신고 접수 관련 */
 
-const requestReportChatModal = (interaction) =>
+const requestReportChatModal = (interaction: any): void =>
 {
   interaction.explicit_replied = true;
 
@@ -36,10 +36,10 @@ const requestReportChatModal = (interaction) =>
   interaction.showModal(report_chat_modal);
 };
 
-const submitReportChatModal = (interaction) =>
+const submitReportChatModal = (interaction: any): void =>
 {
   interaction.explicit_replied = true;
-    
+
   const chat_id = report_chat_info.getChatId(interaction.customId);
   const content = chat_cache.getChatCacheContent(chat_id);
   const chat_info = report_chat_info.extractChatInfo(chat_id);
@@ -65,9 +65,9 @@ const submitReportChatModal = (interaction) =>
 
   if(PRIVATE_CONFIG.ADMIN_ID)
   {
-    report_state.getClient().users.fetch(PRIVATE_CONFIG.ADMIN_ID).then((instance) => 
+    report_state.getClient().users.fetch(PRIVATE_CONFIG.ADMIN_ID).then((instance: any) =>
     {
-      if (instance) 
+      if (instance)
       {
         instance.send(`\`\`\`새로운 신고가 접수되었습니다.\`\`\``);
       }

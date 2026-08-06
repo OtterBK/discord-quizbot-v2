@@ -11,7 +11,7 @@ const OPTION_TYPE = option_system.OPTION_TYPE;
 const text_contents = require('../../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
-const feedback_manager = require('../../managers/feedback_manager.js');
+const feedback_manager = require('../../managers/feedback_manager');
 
 //#region 퀴즈 cycle 용 lifecycle의 base
 class QuizLifeCycle

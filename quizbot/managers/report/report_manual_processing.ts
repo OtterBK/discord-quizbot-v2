@@ -11,12 +11,12 @@ const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
 const ban_manager = require('../ban_manager');
 
-const report_state = require('./report_state.js');
-const report_chat_info = require('./report_chat_info.js');
-const report_processing_core = require('./report_processing_core.js');
+const report_state = require('./report_state');
+const report_chat_info = require('./report_chat_info');
+const report_processing_core = require('./report_processing_core');
 
 /** 수동 신고 처리 관련 */
-const sendReportLog = async (interaction) =>
+const sendReportLog = async (interaction: any): Promise<void> =>
 {
   const user = interaction.user;
 
@@ -36,7 +36,7 @@ const sendReportLog = async (interaction) =>
   {
     reported_chat_info_list = await db_manager.selectReportChatInfo(10); //10개씩 조회하자
   }
-  catch(err)
+  catch(err: any)
   {
     const err_message = `select reported chat info list error. err: ${err.stack}`;
 
@@ -70,7 +70,7 @@ const sendReportLog = async (interaction) =>
   interaction.reply({content: `\`\`\`${reported_chat_info_list.rowCount}개의 신고 항목 조회함\`\`\``, flags: MessageFlags.Ephemeral});
 };
 
-const sendReportProcessingUI = async (user, reported_chat_info) =>
+const sendReportProcessingUI = async (user: any, reported_chat_info: any): Promise<void> =>
 {
   const target_id = reported_chat_info.chat_id;
   const sender_id = reported_chat_info.sender_id;
@@ -81,7 +81,7 @@ const sendReportProcessingUI = async (user, reported_chat_info) =>
   {
     target_report_log_list = await db_manager.selectReportLog(target_id);
   }
-  catch(err)
+  catch(err: any)
   {
     const err_message = `select reported chat log error. err: ${err.stack}`;
 
@@ -101,7 +101,7 @@ const sendReportProcessingUI = async (user, reported_chat_info) =>
     return;
   }
 
-  const embed = {
+  const embed: any = {
     color: 0x8B0000,
     title: `${target_id}`,
     description: `${reported_chat_info.content}`,
@@ -151,11 +151,11 @@ const sendReportProcessingUI = async (user, reported_chat_info) =>
         .setLabel('반려')
         .setStyle(ButtonStyle.Secondary),
     );
-  
+
   user.send({embeds: [embed], components: [reported_log_detail_row, process_report_comp]});
 };
 
-const processReportLog = async (interaction) =>
+const processReportLog = async (interaction: any): Promise<void> =>
 {
   const custom_id = interaction.customId;
   let chat_id = null;
@@ -176,13 +176,13 @@ const processReportLog = async (interaction) =>
   {
     const err_message = `cannot extract chat_id from ${interaction.customId}`;
     logger.error(err_message);
-    
+
     interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
   const [processed_ban_history, processed_report_log_list] = await report_processing_core.processReportCore(chat_id, process_type);
-  
+
   if(process_type == report_chat_info.REPORT_PROCESSED_RESULT_TYPE.BANNED)
   {
     const chat_content = interaction.message?.embeds?.[0]?.description ?? '(내용 없음)';
@@ -195,7 +195,7 @@ const processReportLog = async (interaction) =>
 };
 
 /** 제재 후 후속 조치 */
-const processFollowUpAction = async (interaction) =>
+const processFollowUpAction = async (interaction: any): Promise<void> =>
 {
   interaction.explicit_replied = true;
 
@@ -223,26 +223,26 @@ const processFollowUpAction = async (interaction) =>
   {
     const err_message = `cannot extract chat_id from ${interaction.customId}`;
     logger.error(err_message);
-    
+
     interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
-    const chat_info = report_chat_info.extractChatInfo(chat_id);
-    if(chat_info === undefined)
-    {
-      const err_message = `cannot extract chat_info from ${chat_id}`;
-      logger.error(err_message);
-      
-      interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
-      return;
-    }
+  const chat_info = report_chat_info.extractChatInfo(chat_id);
+  if(chat_info === undefined)
+  {
+    const err_message = `cannot extract chat_info from ${chat_id}`;
+    logger.error(err_message);
+
+    interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
+    return;
+  }
 
   if(followup_processed_type === report_chat_info.FOLLOWUP_PROCESSED_RESULT_TYPE.UNBANNED || followup_processed_type === report_chat_info.FOLLOWUP_PROCESSED_RESULT_TYPE.BANNED)
   {
     let ban_count= 0;
     let ban_type_string = '';
-    
+
     if(followup_processed_type === report_chat_info.FOLLOWUP_PROCESSED_RESULT_TYPE.UNBANNED)
     {
       ban_count = -1;
@@ -268,7 +268,7 @@ const processFollowUpAction = async (interaction) =>
     {
       const err_message = `cannot fetch guild ${guild_id}`;
       logger.error(err_message);
-      
+
       interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
@@ -290,7 +290,7 @@ const processFollowUpAction = async (interaction) =>
 };
 
 /** 제재 후 후속 조치 */
-const applyGuildBan = async (guild_id) =>
+const applyGuildBan = async (guild_id: string): Promise<boolean> =>
 {
   return ban_manager.banId(guild_id);
 };

@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 
 const { DEV_QUIZ_TAG } = require('../../config/system_setting.js');
-const tagged_dev_quiz_manager = require('../../quizbot/managers/tagged_dev_quiz_manager.js');
+const tagged_dev_quiz_manager = require('../../quizbot/managers/tagged_dev_quiz_manager');
 
 const ANIME_TAG = DEV_QUIZ_TAG['애니']; // 16
 const GAME_TAG = DEV_QUIZ_TAG['게임']; // 32

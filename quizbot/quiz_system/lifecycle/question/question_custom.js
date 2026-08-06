@@ -7,7 +7,7 @@ const Question = require('./question.js');
 const { CYCLE_TYPE } = require('../../constants.js');
 const { SYSTEM_CONFIG, BGM_TYPE } = require('../../../../config/system_setting.js');
 const logger = require('../../../../utility/logger.js')('QuizSystem');
-const feedback_manager = require('../../../managers/feedback_manager.js');
+const feedback_manager = require('../../../managers/feedback_manager');
 
 //Custom Type Question
 /** 23.11.16 답이 없다... 리팩터링 안할거면 걍 유지보수 포기하자*/

@@ -4,7 +4,14 @@
 
 /** Chat 쪽 DB 관련 */
 
-const getChatId = (custom_id) =>
+interface ChatInfo
+{
+  guild_id: string;
+  user_id: string;
+  timestamp: string;
+}
+
+const getChatId = (custom_id: string): string | undefined =>
 {
   let chat_id = custom_id.replace('modal_chat_report_', '');
   if(chat_id === custom_id)
@@ -21,7 +28,7 @@ const getChatId = (custom_id) =>
 };
 
 /** Chat ID 에서 정보 추출 */
-const extractChatInfo = (chat_id) =>
+const extractChatInfo = (chat_id: string): ChatInfo | undefined =>
 {
   const info = chat_id.split('-');
   if(info.length != 3)
@@ -36,7 +43,7 @@ const extractChatInfo = (chat_id) =>
   };
 };
 
-const CHAT_INFO_COLUMN = 
+const CHAT_INFO_COLUMN =
 [
   "chat_id",
   "content",
@@ -72,14 +79,14 @@ REPORT_INFO_COLUMN.forEach((field) =>
   report_info_key_fields += `${field}`;
 });
 
-const REPORT_PROCESSED_RESULT_TYPE = 
+const REPORT_PROCESSED_RESULT_TYPE =
 {
   IN_PROGRESS: 0,
   BANNED: 1,
   DENY: 2,
 };
 
-const FOLLOWUP_PROCESSED_RESULT_TYPE = 
+const FOLLOWUP_PROCESSED_RESULT_TYPE =
 {
   IN_PROGRESS: 0,
   UNBANNED: 1,
