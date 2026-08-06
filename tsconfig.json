@@ -3,7 +3,6 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "commonjs",
-    "moduleDetection": "force",
 
     "allowJs": true,
     "checkJs": false,
@@ -16,13 +15,24 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+
+    //원본 .js 파일 중 'use strict'가 없던 파일들은 코드베이스 관례상 의도적으로 sloppy mode임
+    //(REFACTOR_PLAN.md Phase 4/5에서 실수로 붙였다가 되돌린 이력 있음, CLAUDE.md 참고).
+    //tsc가 module:commonjs 출력에 'use strict'를 자동으로 추가하는 걸 막아서, .ts 전환이
+    //조용히 sloppy -> strict 동작 변경을 만들지 않도록 함. alwaysStrict는 TS 7.0에서 제거
+    //예정인 deprecated 옵션이라 TS 7 업그레이드 시 이 설정 전체를 재검토해야 함.
+    "alwaysStrict": false,
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "index.js",
     "quizbot/**/*.js",
+    "quizbot/**/*.ts",
     "utility/**/*.js",
-    "config/**/*.js"
+    "utility/**/*.ts",
+    "config/**/*.js",
+    "config/**/*.ts"
   ],
   "exclude": [
     "node_modules",
