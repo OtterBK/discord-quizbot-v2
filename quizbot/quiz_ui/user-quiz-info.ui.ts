@@ -32,7 +32,7 @@ const {
 
 
 const { QuizInfoUI } = require("./quiz-info-ui");
-const { UserQuestionInfoUI } = require("./user-question-info-ui.js");
+const { UserQuestionInfoUI } = require("./user-question-info-ui");
 const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
 
 //#endregion
