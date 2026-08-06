@@ -1,5 +1,33 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
+//TS 전환(dist/ 빌드) 이후에도, 그리고 어떤 작업 디렉터리에서 프로세스를 띄우든 resources/log 등
+//정적 자원 경로가 항상 실제 저장소 루트를 가리키도록 package.json이 있는 디렉터리를 찾아 올라간다.
+//(__dirname 기준 상대경로는 dist/config/system_setting.js로 컴파일되면 dist/ 밑을 가리키게 돼서 깨짐)
+const findProjectRoot = (start_dir) =>
+{
+  let current_dir = start_dir;
+  for(;;)
+  {
+    if(fs.existsSync(path.join(current_dir, 'package.json')))
+    {
+      return current_dir;
+    }
+
+    const parent_dir = path.dirname(current_dir);
+    if(parent_dir === current_dir) //파일시스템 루트까지 다 올라갔는데도 못 찾음 - 안전장치로 원래 위치 반환
+    {
+      return start_dir;
+    }
+
+    current_dir = parent_dir;
+  }
+};
+
+const PROJECT_ROOT = findProjectRoot(__dirname);
+
 exports.SYSTEM_CONFIG = {
   LANGUAGE: 'kor', //사용 언어
 
@@ -32,16 +60,16 @@ exports.SYSTEM_CONFIG = {
   EXPLAIN_WAIT: 3000, //퀴즈 설명 단계에서 각 설명 텀
   ENDING_WAIT: 3500, //순위 발표 단계에서 각 순위 표시 텀
 
-  BGM_PATH: `${__dirname}/../resources/bgm`, //BGM 파일 위치
-  DEV_QUIZ_PATH: `${__dirname}/../resources/quizdata`, //Dev퀴즈 파일 위치
-  LOG_PATH: `${__dirname}/../log`, //LOG 저장할 위치
-  NOTICES_PATH: `${__dirname}/../resources/notices`, //공지사항 파일 위치
-  CURRENT_NOTICE_PATH: `${__dirname}/../resources/current_notice.txt`, //실시간 공지
-  // fixed_notice_path: `${__dirname}/../resources/fixed_notice.txt`, //고정 공지...애매하네 걍 쓰지말자
-  // version_info_path: `${__dirname}/../resources/version_info.txt`, //실시간 버전. 24.10.12 -> 이제 안쓴다.
-  BANNED_USER_PATH: `${__dirname}/../resources/banned_user.txt`, //퀴즈만들기 밴
-  TAGGED_DEV_QUIZ_INFO: `${__dirname}/../resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
-  MAINTENANCE_NOTICE_PATH: `${__dirname}/../resources/maintenance_notice.txt`, //실시간 점검 공지
+  BGM_PATH: `${PROJECT_ROOT}/resources/bgm`, //BGM 파일 위치
+  DEV_QUIZ_PATH: `${PROJECT_ROOT}/resources/quizdata`, //Dev퀴즈 파일 위치
+  LOG_PATH: `${PROJECT_ROOT}/log`, //LOG 저장할 위치
+  NOTICES_PATH: `${PROJECT_ROOT}/resources/notices`, //공지사항 파일 위치
+  CURRENT_NOTICE_PATH: `${PROJECT_ROOT}/resources/current_notice.txt`, //실시간 공지
+  // fixed_notice_path: `${PROJECT_ROOT}/resources/fixed_notice.txt`, //고정 공지...애매하네 걍 쓰지말자
+  // version_info_path: `${PROJECT_ROOT}/resources/version_info.txt`, //실시간 버전. 24.10.12 -> 이제 안쓴다.
+  BANNED_USER_PATH: `${PROJECT_ROOT}/resources/banned_user.txt`, //퀴즈만들기 밴
+  TAGGED_DEV_QUIZ_INFO: `${PROJECT_ROOT}/resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
+  MAINTENANCE_NOTICE_PATH: `${PROJECT_ROOT}/resources/maintenance_notice.txt`, //실시간 점검 공지
 
   HINT_PERCENTAGE: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
   HINT_MAX_TRY: 1000, //힌트 만들 때 최대 시도 횟수
@@ -59,10 +87,10 @@ exports.SYSTEM_CONFIG = {
     
   CUSTOM_AUDIO_MAX_FILE_SIZE: '10M', //문제용 오디오 파일 최대 용량
   CUSTOM_AUDIO_YTDL_MAX_LENGTH: 1200, //문제용 오디오로 사용가능한 오디오 최대 길이(s)
-  // custom_audio_cache_path: `${__dirname}/../resources/cache`,
-  CUSTOM_AUDIO_CACHE_PATH: `${__dirname}/../resources/cache`,
+  // custom_audio_cache_path: `${PROJECT_ROOT}/resources/cache`,
+  CUSTOM_AUDIO_CACHE_PATH: `${PROJECT_ROOT}/resources/cache`,
 
-  YTDL_COOKIE_PATH: `${__dirname}/../resources/ytdl_cookie.json`,
+  YTDL_COOKIE_PATH: `${PROJECT_ROOT}/resources/ytdl_cookie.json`,
   YTDL_IPV6_USE: true, //IPv6도 함께 사용할지 여부
 
   CERTIFY_LIKE_CRITERIA: 10, //인증된 퀴즈 전환을 위한 추천 수 기준
