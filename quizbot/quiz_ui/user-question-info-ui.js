@@ -416,7 +416,10 @@ class UserQuestionInfoUI extends QuizbotUI
   {
     let audio_range_string = '[랜덤 구간 재생]'; //이게 디폴트
 
-    if(audio_start && audio_start >= 0)
+    //audio_start가 0일 때 `0 && ...`가 falsy라 통째로 걸러져서 0초 시작인데도
+    //"랜덤 구간 재생"으로 잘못 표시되던 버그. 실제 재생 로직은 0초부터 정상 동작하고
+    //있었고(디스코드 유저 제보로 확인), 이 표시 함수만 잘못돼 있었음
+    if(audio_start !== undefined && audio_start >= 0)
     {
       audio_range_string = `[${audio_start}초 ~ `;
 
