@@ -18,7 +18,7 @@ const {
 
 
 const { DevQuizSelectUI } = require("./dev-quiz-select-ui");
-const { OmakaseQuizRoomUI } = require("./omakase-quiz-room-ui.js");
+const { OmakaseQuizRoomUI } = require("./omakase-quiz-room-ui");
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 
 //#endregion

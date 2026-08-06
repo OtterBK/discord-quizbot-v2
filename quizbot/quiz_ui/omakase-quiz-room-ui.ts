@@ -7,7 +7,7 @@ const { MessageFlags } = require('discord.js');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_MAKER_TYPE, QUIZ_TYPE } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
 const {
   omakase_quiz_info_tag_comp,
@@ -19,13 +19,13 @@ const {
   request_basket_reopen_comp,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
 
 const { QuizInfoUI } = require('./quiz-info-ui');
-const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
+const { UserQuizSelectUI } = require("./user-quiz-select-ui");
 
 //#endregion
 
@@ -33,16 +33,16 @@ const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 /** 오마카세 퀴즈 설정 용. 로비 형식임 */
 class OmakaseQuizRoomUI extends QuizInfoUI
 {
-  static createDefaultOmakaseQuizInfo = (interaction) =>
+  static createDefaultOmakaseQuizInfo = (interaction: any) =>
   {
     const guild = interaction.guild;
-    let omakase_quiz_info = {};
+    const omakase_quiz_info: any = {};
 
     omakase_quiz_info['title']  = "오마카세 퀴즈";
     omakase_quiz_info['icon'] = '🍴';
 
-    omakase_quiz_info['type_name'] = "**퀴즈봇 마음대로 퀴즈!**"; 
-    omakase_quiz_info['description'] = `\`\`\`선택 메뉴에서 플레이하실 퀴즈 장르나 항목을 선택해주세요!\n선택하신 퀴즈에서 무작위로 문제를 제출합니다.\n\n장르는 여러 개 선택 가능하여 문제 개수도 지정할 수 있습니다.\n\`\`\``; 
+    omakase_quiz_info['type_name'] = "**퀴즈봇 마음대로 퀴즈!**";
+    omakase_quiz_info['description'] = `\`\`\`선택 메뉴에서 플레이하실 퀴즈 장르나 항목을 선택해주세요!\n선택하신 퀴즈에서 무작위로 문제를 제출합니다.\n\n장르는 여러 개 선택 가능하여 문제 개수도 지정할 수 있습니다.\n\`\`\``;
 
     omakase_quiz_info['author'] = guild.name ?? guild.id;
     omakase_quiz_info['author_icon'] = guild.iconURL() ?? '';
@@ -63,7 +63,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     omakase_quiz_info['basket_items'] = {}; //장바구니 모드
 
     omakase_quiz_info['dev_quiz_tags'] = 0;
-    
+
     omakase_quiz_info['custom_quiz_type_tags'] = 0;
     omakase_quiz_info['custom_quiz_tags'] = 0;
     omakase_quiz_info['certified_filter'] = true;
@@ -75,7 +75,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     return omakase_quiz_info;
   };
 
-  constructor(quiz_info)
+  constructor(quiz_info: any)
   {
     super(quiz_info);
 
@@ -90,7 +90,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     this.refreshUI();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     this.embed = {
       color: 0x87CEEB,
@@ -106,14 +106,14 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     };
   }
 
-  initializeComponents() 
+  initializeComponents()
   {
     this.components = []; //여기서는 component를 바꿔서 해주자
   }
 
   initializeTagSelectedHandler()
   {
-    this.tag_selected_handler = 
+    this.tag_selected_handler =
     {
       'dev_quiz_tags_select_menu': this.handleTagSelected.bind(this),
       'custom_quiz_type_tags_select_menu': this.handleTagSelected.bind(this),
@@ -121,7 +121,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     };
   }
 
-  onInteractionCreate(interaction) 
+  onInteractionCreate(interaction: any)
   {
     if(this.isTagSelectedEvent(interaction)) //퀴즈 장르 설정 시
     {
@@ -131,18 +131,18 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     return super.onInteractionCreate(interaction);
   }
 
-  isTagSelectedEvent(interaction)
+  isTagSelectedEvent(interaction: any)
   {
     return this.tag_selected_handler[interaction.customId] !== undefined;
   }
 
-  handleTagSelectedEvent(interaction)
+  handleTagSelectedEvent(interaction: any)
   {
     const handler = this.tag_selected_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleTagSelected(interaction)
+  handleTagSelected(interaction: any)
   {
     const tag_changed = this.applyQuizTagsSetting(interaction);
     if(tag_changed === false)
@@ -154,7 +154,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     return this;
   }
 
-  handleRequestUseBasketMode(interaction)
+  handleRequestUseBasketMode(interaction: any)
   {
     let basket_items = this.quiz_info['basket_items'];
     if(basket_items === undefined)
@@ -177,7 +177,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     return new UserQuizSelectUI(basket_items);
   }
 
-  handleLoadBasketItems(interaction)
+  handleLoadBasketItems(interaction: any)
   {
     const guild_id = interaction.guild.id;
     const cached_basket_items = QuizInfoUI.BASKET_CACHE[guild_id];
@@ -198,7 +198,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     return this;
   }
 
-  handleRequestUseTagMode(interaction)
+  handleRequestUseTagMode(interaction: any)
   {
     this.quiz_info['basket_mode'] = false;
 
@@ -212,7 +212,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
   refreshUI()
   {
     let description = this.getDescription();
-    
+
     description += this.getTagInfoText();
 
     this.embed.description = description;
@@ -247,7 +247,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
       this.setupBasketSelectMenu();
       this.components.push(this.basket_select_component);
       this.components.push(request_basket_reopen_comp);
-    }   
+    }
   }
 
 }
