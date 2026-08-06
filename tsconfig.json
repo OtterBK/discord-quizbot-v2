@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleDetection": "force",
+
+    "allowJs": true,
+    "checkJs": false,
+
+    "outDir": "dist",
+    "rootDir": ".",
+
+    "strict": false,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "index.js",
+    "quizbot/**/*.js",
+    "utility/**/*.js",
+    "config/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "custom_node_modules",
+    "dist",
+    "test"
+  ]
+}

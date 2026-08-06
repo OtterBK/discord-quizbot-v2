@@ -14,6 +14,7 @@ module.exports = [
       'cache/**',
       'bgm_bak/**',
       'notes/**',
+      'dist/**',
     ],
   },
   js.configs.recommended,
