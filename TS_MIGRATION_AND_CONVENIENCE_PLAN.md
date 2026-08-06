@@ -77,7 +77,7 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
 | 단계 | 대상 | 이유 |
 |---|---|---|
 | 1 | `utility/util/*.js` (순수 함수 위주) — ✅ **완료** | 외부 의존 적고 기존 유닛테스트 있음(`test/utility/`) |
-| 2 | `quizbot/managers/multiplayer_mmr.js`, `db/*.js` | 순수 함수/쿼리 빌더 위주, 부수효과 적고 테스트 있음 |
+| 2 | `quizbot/managers/multiplayer_mmr.js`, `db/*.js` — ✅ **완료** | 순수 함수/쿼리 빌더 위주, 부수효과 적고 테스트 있음. 전부 원본에 이미 'use strict' 있어서 strict 전환 리스크 없었음 |
 | 3 | `quizbot/managers/*.js` (멀티플레이 제외) | ban_manager, feedback_manager, report/* 등 |
 | 4 | `quizbot/quiz_ui/*.js` (멀티플레이 제외) | 화면 클래스 대부분 — 양이 제일 많음 |
 | 5 | `quizbot/quiz_system/**` (멀티플레이 세션 제외) | State 패턴 엔진 본체 |
