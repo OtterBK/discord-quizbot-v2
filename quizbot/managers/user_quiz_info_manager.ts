@@ -76,6 +76,10 @@ QuestionInfoColumn.forEach((field) =>
 //만약 fields 추가 및 수정되면 여기에 그냥 넣으면 된다
 class UserQuizInfo //유저 제작 퀴즈 정보
 {
+  //UI 쪽에서 목록 표시용으로 quiz_info.name = ... 처럼 임의 프로퍼티를 얹는 관행이 있어
+  //(user-quiz-list-ui.js/user-quiz-select-ui.js) common-ui.ts의 QuizbotUI와 같은 패턴으로 인덱스 시그니처를 둔다.
+  [key: string]: any;
+
   data: Record<string, any>;
   quiz_id: any;
   question_list: UserQuestionInfo[];

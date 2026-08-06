@@ -6,7 +6,7 @@ const { MessageFlags } = require('discord.js');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, DEV_QUIZ_TAG, QUIZ_TAG } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
 const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
 const {
@@ -17,7 +17,7 @@ const {
   omakase_basket_select_row,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
@@ -30,9 +30,14 @@ const { cloneDeep } = require('lodash');
 /** 퀴즈 정보 표시 UI, Dev퀴즈/User퀴즈 둘 다 사용 */
 class QuizInfoUI extends QuizbotUI
 {
-  static BASKET_CACHE = {}; //guild id, basket item
+  static BASKET_CACHE: Record<string, any> = {}; //guild id, basket item
 
-  constructor(quiz_info={})
+  quiz_info: any;
+  max_quiz_count: number;
+  need_tags: boolean;
+  custom_quiz_warned: boolean;
+
+  constructor(quiz_info: any = {})
   {
     super();
 
@@ -69,12 +74,12 @@ class QuizInfoUI extends QuizbotUI
     this.quiz_info_ui_handler =
     {
       'start': this.handleStartQuiz.bind(this),
-      'scoreboard': this.handleRequestScoreboard.bind(this), 
-      'settings': this.handleRequestSettingUI.bind(this), 
-      'request_modal_quiz_setting': this.handleRequestModalQuizSetting.bind(this), 
+      'scoreboard': this.handleRequestScoreboard.bind(this),
+      'settings': this.handleRequestSettingUI.bind(this),
+      'request_modal_quiz_setting': this.handleRequestModalQuizSetting.bind(this),
       'modal_quiz_setting': this.handleSubmitModalQuizSetting.bind(this),
-      'use_tag_mode': this.handleRequestUseTagMode.bind(this), 
-      'use_basket_mode': this.handleRequestUseBasketMode.bind(this), 
+      'use_tag_mode': this.handleRequestUseTagMode.bind(this),
+      'use_basket_mode': this.handleRequestUseBasketMode.bind(this),
       'load_basket_items': this.handleLoadBasketItems.bind(this),
       'basket_select_menu': this.handleBasketSelected.bind(this),
       'basket_readonly_select_menu': () => this, //읽기 전용 조회 메뉴, 선택해도 상태 변화 없음(의도된 동작)
@@ -83,34 +88,34 @@ class QuizInfoUI extends QuizbotUI
 
   refreshUI()
   {
-    let description = this.getDescription();
+    const description = this.getDescription();
 
     this.embed.description = description;
   }
 
   getDescription()
   {
-    let description = text_contents.quiz_info_ui.description;
+    const description = text_contents.quiz_info_ui.description;
 
     const all_question_count = this.quiz_info['quiz_size'] ?? this.max_quiz_count;
-  
+
     return description
       .replace('${quiz_size}', `[ ${this.quiz_info['selected_question_count'] ?? this.quiz_info['quiz_size']} / ${all_question_count} ]`)
       .replace('${quiz_type_name}', `${this.quiz_info['type_name'] ?? ''}`)
       .replace('${quiz_description}', `${this.quiz_info['description'] ?? ''}`);
   }
-  
-  getTagInfoText() 
+
+  getTagInfoText()
   {
     let tag_info_text = "\n";
-    
+
     // 공식 퀴즈 설정
     tag_info_text += `📕 **공식 퀴즈 설정**\n`;
     const dev_quiz_tags = this.quiz_info['dev_quiz_tags'];
-    const dev_quiz_tags_string = this.formatTagsString(dev_quiz_tags, DEV_QUIZ_TAG, '음악 퀴즈');
+    const dev_quiz_tags_string = this.formatTagsString(dev_quiz_tags);
     tag_info_text += `🔸 퀴즈 유형: \`음악 퀴즈\`\n`;
     tag_info_text += `🔹 퀴즈 장르: \`${dev_quiz_tags_string}\`\n\n`;
-    
+
     tag_info_text += `📗 **유저 퀴즈 설정**\n`;
     const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
     if(use_basket_mode === false)
@@ -119,7 +124,7 @@ class QuizInfoUI extends QuizbotUI
       const custom_quiz_type_tags = this.quiz_info['custom_quiz_type_tags'];
       const custom_quiz_tags = this.quiz_info['custom_quiz_tags'];
 
-      const custom_quiz_type_tags_string = this.getCustomQuizTypeString(custom_quiz_type_tags, custom_quiz_tags);
+      const custom_quiz_type_tags_string = this.getCustomQuizTypeString(custom_quiz_type_tags);
       const custom_quiz_tags_string = this.getCustomQuizTagsString(custom_quiz_tags, custom_quiz_type_tags);
 
       tag_info_text += `🔸 퀴즈 유형: \`${custom_quiz_type_tags_string}\`\n`;
@@ -132,37 +137,37 @@ class QuizInfoUI extends QuizbotUI
     {
       tag_info_text += `🔸 \`장바구니 모드 사용 중\`\n\n`;
     }
-    
+
     return tag_info_text;
   }
-  
-  formatTagsString(tags) 
+
+  formatTagsString(tags: any)
   {
     const tagsString = utility.convertTagsValueToString(tags, DEV_QUIZ_TAG);
     return tagsString === '' ? '선택 안함' : tagsString;
   }
-  
-  getCustomQuizTypeString(typeTags, quizTags) 
+
+  getCustomQuizTypeString(typeTags: any)
   {
-    if (typeTags === 0) 
+    if (typeTags === 0)
     {
       return '선택 안함';
     }
     return utility.convertTagsValueToString(typeTags, QUIZ_TAG);
   }
-  
-  getCustomQuizTagsString(quizTags, typeTags) 
+
+  getCustomQuizTagsString(quizTags: any, typeTags: any)
   {
-    if (quizTags === 0) 
+    if (quizTags === 0)
     {
       return typeTags !== 0 ? '모든 장르(분류되지 않은 퀴즈 포함)' : '선택 안함';
     }
     return utility.convertTagsValueToString(quizTags, QUIZ_TAG);
   }
-  
-  onInteractionCreate(interaction) 
+
+  onInteractionCreate(interaction: any)
   {
-    if(this.isUnsupportedInteraction(interaction)) 
+    if(this.isUnsupportedInteraction(interaction))
     {
       return;
     }
@@ -178,18 +183,18 @@ class QuizInfoUI extends QuizbotUI
     this.refreshUI();
   }
 
-  isQuizInfoUIEvent(interaction)
+  isQuizInfoUIEvent(interaction: any)
   {
     return this.quiz_info_ui_handler[interaction.customId] !== undefined;
   }
 
-  handleQuizInfoUIEvent(interaction)
+  handleQuizInfoUIEvent(interaction: any)
   {
     const handler = this.quiz_info_ui_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleStartQuiz(interaction)
+  handleStartQuiz(interaction: any)
   {
     const quiz_info = this.quiz_info;
 
@@ -214,23 +219,23 @@ class QuizInfoUI extends QuizbotUI
       interaction.reply({content: reason_message, flags: MessageFlags.Ephemeral});
       return;
     }
-    
+
     quiz_system.startQuiz(guild, owner, channel, quiz_info); //퀴즈 시작
 
-    return new AlertQuizStartUI(quiz_info, owner.displayName); 
+    return new AlertQuizStartUI(quiz_info, owner.displayName);
   }
 
-  handleRequestScoreboard(interaction)
+  handleRequestScoreboard(interaction: any)
   {
     //TODO 순위표 만들기
   }
 
-  handleRequestSettingUI(interaction)
+  handleRequestSettingUI(interaction: any)
   {
     return new ServerSettingUI(interaction.guild.id);
   }
 
-  handleRequestModalQuizSetting(interaction)
+  handleRequestModalQuizSetting(interaction: any)
   {
     const modal_current_quiz_setting = this.modal_quiz_setting;
 
@@ -253,12 +258,12 @@ class QuizInfoUI extends QuizbotUI
       const use_certified_filter = this.quiz_info.certified_filter ?? true;
       certified_filter_off_component.setValue(`${use_certified_filter ? '' : '네'}`);
     }
-    
+
     interaction.explicit_replied = true;
     interaction.showModal(modal_current_quiz_setting); //퀴즈 설정 모달 전달
   }
 
-  handleSubmitModalQuizSetting(interaction)
+  handleSubmitModalQuizSetting(interaction: any)
   {
     const need_refresh = this.applyQuizSettings(interaction);
 
@@ -277,20 +282,20 @@ class QuizInfoUI extends QuizbotUI
     return this;
   }
 
-  checkHasComponentFieldFromModalSubmit(interaction, custom_id)
+  checkHasComponentFieldFromModalSubmit(interaction: any, custom_id: string)
   {
-    const exists = interaction.fields.components.some(row =>
-      row.components.some(component => component.customId === custom_id)
+    const exists = interaction.fields.components.some((row: any) =>
+      row.components.some((component: any) => component.customId === custom_id)
     );
 
     return exists;
   }
 
-  getComponentFromModalComponent(modal_comp, custom_id)
+  getComponentFromModalComponent(modal_comp: any, custom_id: string)
   {
     const target_component = modal_comp.components
-      .flatMap(actionRow => actionRow.components)
-      .find(component => 
+      .flatMap((actionRow: any) => actionRow.components)
+      .find((component: any) =>
       {
         if(component.data.custom_id === custom_id)
         {
@@ -301,18 +306,18 @@ class QuizInfoUI extends QuizbotUI
     return target_component;
   }
 
-  applyQuizSettings(interaction)
+  applyQuizSettings(interaction: any)
   {
-    let need_refresh = false;
+    let need_refresh: any = false;
 
-    need_refresh |= this.applySelectedQuestionCount(interaction);  
-    need_refresh |= this.applyCustomTitle(interaction);
-    need_refresh |= this.applyCertifiedFilter(interaction);
+    need_refresh |= (this.applySelectedQuestionCount(interaction) as any);
+    need_refresh |= (this.applyCustomTitle(interaction) as any);
+    need_refresh |= (this.applyCertifiedFilter(interaction) as any);
 
     return need_refresh;
   }
 
-  applySelectedQuestionCount(interaction)
+  applySelectedQuestionCount(interaction: any)
   {
     if(this.checkHasComponentFieldFromModalSubmit(interaction, 'txt_input_selected_question_count') === false)
     {
@@ -347,7 +352,7 @@ class QuizInfoUI extends QuizbotUI
     {
       selected_question_count = min_quiz_size;
     }
-    
+
     // interaction.explicit_replied = true;
     // interaction.reply({content: `\`\`\`🔸 제출할 문제 수를 ${selected_question_count}개로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
     quiz_info['selected_question_count'] = selected_question_count;
@@ -355,7 +360,7 @@ class QuizInfoUI extends QuizbotUI
     return true;
   }
 
-  applyCustomTitle(interaction)
+  applyCustomTitle(interaction: any)
   {
     if(this.checkHasComponentFieldFromModalSubmit(interaction, 'txt_input_custom_title') === false)
     {
@@ -372,7 +377,7 @@ class QuizInfoUI extends QuizbotUI
     return true;
   }
 
-  applyCertifiedFilter(interaction)
+  applyCertifiedFilter(interaction: any)
   {
     if(this.checkHasComponentFieldFromModalSubmit(interaction, 'txt_input_certified_quiz_filter_off') === false)
     {
@@ -384,14 +389,14 @@ class QuizInfoUI extends QuizbotUI
     //예전엔 뭐라도 입력만 하면(스페이스 하나 실수로 입력해도) off로 처리돼서 오입력 위험이 있었음.
     //명확한 긍정 응답을 입력했을 때만 off로 처리하도록 변경
     const use_certified_filter = !['네', '예', 'ㅇ', 'y', 'Y'].includes(is_offed.trim());
-    
+
     if(this.quiz_info['certified_filter'] === use_certified_filter)
     {
       return false;
     }
 
     this.quiz_info['certified_filter'] = use_certified_filter;
-    
+
     if(use_certified_filter === false)
     {
       interaction.channel.send({content: `\`\`\`⚠ 주의! 인증 필터가 꺼졌습니다.\n인증되지 않은 퀴즈를 포함한 모든 퀴즈가 출제 문제로 사용됩니다.\n출제될 문제는 다양해지지만 일반적으론 권장되지 않습니다.\`\`\``});
@@ -404,7 +409,7 @@ class QuizInfoUI extends QuizbotUI
     return true;
   }
 
-  applyQuizTagsSetting(interaction)
+  applyQuizTagsSetting(interaction: any)
   {
     const quiz_info = this.quiz_info;
 
@@ -424,7 +429,7 @@ class QuizInfoUI extends QuizbotUI
       tags_value_type = 'custom_quiz_tags';
       this.sendCustomQuizWarning(interaction.channel);
     }
-    
+
     if(tags_value_type === '')
     {
       return false;
@@ -433,15 +438,15 @@ class QuizInfoUI extends QuizbotUI
     const previous_tags_value = quiz_info[tags_value_type];
     if(previous_tags_value === tags_value) //같으면 할 게 없다
     {
-      return false; 
+      return false;
     }
 
     quiz_info[tags_value_type] = tags_value;
-    
+
     return true;
   }
 
-  sendCustomQuizWarning(channel)
+  sendCustomQuizWarning(channel: any)
   {
     if(this.custom_quiz_warned === true)
     {
@@ -458,22 +463,22 @@ class QuizInfoUI extends QuizbotUI
     return this.need_tags == false || this.quiz_info['dev_quiz_tags'] !== 0 || this.quiz_info['custom_quiz_type_tags'] !== 0 || (this.quiz_info['basket_mode'] && Object.keys(this.quiz_info['basket_items']).length > 0);
   }
 
-  handleRequestUseBasketMode(interaction)
+  handleRequestUseBasketMode(interaction: any)
   {
     //일반적으론 지원하지 않음
   }
 
-  handleRequestUseTagMode(interaction)
+  handleRequestUseTagMode(interaction: any)
   {
     //일반적으로 지원하지 않음
   }
 
-  handleLoadBasketItems(interaction)
+  handleLoadBasketItems(interaction: any)
   {
     //일반적으로 지원하지 않음
   }
 
-  setupBasketSelectMenu() 
+  setupBasketSelectMenu()
   {
     const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
     if(use_basket_mode === false)
@@ -482,7 +487,7 @@ class QuizInfoUI extends QuizbotUI
     }
 
     const basket_items = this.quiz_info['basket_items'] ?? {};
-    let basket_select_menu_for_current = cloneDeep(this.readonly ? omakase_basket_readonly_select_menu : omakase_basket_select_menu);
+    const basket_select_menu_for_current = cloneDeep(this.readonly ? omakase_basket_readonly_select_menu : omakase_basket_select_menu);
 
     const basket_keys = Object.keys(basket_items);
     if(basket_keys.length === 0)
@@ -492,9 +497,9 @@ class QuizInfoUI extends QuizbotUI
       this.basket_select_component.components[0] = basket_select_menu_for_current;
       return;
     }
-  
+
     basket_select_menu_for_current.setMaxValues(basket_keys.length > 24 ? 24 : basket_keys.length);
-    for (const key of basket_keys) 
+    for (const key of basket_keys)
     {
       const basket_item = basket_items[key];
 
@@ -510,18 +515,18 @@ class QuizInfoUI extends QuizbotUI
       {
         option = { label: `${quiz_title}`, description: `선택하여 장바구니에서 제거`, value: `${quiz_id}` };
       }
-      
+
       basket_select_menu_for_current.addOptions(option);
     }
 
     this.basket_select_component.components[0] = basket_select_menu_for_current;
   }
 
-  handleBasketSelected(interaction)
+  handleBasketSelected(interaction: any)
   {
     const selected_values = interaction.values;
 
-    let basket_items = this.quiz_info['basket_items'] ?? {};
+    const basket_items = this.quiz_info['basket_items'] ?? {};
     let remove_count = 0;
     for(const key of selected_values)
     {
@@ -531,7 +536,7 @@ class QuizInfoUI extends QuizbotUI
         continue;
       }
 
-      delete basket_items[parseInt(quiz_id)];
+      delete basket_items[quiz_id];
       ++remove_count;
     }
 

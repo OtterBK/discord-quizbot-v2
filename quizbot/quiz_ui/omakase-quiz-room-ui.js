@@ -24,7 +24,7 @@ const {
 } = require("./common-ui");
 
 
-const { QuizInfoUI } = require('./quiz-info-ui.js');
+const { QuizInfoUI } = require('./quiz-info-ui');
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 
 //#endregion

@@ -6,7 +6,7 @@
 
 //#region 로컬 modules
 
-const { QuizInfoUI } = require('./quiz-info-ui.js');
+const { QuizInfoUI } = require('./quiz-info-ui');
 
 //#endregion
 

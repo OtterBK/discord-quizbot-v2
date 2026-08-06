@@ -7,7 +7,7 @@ const cloneDeep = require("lodash/cloneDeep.js");
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const {  loadUserQuizListFromDB } = require('../managers/user_quiz_info_manager');
 const {
   sort_by_select_menu,
@@ -17,18 +17,18 @@ const {
   btn_done,
 } = require("./components");
 
-const { 
+const {
   QuizBotControlComponentUI
 } = require("./common-ui");
 
 const { UserQuizInfoUI } = require("./user-quiz-info.ui.js");
-const { QuizInfoUI } = require("./quiz-info-ui.js");
+const { QuizInfoUI } = require("./quiz-info-ui");
 //#endregion
 
 /** 유저 퀴즈 선택 UI */
-class UserQuizSelectUI extends QuizBotControlComponentUI  
+class UserQuizSelectUI extends QuizBotControlComponentUI
 {
-  constructor(basket_items=undefined)
+  constructor(basket_items: any = undefined)
   {
     super();
 
@@ -40,13 +40,13 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     this.basket_items = basket_items;
     this.use_basket_mode = this.basket_items !== undefined;
     this.max_basket_size = 25;
-    
+
     this.initializeEmbed();
     this.initializeComponents();
     this.initializeUserQuizSelectUIEventHandler();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     this.embed = {
       color: 0x05f1f1,
@@ -56,7 +56,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     };
   }
 
-  initializeComponents() 
+  initializeComponents()
   {
     this.sort_by_select_menu = cloneDeep(sort_by_select_menu); //아예 deep copy해야함
     this.search_tag_select_menu = cloneDeep(quiz_search_tags_select_menu); //아예 deep copy해야함
@@ -74,7 +74,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
   initializeUserQuizSelectUIEventHandler()
   {
-    this.user_quiz_select_ui_handler = 
+    this.user_quiz_select_ui_handler =
     {
       'sort_by_select': this.handleRequestSort.bind(this),
       'quiz_search_tags_select_menu': this.handleRequestTagSearch.bind(this),
@@ -84,14 +84,14 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
   onReady() //ui 등록 됐을 때
   {
-    this.loadAllUserQuizList(undefined); //여기서 ui 업데이트함
+    this.loadAllUserQuizList(); //여기서 ui 업데이트함
   }
 
   async loadAllUserQuizList()
   {
     const user_quiz_list = await loadUserQuizListFromDB(undefined); //전체 조회
 
-    for(let user_quiz_info of user_quiz_list) 
+    for(const user_quiz_info of user_quiz_list)
     {
       user_quiz_info.name = `**${user_quiz_info.data.quiz_title}**\n🔸) ${user_quiz_info.data.simple_description ?? ''}`;
     }
@@ -104,9 +104,9 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     this.update();
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
-    if(this.isUnsupportedInteraction(interaction))  
+    if(this.isUnsupportedInteraction(interaction))
     {
       return;
     }
@@ -115,7 +115,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     {
       return this.handleUserQuizSelectUIEvent(interaction);
     }
-    
+
     if(this.isPageMoveEvent(interaction))
     {
       if(interaction.customId === 'modal_complex_page_jump') //키워드 검색을 먼저 본다.
@@ -132,25 +132,25 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  isUserQuizSelectUIEvent(interaction)
+  isUserQuizSelectUIEvent(interaction: any)
   {
     return this.user_quiz_select_ui_handler[interaction.customId] !== undefined;
   }
 
-  handleUserQuizSelectUIEvent(interaction)
+  handleUserQuizSelectUIEvent(interaction: any)
   {
     const handler = this.user_quiz_select_ui_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleRequestSort(interaction)
+  handleRequestSort(interaction: any)
   {
     this.reorderQuizInfoList(interaction.values[0]); //재정렬 ㄱㄱ
     this.displayContents(this.cur_page);
     return this;
   }
 
-  handleRequestTagSearch(interaction)
+  handleRequestTagSearch(interaction: any)
   {
     const selected_tags_value = interaction.values[0];
     this.filterByTag(selected_tags_value);
@@ -160,21 +160,21 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     return this;
   }
 
-  handleRequestModalComplexPageJump(interaction)
+  handleRequestModalComplexPageJump(interaction: any)
   {
     interaction.explicit_replied = true;
     interaction.showModal(modal_complex_page_jump); //페이지 점프 입력 모달 전달
     return undefined;
   }
 
-  handleRequestKeywordSearch(interaction)
+  handleRequestKeywordSearch(interaction: any)
   {
     const input_keyword_value = interaction.fields.getTextInputValue('txt_input_keyword');
 
     this.filterByKeyword(input_keyword_value);
 
     this.cur_page = 0;
-    this.displayContents(this.cur_page); 
+    this.displayContents(this.cur_page);
 
     if(input_keyword_value === undefined || input_keyword_value === '')
     {
@@ -186,10 +186,10 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  reorderQuizInfoList(selected_sort_by_value)
+  reorderQuizInfoList(selected_sort_by_value: string)
   {
     if(this.selected_sort_by_value === selected_sort_by_value) return; //바뀐게 없다면 return
-    
+
     this.selected_sort_by_value = selected_sort_by_value;
 
     this.selectDefaultOptionByValue(this.sort_by_select_menu.components[0], selected_sort_by_value);
@@ -197,17 +197,17 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     if(this.selected_sort_by_value.endsWith("_reverse")) //거꾸로 정렬이면
     {
       const selected_sort_by_value = this.selected_sort_by_value.substring(0, this.selected_sort_by_value.length - "_reverse".length);
-      this.cur_contents.sort((a, b) => a.data[selected_sort_by_value] - b.data[selected_sort_by_value]); //오름차순(오래된 퀴즈순)
+      this.cur_contents.sort((a: any, b: any) => a.data[selected_sort_by_value] - b.data[selected_sort_by_value]); //오름차순(오래된 퀴즈순)
     }
     else
     {
-      this.cur_contents.sort((a, b) => b.data[this.selected_sort_by_value] - a.data[this.selected_sort_by_value]); //내림차순(최근 퀴즈순)
+      this.cur_contents.sort((a: any, b: any) => b.data[this.selected_sort_by_value] - a.data[this.selected_sort_by_value]); //내림차순(최근 퀴즈순)
     }
 
     this.displayContents(this.current_question_index);
   }
 
-  filterByTag(selected_tags_value) //태그로
+  filterByTag(selected_tags_value: any) //태그로
   {
     if(this.selected_tags_value === selected_tags_value) //같으면 패스
     {
@@ -218,7 +218,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
     this.selectDefaultOptionByValue(this.search_tag_select_menu.components[0], selected_tags_value);
 
-    let filtered_contents = [];
+    const filtered_contents = [];
     for(const quiz_info of this.all_user_quiz_contents)
     {
       const quiz_tags_value = quiz_info.data.tags_value;
@@ -234,7 +234,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
   }
 
 
-  filterByKeyword(selected_keyword_value) //검색어로
+  filterByKeyword(selected_keyword_value: any) //검색어로
   {
     if(this.selected_keyword_value === selected_keyword_value) //같으면 패스
     {
@@ -248,7 +248,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
     this.selected_keyword_value = selected_keyword_value;
 
-    let filtered_contents = [];
+    const filtered_contents = [];
     for(const quiz_info of this.all_user_quiz_contents)
     {
       if(
@@ -256,7 +256,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
         || quiz_info.data.simple_description?.includes(selected_keyword_value)
         || quiz_info.data.description?.includes(selected_keyword_value)
         || quiz_info.data.creator_name?.includes(selected_keyword_value)
-      ) 
+      )
       {
         filtered_contents.push(quiz_info);
         continue;
@@ -266,7 +266,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
     this.cur_contents = filtered_contents;
   }
 
-  handleSelectedIndexEvent(interaction)
+  handleSelectedIndexEvent(interaction: any)
   {
     const select_index = this.convertToSelectedIndex(interaction.customId);
 
@@ -288,7 +288,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
       if(quiz_id === undefined)
       {
         interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈에서 Quiz id 값을 찾을 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral});
-        return; 
+        return;
       }
 
       if(this.basket_items[quiz_id] !== undefined)
@@ -300,15 +300,15 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
       if(Object.keys(this.basket_items ?? []).length >= this.max_basket_size)
       {
         interaction.reply({content: `\`\`\`🔸 장바구니가 가득 찼습니다. 더 이상 퀴즈를 담을 수 없어요.\`\`\``, flags: MessageFlags.Ephemeral});
-        return; 
+        return;
       }
 
-      this.basket_items[quiz_id] = 
+      this.basket_items[quiz_id] =
       {
         quiz_id: quiz_id,
         title: quiz_title,
       };
-   
+
       interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈를 장바구니에 담았습니다. (${Object.keys(this.basket_items).length}개 / ${this.max_basket_size}개)\`\`\``});
 
       const guild_id = interaction.guild.id;

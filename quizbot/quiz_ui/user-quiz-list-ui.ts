@@ -8,7 +8,7 @@ const { MessageFlags } = require('discord.js');
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const PRIVATE_CONFIG = require('../../config/private_config.json');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('../../utility/logger.js')('QuizUI');
 const { UserQuizInfo, loadUserQuizListFromDB } = require('../managers/user_quiz_info_manager');
 const {
@@ -16,7 +16,7 @@ const {
   modal_quiz_info,
 } = require("./components");
 
-const { 
+const {
   QuizBotControlComponentUI
 } = require("./common-ui");
 
@@ -28,7 +28,7 @@ const { UserQuizInfoUI } = require("./user-quiz-info.ui.js");
 /** Quiz 제작 UI 관련, 전부 개인 메시지로 처리됨 */
 class UserQuizListUI extends QuizBotControlComponentUI
 {
-  constructor(creator, show_all_quizzes = false)
+  constructor(creator: any, show_all_quizzes = false)
   {
     super();
 
@@ -41,7 +41,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
     this.initializeUserQuizListHandler();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     this.embed = {
       color: 0x05f1f1,
@@ -50,7 +50,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
       description: `🛠 **${this.creator.displayName}**님이 제작하신 퀴즈 목록입니다!\n \n \n`,
 
       footer: {
-        text: this.creator.displayName, 
+        text: this.creator.displayName,
         icon_url: this.creator.avatarURL(),
       },
     };
@@ -58,7 +58,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
     this.main_description = this.embed.description;
   }
 
-  initializeComponents() 
+  initializeComponents()
   {
     this.components.push(my_quiz_control_comp);
   }
@@ -66,8 +66,8 @@ class UserQuizListUI extends QuizBotControlComponentUI
   initializeUserQuizListHandler()
   {
     this.user_quiz_list_handler = {
-      'request_modal_quiz_create': this.handleRequestModalQuizCreate.bind(this), 
-      'modal_quiz_info': this.addQuiz.bind(this), 
+      'request_modal_quiz_create': this.handleRequestModalQuizCreate.bind(this),
+      'modal_quiz_info': this.addQuiz.bind(this),
     };
   }
 
@@ -75,12 +75,12 @@ class UserQuizListUI extends QuizBotControlComponentUI
   {
     //조회 속도가 빠르면 메시지 생성되기 전에 updateUI 해버려서 그냥 조회 후 ui 전송되게함
     this.loadUserQuiz()
-      .then(() => 
-      { 
+      .then(() =>
+      {
         this.update();
         this.sendQuizPlayedInfo(); //제작한 퀴즈 플레이 정보 요약
       })
-      .catch(err => 
+      .catch((err: any) =>
       {
         logger.error(`Undefined Current Contents on UserQuizListUI, creator_id:${this.creator_id}, err: ${err.stack}`);
       });
@@ -114,9 +114,9 @@ class UserQuizListUI extends QuizBotControlComponentUI
     this.displayContents();
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
-    if(this.isUnsupportedInteraction(interaction)) 
+    if(this.isUnsupportedInteraction(interaction))
     {
       return;
     }
@@ -137,28 +137,28 @@ class UserQuizListUI extends QuizBotControlComponentUI
     }
   }
 
-  isQuizListEvent(interaction)
+  isQuizListEvent(interaction: any)
   {
     return this.user_quiz_list_handler[interaction.customId] !== undefined;
   }
 
-  handleQuizListEvent(interaction)
+  handleQuizListEvent(interaction: any)
   {
     const handler = this.user_quiz_list_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleRequestModalQuizCreate(interaction)
+  handleRequestModalQuizCreate(interaction: any)
   {
     interaction.explicit_replied = true;
     interaction.showModal(modal_quiz_info); //퀴즈 생성 모달 전달
   }
 
-  addQuiz(modal_interaction) //제출된 modal interaction에서 정보 가져다 씀
+  addQuiz(modal_interaction: any) //제출된 modal interaction에서 정보 가져다 씀
   {
-    
-    let user_quiz_info = new UserQuizInfo();
-    
+
+    const user_quiz_info = new UserQuizInfo();
+
     const quiz_title = modal_interaction.fields.getTextInputValue('txt_input_quiz_title');
     const quiz_thumbnail = modal_interaction.fields.getTextInputValue('txt_input_quiz_thumbnail');
     const quiz_simple_description = modal_interaction.fields.getTextInputValue('txt_input_quiz_simple_description');
@@ -183,22 +183,22 @@ class UserQuizListUI extends QuizBotControlComponentUI
     user_quiz_info.data.played_count_of_week = 0;
 
     user_quiz_info.saveDataToDB()
-      .then(created_quiz_id => 
+      .then((created_quiz_id: any) =>
       {
         if(created_quiz_id === undefined) //저장 실패
         {
           modal_interaction.user.send({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM(제육보끔#1916)으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral});
           return;
         }
-    
+
         logger.info(`Created New Quiz... quiz_id: ${user_quiz_info.quiz_id}, title: ${user_quiz_info.data.quiz_title}`);
-    
+
         const user = modal_interaction.user;
         return this.showEditor(user, user_quiz_info);
       });
   }
 
-  handleSelectedIndexEvent(interaction)
+  handleSelectedIndexEvent(interaction: any)
   {
     const selected_index = this.convertToSelectedIndex(interaction.customId);
 
@@ -214,7 +214,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
     return this.showEditor(user, user_quiz_info);
   }
 
-  showEditor(user, user_quiz_info)
+  showEditor(user: any, user_quiz_info: any)
   {
     if(user.id !== user_quiz_info.data.creator_id && user.id !== PRIVATE_CONFIG?.ADMIN_ID) //어드민이면 다 수정 할 수 있음
     {
@@ -266,7 +266,7 @@ class UserQuizListUI extends QuizBotControlComponentUI
       }
     }
 
-    let info_string = 
+    const info_string =
 	 `🔸 유저분들이 ${user.displayName} 님의 퀴즈를 [${total_played_count}]회 플레이했어요!\n🔸 이번 주에 가장 플레이된 퀴즈는 [${best_quiz_of_week.data.quiz_title ?? "UNKNOWN NAME"}]이네요!\n🔸 모든 퀴즈 중 가장 많이 플레이된 퀴즈는 [${best_quiz.data.quiz_title ?? "UNKNOWN NAME"}]입니다!\n🔸 퀴즈 제작에 참여해주셔서 정말 감사드립니다.🙂`;
     user.send({content: '```' + info_string + '```', flags: MessageFlags.Ephemeral});
   }
