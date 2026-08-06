@@ -7,7 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { calcWinnerMMR, calcLoserMMR } = require('../../quizbot/managers/multiplayer_mmr.js');
+const { calcWinnerMMR, calcLoserMMR } = require('../../quizbot/managers/multiplayer_mmr');
 
 test('calcWinnerMMR: guild_info가 없으면(탈주 등) 0을 반환한다', () =>
 {

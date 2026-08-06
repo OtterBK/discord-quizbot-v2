@@ -6,7 +6,15 @@
 //(quiz_system Phase 1의 monitoring_manager.calculateAverageCpuUsage와 같은 패턴).
 //공식/주석은 원본과 동일 (계산 결과 동일, 동작 변경 없음).
 
-exports.calcWinnerMMR = (guild_info, question_num, participant_count) =>
+interface GuildInfo
+{
+  stat: {
+    win: number;
+    lose: number;
+  };
+}
+
+exports.calcWinnerMMR = (guild_info: GuildInfo | undefined, question_num: number, participant_count: number): number =>
 {
   if (!guild_info)
   { // 예외 처리
@@ -45,7 +53,7 @@ exports.calcWinnerMMR = (guild_info, question_num, participant_count) =>
   return Math.round(mmr_add); // 소수점 반올림
 };
 
-exports.calcLoserMMR = (guild_info, score = 0, question_num, top_score) =>
+exports.calcLoserMMR = (guild_info: GuildInfo | undefined, score: number = 0, question_num: number, top_score: number): number =>
 {
   const base_mmr = -100; // 기본 -100
   if (!guild_info)

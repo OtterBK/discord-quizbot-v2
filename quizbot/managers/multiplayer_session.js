@@ -12,7 +12,7 @@ const db_manager = require('./db_manager.js');
 const utility = require('../../utility/utility.js');
 
 const session_registry = require('./multiplayer_session_registry.js');
-const multiplayer_mmr = require('./multiplayer_mmr.js');
+const multiplayer_mmr = require('./multiplayer_mmr');
 const MultiplayerGuildInfo = require('./multiplayer_guild_info.js');
 
 const SESSION_STATE = 

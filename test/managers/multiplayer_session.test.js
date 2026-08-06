@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
 
 const { MultiplayerSession, SESSION_STATE } = require('../../quizbot/managers/multiplayer_session.js');
 const session_registry = require('../../quizbot/managers/multiplayer_session_registry.js');
-const multiplayer_mmr = require('../../quizbot/managers/multiplayer_mmr.js');
+const multiplayer_mmr = require('../../quizbot/managers/multiplayer_mmr');
 const db_manager = require('../../quizbot/managers/db_manager.js');
 
 function resetRegistry()
