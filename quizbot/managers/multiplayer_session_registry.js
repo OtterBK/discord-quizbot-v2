@@ -8,7 +8,7 @@
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
 const logger = require('../../utility/logger.js')('MultiplayerManager');
-const { IPC_MESSAGE_TYPE } = require('./ipc_manager.js');
+const { IPC_MESSAGE_TYPE } = require('./ipc_manager');
 const { SERVER_SIGNAL } = require('./multiplayer_signal.js');
 
 let cluster_manager = undefined;

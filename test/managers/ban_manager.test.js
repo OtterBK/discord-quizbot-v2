@@ -11,7 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 
-const ban_manager = require('../../quizbot/managers/ban_manager.js');
+const ban_manager = require('../../quizbot/managers/ban_manager');
 
 test('initialize: 파일이 없으면 빈 파일을 만들고, 있으면 줄 단위로 파싱해 캐싱한다', (t) =>
 {

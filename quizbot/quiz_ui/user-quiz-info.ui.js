@@ -13,7 +13,7 @@ const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const feedback_manager = require('../managers/feedback_manager.js');
-const ban_manager = require('../managers/ban_manager.js');
+const ban_manager = require('../managers/ban_manager');
 const {
   quiz_info_comp,
   quiz_edit_comp,

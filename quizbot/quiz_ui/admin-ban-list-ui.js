@@ -5,7 +5,7 @@ const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder
 //#endregion
 
 //#region 로컬 modules
-const ban_manager = require('../managers/ban_manager.js');
+const ban_manager = require('../managers/ban_manager');
 const {
   only_back_comp,
   admin_ban_unban_confirm_comp,

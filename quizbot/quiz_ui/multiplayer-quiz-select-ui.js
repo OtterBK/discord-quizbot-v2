@@ -6,9 +6,9 @@ const { MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
-const ipc_manager = require('../managers/ipc_manager.js');
+const ipc_manager = require('../managers/ipc_manager');
 const { CLIENT_SIGNAL, SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
-const ban_manager = require('../managers/ban_manager.js');
+const ban_manager = require('../managers/ban_manager');
 
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 

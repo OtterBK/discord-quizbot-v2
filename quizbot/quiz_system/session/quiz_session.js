@@ -290,7 +290,7 @@ class QuizSession
     //ipc_manager.js가 다시 quiz_system.js를 require하는 순환참조가 있어서
     //(REFACTOR_PLAN.md Phase 2에서 quiz_session.js를 분리하며 새로 생긴 경로),
     //모듈 최상단이 아니라 실제 호출 시점에 지연 require해서 로드 순서 문제를 피한다.
-    const ipc_manager = require('../../managers/ipc_manager.js');
+    const ipc_manager = require('../../managers/ipc_manager');
     signal.guild_id = this.guild_id;
     return ipc_manager.sendMultiplayerSignal(signal);
   }

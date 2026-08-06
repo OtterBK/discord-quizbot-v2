@@ -1,7 +1,7 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const { sync_objects } = require('./ipc_manager.js');
+const { sync_objects } = require('./ipc_manager');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const logger = require('../../utility/logger.js')('MonitoringManager');
 

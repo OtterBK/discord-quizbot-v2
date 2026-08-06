@@ -152,7 +152,7 @@ const MultiplayerSessionMixin = Base => class extends Base
     //ipc_manager.js가 다시 quiz_system.js를 require하는 순환참조가 있어서
     //(quiz_session.js에서 겪은 것과 동일한 문제, 해당 커밋 참고), 모듈 최상단이
     //아니라 실제 호출 시점에 지연 require해서 로드 순서 문제를 피한다.
-    const ipc_manager = require('../../managers/ipc_manager.js');
+    const ipc_manager = require('../../managers/ipc_manager');
     ipc_manager.sendMultiplayerSignal(
       signal
     )

@@ -24,19 +24,19 @@ const {
   QUIZ_MAKER_TYPE,
 } = require('../config/system_setting.js');
 
-const command_manager = require('./managers/command_manager.js');
+const command_manager = require('./managers/command_manager');
 const quizbot_ui = require('./quiz_ui/ui-system-core.js');
 const quiz_system = require('./quiz_system/quiz_system.js');
 const option_system = require('./quiz_option/quiz_option.js');
 const utility = require('../utility/utility.js');
 const logger = require('../utility/logger.js')('Main');
 const db_manager = require('./managers/db_manager.js');
-const ipc_manager = require('./managers/ipc_manager.js');
+const ipc_manager = require('./managers/ipc_manager');
 const tagged_dev_quiz_manager = require('./managers/tagged_dev_quiz_manager.js');
 const audio_cache_manager = require('./managers/audio_cache_manager.js');
 const multiplayer_chat_manager = require('./managers/multiplayer_chat_manager.js');
 const report_manager = require('./managers/report_manager.js');
-const ban_manager = require('./managers/ban_manager.js');
+const ban_manager = require('./managers/ban_manager');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
 const { startMonitoring } = require('./managers/monitoring_manager.js');
 

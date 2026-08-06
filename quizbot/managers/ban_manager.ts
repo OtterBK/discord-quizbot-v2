@@ -15,9 +15,9 @@ const logger = require('../../utility/logger.js')('BanManager');
 
 const REFRESH_INTERVAL = 600000; //10분마다 파일에서 다시 읽어옴 (외부에서 직접 파일을 수정하는 경우 대비)
 
-let banned_id_set = new Set();
+let banned_id_set: Set<string> = new Set();
 
-const loadBannedIdListFromDisk = () =>
+const loadBannedIdListFromDisk = (): void =>
 {
   if(!fs.existsSync(SYSTEM_CONFIG.BANNED_USER_PATH))
   {
@@ -29,10 +29,10 @@ const loadBannedIdListFromDisk = () =>
     flag: 'r',
   });
 
-  banned_id_set = new Set(banned_list.split('\n').map(line => line.trim()).filter(Boolean));
+  banned_id_set = new Set(banned_list.split('\n').map((line: string) => line.trim()).filter(Boolean));
 };
 
-exports.initialize = () =>
+exports.initialize = (): void =>
 {
   loadBannedIdListFromDisk();
 
@@ -43,12 +43,12 @@ exports.initialize = () =>
   refresh_timer.unref(); //이 타이머 하나만으로 프로세스가 종료되지 않는 걸 막지 않도록 함 (테스트에서 initialize()를 여러 번 호출해도 프로세스가 안 걸리게)
 };
 
-exports.isBanned = (id_list) =>
+exports.isBanned = (id_list: string[]): boolean =>
 {
   return id_list.some(id => banned_id_set.has(id));
 };
 
-exports.banId = (id) =>
+exports.banId = (id: string): boolean =>
 {
   if(banned_id_set.has(id))
   {
@@ -65,12 +65,12 @@ exports.banId = (id) =>
   return true;
 };
 
-exports.getBannedIdList = () =>
+exports.getBannedIdList = (): string[] =>
 {
   return Array.from(banned_id_set);
 };
 
-exports.unbanId = (id) =>
+exports.unbanId = (id: string): boolean =>
 {
   if(!banned_id_set.has(id))
   {

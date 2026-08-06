@@ -17,7 +17,7 @@ const chat_cache = require('../../quizbot/managers/report/chat_cache.js');
 const report_processing_core = require('../../quizbot/managers/report/report_processing_core.js');
 const report_manual_processing = require('../../quizbot/managers/report/report_manual_processing.js');
 const db_manager = require('../../quizbot/managers/db_manager.js');
-const ban_manager = require('../../quizbot/managers/ban_manager.js');
+const ban_manager = require('../../quizbot/managers/ban_manager');
 
 test('report_manager.js: 원본과 동일하게 initialize/checkReportEvent 2개만 재수출한다', () =>
 {

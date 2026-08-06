@@ -9,7 +9,7 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, S
 const PRIVATE_CONFIG = require('../../../config/private_config.json');
 const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
-const ban_manager = require('../ban_manager.js');
+const ban_manager = require('../ban_manager');
 
 const report_state = require('./report_state.js');
 const report_chat_info = require('./report_chat_info.js');

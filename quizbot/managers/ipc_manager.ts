@@ -7,17 +7,17 @@ const { messageType } = require('discord-hybrid-sharding');
 const logger = require('../../utility/logger.js')('IPCManager');
 const quiz_system = require('../quiz_system/quiz_system.js');
 
-/** 
+/**
  * 샤딩으로인한 공유 객체 및 이벤트 관리
  */
-let bot_client = undefined;
+let bot_client: any = undefined;
 
 //공유 오브젝트
-let sync_objects = new Map();
+let sync_objects = new Map<string, any>();
 
-let guild_count;
-let local_play_count;
-let multi_play_count;
+let guild_count: number;
+let local_play_count: number;
+let multi_play_count: number;
 
 const IPC_MESSAGE_TYPE = {
   CHECK_STATUS: 0,
@@ -26,7 +26,7 @@ const IPC_MESSAGE_TYPE = {
   MULTIPLAYER_SIGNAL: 3,
 };
 
-let relayMultiplayerSignalHandler = (signal) => 
+let relayMultiplayerSignalHandler = (signal: any): void =>
 {
   logger.error("relay handler doest not initialized!");
 };
@@ -35,7 +35,7 @@ exports.IPC_MESSAGE_TYPE = IPC_MESSAGE_TYPE;
 
 exports.sync_objects = sync_objects;
 
-exports.initialize = (client) =>
+exports.initialize = (client: any): boolean | undefined =>
 {
   if(client == undefined)
   {
@@ -44,13 +44,13 @@ exports.initialize = (client) =>
   }
 
   bot_client = client;
-  bot_client.cluster.on('message', message => 
+  bot_client.cluster.on('message', (message: any) =>
   {
 
     if(message.ipc_message_type == exports.IPC_MESSAGE_TYPE.CHECK_STATUS)
     {
-      message.reply({ 
-        guild_count: bot_client.guilds.cache.size,  
+      message.reply({
+        guild_count: bot_client.guilds.cache.size,
         local_play_count: quiz_system.getLocalQuizSessionCount(),
         multi_play_count: quiz_system.getMultiplayerQuizSessionCount(),
       });
@@ -76,7 +76,7 @@ exports.initialize = (client) =>
   });
 };
 
-exports.sendMultiplayerSignal = (signal) =>
+exports.sendMultiplayerSignal = (signal: any): Promise<any> =>
 {
   return bot_client.cluster.request({
     ipc_message_type: exports.IPC_MESSAGE_TYPE.MULTIPLAYER_SIGNAL,
@@ -84,8 +84,7 @@ exports.sendMultiplayerSignal = (signal) =>
   });
 };
 
-exports.adaptRelayHandler = (handler) =>
+exports.adaptRelayHandler = (handler: (signal: any) => void): void =>
 {
   relayMultiplayerSignalHandler = handler;
 };
-

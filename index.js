@@ -17,7 +17,7 @@ const { ClusterManager, HeartbeatManager } = require('discord-hybrid-sharding');
 const PRIVATE_CONFIG = require('./config/private_config.json');
 const logger = require('./utility/logger.js')('ShardManager');
 const { SYSTEM_CONFIG } = require('./config/system_setting.js');
-const { IPC_MESSAGE_TYPE } = require('./quizbot/managers/ipc_manager.js');
+const { IPC_MESSAGE_TYPE } = require('./quizbot/managers/ipc_manager');
 // const web_manager = require('./web/web_manager.js'); //고정 html 표시로 바꿔서 웹서버 열 필요 없음
 const multiplayer_manager = require('./quizbot/managers/multiplayer_manager.js');
 

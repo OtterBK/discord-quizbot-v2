@@ -9,7 +9,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('퀴즈')
     .setDescription('퀴즈봇의 메인 메뉴를 표시합니다.'),
-  // .addChannelOption(option => 
+  // .addChannelOption(option =>
   //     option
   //     .setName("보이스채널")
   //     .setDescription("봇을 부를 채널")
@@ -58,24 +58,24 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('quizmgr')
-    .setDescription('퀴즈봇 내부 도구'),
+    .setDescription('.'),
 ];
 
 //길드에 명령어 등록용
-exports.registerCommands = async (token, clientId, guildId) => 
+exports.registerCommands = async (token: string, clientId: string, guildId: string): Promise<void> =>
 {
   const rest = new REST({version: '10'}).setToken(token);
 
   rest.put(Routes.applicationGuildCommands(clientId, guildId), {body: commands})
     .then(() => logger.info('Successfully registered application commands for ' + guildId))
-    .catch(err => logger.error(err));
+    .catch((err: any) => logger.error(err));
 };
 
-exports.registerGlobalCommands = async (token, clientId) => 
+exports.registerGlobalCommands = async (token: string, clientId: string): Promise<void> =>
 {
   const rest = new REST({version: '10'}).setToken(token);
 
   rest.put(Routes.applicationCommands(clientId), {body: commands})
     .then(() => logger.info('Successfully registered global application commands'))
-    .catch(err => logger.error(err));
+    .catch((err: any) => logger.error(err));
 };

@@ -3,7 +3,7 @@
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
-const { sync_objects, sendMultiplayerSignal } = require('../managers/ipc_manager.js');
+const { sync_objects, sendMultiplayerSignal } = require('../managers/ipc_manager');
 const {
   select_btn_component,
   main_ui_component,
