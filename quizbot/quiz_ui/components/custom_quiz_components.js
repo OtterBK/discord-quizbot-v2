@@ -146,6 +146,21 @@ const admin_panel_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
   );
 
+//관리자 밴 목록 - 밴 해제 확인 절차 (오클릭 방지)
+const admin_ban_unban_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_ban_unban_cancel')
+      .setLabel('아니요, 해제하지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_ban_unban_confirmed')
+      .setLabel('네, 밴을 해제합니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
 //퀴즈 만들기
 const modal_quiz_info = new ModalBuilder()
   .setCustomId('modal_quiz_info')
@@ -478,6 +493,7 @@ module.exports = {
   quiz_delete_confirm_comp,
   quiz_delete_confirm_admin_comp,
   admin_panel_comp,
+  admin_ban_unban_confirm_comp,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,

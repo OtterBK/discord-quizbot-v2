@@ -1,13 +1,14 @@
 'use strict';
 
 //#region 필요한 외부 모듈
-const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, MessageFlags } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
 const ban_manager = require('../managers/ban_manager.js');
 const {
   only_back_comp,
+  admin_ban_unban_confirm_comp,
 } = require("./components.js");
 
 const {
@@ -37,10 +38,16 @@ class AdminBanListUI extends QuizbotUI
   {
     const banned_id_list = ban_manager.getBannedIdList();
 
+    //Discord select는 25개까지만 보여줄 수 있어서, 실제 전체 개수와 화면에 보이는 개수가
+    //다를 수 있다는 걸 안내에 명시함(이전엔 전체 개수만 보여줘서 혼란 가능)
+    const count_notice = banned_id_list.length > MAX_SELECT_OPTIONS
+      ? `현재 ${banned_id_list.length}개의 ID가 밴되어 있습니다. (목록에는 최대 ${MAX_SELECT_OPTIONS}개까지만 표시됩니다)`
+      : `현재 ${banned_id_list.length}개의 ID가 밴되어 있습니다.`;
+
     this.embed = {
       color: 0x8B0000,
       title: `🚫 밴 목록 관리`,
-      description: `현재 ${banned_id_list.length}개의 ID가 밴되어 있습니다.\n해제할 ID를 선택하세요.`,
+      description: `${count_notice}\n해제할 ID를 선택하세요.`,
     };
   }
 
@@ -88,26 +95,63 @@ class AdminBanListUI extends QuizbotUI
 
   onInteractionCreate(interaction)
   {
-    if(interaction.isStringSelectMenu() === false)
+    if(interaction.isStringSelectMenu() && interaction.customId === BAN_LIST_SELECT_CUSTOM_ID)
     {
-      return;
+      return this.requestUnban(interaction);
     }
 
-    if(interaction.customId !== BAN_LIST_SELECT_CUSTOM_ID)
+    if(interaction.isButton() && interaction.customId === 'admin_ban_unban_confirmed')
     {
-      return;
+      return this.confirmUnban(interaction);
     }
 
+    if(interaction.isButton() && interaction.customId === 'admin_ban_unban_cancel')
+    {
+      return this.cancelUnban(interaction);
+    }
+  }
+
+  requestUnban(interaction) //선택 즉시 해제하지 않고 확인 절차부터 거침(오클릭 방지)
+  {
     const selected_id = interaction.values[0];
     if(selected_id === 'admin_ban_list_empty')
     {
       return;
     }
 
-    ban_manager.unbanId(selected_id);
+    this.pending_unban_id = selected_id; //확인/취소 버튼 클릭 시 참조
 
+    interaction.explicit_replied = true;
+    interaction.reply({
+      content: `\`\`\`🚫 정말 [ ${selected_id} ] 밴을 해제하시겠습니까?\`\`\``,
+      components: [admin_ban_unban_confirm_comp],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  confirmUnban(interaction)
+  {
+    const selected_id = this.pending_unban_id;
+    if(selected_id === undefined)
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`🚫 이미 처리됐거나 만료된 요청입니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    this.pending_unban_id = undefined;
+
+    ban_manager.unbanId(selected_id);
     this.refreshList();
-    return this;
+
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🚫 [ ${selected_id} ] 밴을 해제했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+  }
+
+  cancelUnban(interaction)
+  {
+    this.pending_unban_id = undefined;
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🚫 해제를 취소했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
   }
 }
 

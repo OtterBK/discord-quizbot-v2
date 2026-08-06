@@ -17,12 +17,13 @@ const omakase_components = require('../../quizbot/quiz_ui/components/omakase_com
 const multiplayer_components = require('../../quizbot/quiz_ui/components/multiplayer_components.js');
 const report_components = require('../../quizbot/quiz_ui/components/report_components.js');
 
-test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 60개)', () =>
+test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 61개)', () =>
 {
   // 죽은 export였던 note_ui_component는 Phase 6에서 삭제됨 (DEPRECATED_CODE_REMOVED.md 참고)
   // quiz_delete_confirm_admin_comp/admin_panel_comp는 관리자 기능 추가로 신설됨
   // select_quiz_type_btn_component는 SelectQuizTypeUI 전용 3버튼(죽은 버튼 정리)으로 신설됨
   // multiplayer_leave_confirm_comp/multiplayer_kick_confirm_comp는 파괴적 동작 확인 절차 추가로 신설됨
+  // admin_ban_unban_confirm_comp는 밴 해제 확인 절차 추가로 신설됨
   const expected_names = [
     ...Object.keys(base_components),
     ...Object.keys(custom_quiz_components),
@@ -33,7 +34,7 @@ test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출�
 
   const actual_names = Object.keys(components).sort();
 
-  assert.equal(actual_names.length, 60);
+  assert.equal(actual_names.length, 61);
   assert.deepEqual(actual_names, expected_names);
 });
 
