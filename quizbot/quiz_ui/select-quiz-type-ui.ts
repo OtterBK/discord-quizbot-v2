@@ -6,39 +6,38 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const {
   select_quiz_type_btn_component,
   only_back_comp,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
 
-const { DevQuizSelectUI } = require("./dev-quiz-select-ui.js");
+const { DevQuizSelectUI } = require("./dev-quiz-select-ui");
 const { OmakaseQuizRoomUI } = require("./omakase-quiz-room-ui.js");
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 
 //#endregion
 
 /** 퀴즈 유형(개발자/유저/오마카세) 선택 UI */
-class SelectQuizTypeUI extends QuizbotUI 
+class SelectQuizTypeUI extends QuizbotUI
 {
 
   constructor()
   {
     super();
-  
+
     this.initializeEmbed();
     this.initializeComponents();
-    
+
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
-    
 
     this.embed = {
       color: 0x87CEEB,
@@ -48,37 +47,36 @@ class SelectQuizTypeUI extends QuizbotUI
     };
   }
 
-  initializeComponents() 
+  initializeComponents()
   {
-    
 
     this.components = [select_quiz_type_btn_component, only_back_comp ]; //옵션이 3개뿐이라 전용 3버튼 컴포넌트 사용
   }
-  
-  onInteractionCreate(interaction)
+
+  onInteractionCreate(interaction: any)
   {
-    if(!interaction.isButton()) 
+    if(!interaction.isButton())
     {
       return;
     }
-  
+
     if(interaction.customId === '1') //개발자 퀴즈 눌렀을 때
     {
       return new DevQuizSelectUI(undefined);
     }
-      
+
     if(interaction.customId === '2') //유저 제작 퀴즈 눌렀을 때
     {
       return new UserQuizSelectUI();
     }
-  
+
     if(interaction.customId === '3') //오마카세 퀴즈 눌렀을 때
     {
       const omakase_quiz_info = OmakaseQuizRoomUI.createDefaultOmakaseQuizInfo(interaction);
       return new OmakaseQuizRoomUI(omakase_quiz_info);
     }
   }
-  
+
 }
 
 module.exports = { SelectQuizTypeUI };

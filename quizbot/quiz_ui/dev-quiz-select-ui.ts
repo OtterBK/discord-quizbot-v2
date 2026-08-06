@@ -6,14 +6,14 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, QUIZ_MAKER_TYPE, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const {
 
 } = require("./components");
 
-const { 
+const {
   QuizBotControlComponentUI
 } = require("./common-ui");
 
@@ -23,14 +23,14 @@ const { DevQuizInfoUI } = require("./dev-quiz-info-ui");
 //#endregion
 
 /** 개발자 퀴즈 선택 UI */
-class DevQuizSelectUI extends QuizBotControlComponentUI  
+class DevQuizSelectUI extends QuizBotControlComponentUI
 {
 
   static resource_path = SYSTEM_CONFIG.DEV_QUIZ_PATH;
   static quiz_contents_sorted_by_name =  utility.loadLocalDirectoryQuiz(DevQuizSelectUI.resource_path); //동적 로드할 필요는 딱히 없을듯..? 초기 로드 시, 정적으로 로드하자;
   // static quiz_contents_sorted_by_mtime =  utility.loadLocalDirectoryQuiz(DevQuizSelectUI.resource_path, 'mtime'); //mtime 안쓰니깐 잠시 빼두자;
-  
-  constructor(contents)
+
+  constructor(contents: any)
   {
     super();
 
@@ -47,14 +47,14 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
 
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
-    
 
-    
+
+
   }
 
-  initializeContents(contents)
+  initializeContents(contents: any)
   {
     this.main_description = text_contents.dev_select_category.description;
 
@@ -66,7 +66,7 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
     if(this.isUnsupportedInteraction(interaction))
     {
@@ -84,7 +84,7 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  handleContentSelected(interaction)
+  handleContentSelected(interaction: any)
   {
     const selected_index = this.convertToSelectedIndex(interaction.customId);
 
@@ -98,7 +98,7 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     const content = this.cur_contents[index];
     if(content['is_quiz'] === true) //퀴즈 content 를 선택했을 경우
     {
-      const dev_quiz_info = this.generateDevQuizInfo(content); 
+      const dev_quiz_info = this.generateDevQuizInfo(content);
 
       return new DevQuizInfoUI(dev_quiz_info);
     }
@@ -109,22 +109,22 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  generateDevQuizInfo(content)
+  generateDevQuizInfo(content: any)
   {
     //어차피 여기서 만드는 quiz info 는 내가 하드코딩해도 되네
-    let dev_quiz_info = {};
+    const dev_quiz_info: any = {};
     dev_quiz_info['title']  = content['name'];
     dev_quiz_info['icon'] = content['icon'];
 
-    dev_quiz_info['type_name'] = content['type_name']; 
-    dev_quiz_info['description'] = content['description']; 
+    dev_quiz_info['type_name'] = content['type_name'];
+    dev_quiz_info['description'] = content['description'];
 
     dev_quiz_info['author'] = '제육보끔#1916';
     dev_quiz_info['author_icon'] = 'https://user-images.githubusercontent.com/28488288/208116143-24828069-91e7-4a67-ac69-3bf50a8e1a02.png';
     dev_quiz_info['thumbnail'] = 'https://user-images.githubusercontent.com/28488288/106536426-c48d4300-653b-11eb-97ee-445ba6bced9b.jpg'; //썸네일은 그냥 quizbot으로 해두자
 
-    dev_quiz_info['quiz_size'] = content['quiz_size']; 
-    dev_quiz_info['repeat_count'] = content['repeat_count']; 
+    dev_quiz_info['quiz_size'] = content['quiz_size'];
+    dev_quiz_info['repeat_count'] = content['repeat_count'];
     dev_quiz_info['winner_nickname'] = content['winner_nickname'];
     dev_quiz_info['quiz_path'] = content['content_path'];//dev quiz는 quiz_path 필요
     dev_quiz_info['quiz_type'] = content['quiz_type'];

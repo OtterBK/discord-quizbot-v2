@@ -22,7 +22,7 @@ const {
 } = require("./common-ui");
 
 const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
-const { ServerSettingUI } = require("./server-setting-ui.js");
+const { ServerSettingUI } = require("./server-setting-ui");
 const { cloneDeep } = require('lodash');
 
 //#endregion

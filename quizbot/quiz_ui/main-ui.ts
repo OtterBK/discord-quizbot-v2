@@ -2,27 +2,27 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const { sync_objects, sendMultiplayerSignal } = require('../managers/ipc_manager');
 const {
   select_btn_component,
   main_ui_component,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
 const { NotesSelectUI } = require("./note-select-ui");
 const { QuizToolGuideUI } = require("./quiz-tool-guide-ui");
-const { SelectQuizTypeUI } = require("./select-quiz-type-ui.js");
-const { ServerSettingUI } = require("./server-setting-ui.js");
+const { SelectQuizTypeUI } = require("./select-quiz-type-ui");
+const { ServerSettingUI } = require("./server-setting-ui");
 const { MultiplayerQuizSelectUI } = require("./multiplayer-quiz-select-ui.js");
 
 //#endregion
 
 /** 메인메뉴 */
-class MainUI extends QuizbotUI 
+class MainUI extends QuizbotUI
 {
 
   static MULTIPLAYER_LOBBY_COUNT = 0;
@@ -36,7 +36,7 @@ class MainUI extends QuizbotUI
     this.initializeComponents();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     this.embed = {
       color: 0x87CEEB,
@@ -82,7 +82,7 @@ class MainUI extends QuizbotUI
       // },
       // timestamp: new Date().toISOString(),
       footer: {
-        text: `${text_contents.main_menu.footer}`, 
+        text: `${text_contents.main_menu.footer}`,
         // icon_url: 'https://user-images.githubusercontent.com/28488288/208116143-24828069-91e7-4a67-ac69-3bf50a8e1a02.png',
       },
     };
@@ -93,9 +93,9 @@ class MainUI extends QuizbotUI
     this.components = [select_btn_component, main_ui_component]; //MAIN UI에서는 control component는 필요없다.
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
-    if(!interaction.isButton()) 
+    if(!interaction.isButton())
     {
       return;
     }

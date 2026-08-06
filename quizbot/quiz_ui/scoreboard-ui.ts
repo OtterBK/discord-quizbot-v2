@@ -6,14 +6,14 @@
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const db_manager = require('../managers/db_manager.js');
 
 const {
   only_back_comp,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
@@ -22,7 +22,9 @@ const {
 /** 단순 순위표 표시 UI */
 class ScoreboardUI extends QuizbotUI
 {
-  constructor(guild)
+  guild: any;
+
+  constructor(guild: any)
   {
     super();
 
@@ -33,7 +35,7 @@ class ScoreboardUI extends QuizbotUI
     this.loadScoreboard();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     this.embed = {
       color: 0xFED049,
@@ -51,7 +53,7 @@ class ScoreboardUI extends QuizbotUI
 
   async loadScoreboard()
   {
-    let my_scoreboard = 
+    let my_scoreboard =
     {
       guild_id: this.guild.id,
       win: 0,

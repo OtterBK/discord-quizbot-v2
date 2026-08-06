@@ -93,7 +93,7 @@ class AdminBanListUI extends QuizbotUI
     this.update();
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
     if(interaction.isStringSelectMenu() && interaction.customId === BAN_LIST_SELECT_CUSTOM_ID)
     {
@@ -111,7 +111,7 @@ class AdminBanListUI extends QuizbotUI
     }
   }
 
-  requestUnban(interaction) //선택 즉시 해제하지 않고 확인 절차부터 거침(오클릭 방지)
+  requestUnban(interaction: any) //선택 즉시 해제하지 않고 확인 절차부터 거침(오클릭 방지)
   {
     const selected_id = interaction.values[0];
     if(selected_id === 'admin_ban_list_empty')
@@ -129,7 +129,7 @@ class AdminBanListUI extends QuizbotUI
     });
   }
 
-  confirmUnban(interaction)
+  confirmUnban(interaction: any)
   {
     const selected_id = this.pending_unban_id;
     if(selected_id === undefined)
@@ -147,7 +147,7 @@ class AdminBanListUI extends QuizbotUI
     interaction.reply({ content: `\`\`\`🚫 [ ${selected_id} ] 밴을 해제했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
   }
 
-  cancelUnban(interaction)
+  cancelUnban(interaction: any)
   {
     this.pending_unban_id = undefined;
     interaction.explicit_replied = true;

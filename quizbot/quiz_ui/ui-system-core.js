@@ -10,9 +10,9 @@ const PRIVATE_CONFIG = require('../../config/private_config.json');
 const logger = require('../../utility/logger.js')('QuizUI');
 
 const { QuizbotUI } = require('./common-ui');
-const { MainUI } = require("./main-ui.js");
+const { MainUI } = require("./main-ui");
 const { UserQuizListUI } = require("./user-quiz-list-ui.js");
-const { AdminPanelUI } = require("./admin-panel-ui.js");
+const { AdminPanelUI } = require("./admin-panel-ui");
 const { MultiplayerQuizLobbyUI } = require('./multiplayer-quiz-lobby-ui.js');
 const { SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
 

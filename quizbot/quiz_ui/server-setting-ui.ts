@@ -9,25 +9,25 @@ const { MessageFlags } = require('discord.js');
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const option_system = require("../quiz_option/quiz_option.js");
 const OPTION_TYPE = option_system.OPTION_TYPE;
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const {
   option_control_btn_component,
   option_component,
   option_value_components,
 } = require("./components");
 
-const { 
+const {
   QuizBotControlComponentUI
-} = require("./common-ui");  
+} = require("./common-ui");
 
 
 //#endregion
 
 /** 서버 설정 UI */
-class ServerSettingUI extends QuizBotControlComponentUI 
+class ServerSettingUI extends QuizBotControlComponentUI
 {
 
-  constructor(guild_id)
+  constructor(guild_id: any)
   {
     super();
 
@@ -41,9 +41,8 @@ class ServerSettingUI extends QuizBotControlComponentUI
     this.initializeServerSettingUIHandler();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
-    
 
     this.embed = {
       color: 0x87CEEB,
@@ -56,9 +55,8 @@ class ServerSettingUI extends QuizBotControlComponentUI
     this.fillDescription(this.option_data);
   }
 
-  initializeComponents() 
+  initializeComponents()
   {
-    
 
     this.option_component = cloneDeep(option_component); //아예 deep copy해야함
     this.option_control_btn_component = cloneDeep(option_control_btn_component);
@@ -76,10 +74,10 @@ class ServerSettingUI extends QuizBotControlComponentUI
     };
   }
 
-  fillDescription(option_data)
+  fillDescription(option_data: any)
   {
     let description_message = text_contents.server_setting_ui.description;
-    description_message = description_message.replace("${audio_play_time}", parseInt(option_data.quiz.audio_play_time / 1000));
+    description_message = description_message.replace("${audio_play_time}", parseInt(String(option_data.quiz.audio_play_time / 1000)));
     description_message = description_message.replace("${hint_type}", option_data.quiz.hint_type);
     description_message = description_message.replace("${skip_type}", option_data.quiz.skip_type);
     description_message = description_message.replace("${use_similar_answer}", (option_data.quiz.use_similar_answer === OPTION_TYPE.ENABLED ? `${text_contents.server_setting_ui.use}` : `${text_contents.server_setting_ui.not_use}`));
@@ -91,35 +89,35 @@ class ServerSettingUI extends QuizBotControlComponentUI
     this.embed.description = description_message;
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
     if(this.isUnsupportedInteraction(interaction))
     {
       return;
     }
 
-    if(this.isServerSettingUIEvent(interaction)) 
+    if(this.isServerSettingUIEvent(interaction))
     {
       return this.handleServerSettingUIEvent(interaction);
-    } 
+    }
   }
 
-  isServerSettingUIEvent(interaction)
+  isServerSettingUIEvent(interaction: any)
   {
     return this.server_setting_ui_handler[interaction.customId] !== undefined;
   }
 
-  handleServerSettingUIEvent(interaction)
+  handleServerSettingUIEvent(interaction: any)
   {
     const handler = this.server_setting_ui_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleOptionSelected(interaction)
+  handleOptionSelected(interaction: any)
   {
     const selected_option = interaction.values[0];
     if(this.selected_option === selected_option) return; //바뀐게 없다면 return
-            
+
     this.selected_option = selected_option;
 
     this.selectDefaultOptionByValue(this.option_component.components[0], selected_option);
@@ -135,10 +133,10 @@ class ServerSettingUI extends QuizBotControlComponentUI
     return this;
   }
 
-  handleOptionValueSelected(interaction)
+  handleOptionValueSelected(interaction: any)
   {
     const selected_value = interaction.values[0];
-                
+
     this.selected_value = selected_value;
 
     this.selectDefaultOptionByValue(this.option_component.components[0], this.selected_option);
@@ -159,13 +157,13 @@ class ServerSettingUI extends QuizBotControlComponentUI
     return this;
   }
 
-  getSelectedValueLabel(selected_value)
+  getSelectedValueLabel(selected_value: any)
   {
     const options = this.option_value_component?.components[0]?.options ?? [];
-    return options.find((option) => option.data.value === selected_value)?.data.label;
+    return options.find((option: any) => option.data.value === selected_value)?.data.label;
   }
 
-  handleSaveOption(interaction)
+  handleSaveOption(interaction: any)
   {
     this.option_control_btn_component.components[0].setDisabled(true); //저장 버튼 비활성화
 
@@ -173,7 +171,7 @@ class ServerSettingUI extends QuizBotControlComponentUI
 
     interaction.explicit_replied = true;
     this.option_storage.saveOptionToDB()
-      .then((result) => 
+      .then((result: any) =>
       {
 
         let result_message = text_contents.server_setting_ui.save_fail;

@@ -11,7 +11,7 @@ const {
 
 const report_manual_processing = require('../managers/report/report_manual_processing');
 const { UserQuizListUI } = require("./user-quiz-list-ui.js");
-const { AdminBanListUI } = require("./admin-ban-list-ui.js");
+const { AdminBanListUI } = require("./admin-ban-list-ui");
 
 //#endregion
 
@@ -40,7 +40,7 @@ class AdminPanelUI extends QuizbotUI
     this.components = [ admin_panel_comp ];
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
     if(interaction.isButton() === false)
     {
