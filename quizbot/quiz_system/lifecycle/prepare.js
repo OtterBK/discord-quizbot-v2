@@ -14,7 +14,7 @@ const { SYSTEM_CONFIG, QUIZ_TYPE } = require('../../../config/system_setting.js'
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
 const { SeekStream } = require('../../../utility/SeekStream/SeekStream.js');
-const audio_cache_manager = require('../../managers/audio_cache_manager.js');
+const audio_cache_manager = require('../../managers/audio_cache_manager');
 
 //#region Prepare Cycle
 /** 퀴즈 내기 전, 퀴즈 준비하는 단계인 Prepare **/

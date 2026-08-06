@@ -11,7 +11,7 @@ const ffmpeg = require('fluent-ffmpeg');
 
 ffmpeg.setFfmpegPath(ffmpeg_path);
 
-const DOWNLOAD_RESULT_TYPE = 
+const DOWNLOAD_RESULT_TYPE =
 {
   SUCCESS: 0,
   ERROR: 1,
@@ -25,7 +25,7 @@ const DOWNLOAD_RESULT_TYPE =
   UNKNOWN: 10,
 };
 
-const getHashedPath = (target) => 
+const getHashedPath = (target: string): string | undefined =>
 {
   if(target == undefined || target.length == 0)
   {
@@ -34,14 +34,14 @@ const getHashedPath = (target) =>
 
   const cache_path = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
   const sub_path = target.charAt(0).toUpperCase();
-    
+
   return path.join(cache_path, sub_path);
 };
 
-const getAudioCache = (video_id) => 
+const getAudioCache = (video_id: string): string | undefined =>
 {
   const cache_path = getHashedPath(video_id);
-  let cache_file_path = path.join(cache_path, `${video_id}.webm`); //우선 webm으로 찾는다
+  const cache_file_path = path.join(cache_path, `${video_id}.webm`); //우선 webm으로 찾는다
 
   if(fs.existsSync(cache_file_path)) //바로 찾으면 개꿀~
   {
@@ -50,7 +50,7 @@ const getAudioCache = (video_id) =>
 
   return undefined; //이제 webm으로 다 변환해두기 때문에 밑어 더 볼 필요는 없음
 
-  /**Deprecated 
+  /**Deprecated
   //하 없으면 찾아보자
   const cache_info = getAudioCacheInfo(video_id);
   if(cache_info == undefined)
@@ -68,7 +68,7 @@ const getAudioCache = (video_id) =>
   {
     return undefined;
   }
-    
+
   //캐싱 성공은 했어?
   const ext = cache_info.ext;
   cache_file_path = path.join(cache_path, `${video_id}.${ext}`);
@@ -82,7 +82,7 @@ const getAudioCache = (video_id) =>
   */
 };
 
-const getAudioCacheInfo = (video_id) =>
+const getAudioCacheInfo = (video_id: string): any | undefined =>
 {
   const cache_path = getHashedPath(video_id);
   const info_filename = `${video_id}.info.json`;
@@ -106,7 +106,7 @@ const getAudioCacheInfo = (video_id) =>
   return json_data;
 };
 
-const reWriteCacheInfo = (video_id, cache_result) =>
+const reWriteCacheInfo = (video_id: string, cache_result: any): void =>
 {
   try
   {
@@ -139,22 +139,22 @@ const reWriteCacheInfo = (video_id, cache_result) =>
     {
       fs.mkdirSync(cache_path, { recursive: true });
     }
-    
-    fs.writeFileSync(info_file_path, JSON.stringify(cache_info), 'utf-8',  (err) => 
+
+    fs.writeFileSync(info_file_path, JSON.stringify(cache_info), 'utf-8',  (err: any) =>
     {
-      if (err) 
+      if (err)
       {
         logger.error(`remove format info write error ${err.message}`);
       }
     });
   }
-  catch(err)
+  catch(err: any)
   {
     logger.error(`rewrite cache info error. ${err.message}`);
   }
 };
 
-const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined, ipv6: undefined}) => 
+const downloadAudioCache = async (audio_url: string, video_id: string, ip_info: any = {ipv4: undefined, ipv6: undefined}): Promise<any> =>
 {
   const cache_path = getHashedPath(video_id);
 
@@ -175,7 +175,7 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
   };
 
   //create download scenario
-  let download_scenario = [];
+  const download_scenario: any[] = [];
 
   const { ipv4, ipv6 } = ip_info;
   if(ipv4 == undefined && ipv6 == undefined)
@@ -186,7 +186,7 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
   {
     if(ipv4 != undefined)
     {
-      let ipv4_option = cloneDeep(default_option);
+      const ipv4_option: any = cloneDeep(default_option);
       ipv4_option["sourceAddress"] = ipv4;
       ipv4_option["forceIpv4"] = true;
       download_scenario.push(ipv4_option);
@@ -194,7 +194,7 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
 
     if(ipv6 != undefined)
     {
-      let ipv6_option = cloneDeep(default_option);
+      const ipv6_option: any = cloneDeep(default_option);
       ipv6_option["sourceAddress"] = ipv6;
       ipv6_option["forceIpv6"] = true;
       download_scenario.push(ipv6_option);
@@ -203,8 +203,8 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
 
   logger.debug(`Downloading cache scenario is ${download_scenario.length}`);
 
-  let result = undefined;
-  let cache_result = {};
+  let result: any = undefined;
+  let cache_result: any = {};
 
   while(download_scenario.length > 0)
   {
@@ -228,9 +228,9 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
       logger.info(`Downloaded cache file ${video_id}`);
 
       reWriteCacheInfo(video_id, cache_result);
-            
-      await convertToWebm(video_id); 
-            
+
+      await convertToWebm(video_id);
+
       return cache_result;
     }
 
@@ -286,7 +286,7 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
       need_retry: false
     };
   }
-  else if(result.result_type == DOWNLOAD_RESULT_TYPE.ALREADY_EXIST) //이럴수가 있나 싶긴한데... 
+  else if(result.result_type == DOWNLOAD_RESULT_TYPE.ALREADY_EXIST) //이럴수가 있나 싶긴한데...
   {
     logger.warn(`${audio_url}'s cache is already exist`);
     cache_result = {
@@ -295,7 +295,7 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
       need_retry: false
     };
   }
-  else if(result.result_type == DOWNLOAD_RESULT_TYPE.PREMIUM) 
+  else if(result.result_type == DOWNLOAD_RESULT_TYPE.PREMIUM)
   {
     logger.warn(`${audio_url} is premium music`);
     cache_result = {
@@ -323,33 +323,33 @@ const downloadAudioCache = async (audio_url, video_id, ip_info={ipv4: undefined,
   return cache_result;
 };
 
-const executeDownloadProcess = async (audio_url, yt_dlp_option) =>
+const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any): Promise<{result_type: number, result_message: string, error_message: string}> =>
 {
   /** 24.07.16 root 권한으로 yt-dlp 실행하면 webm 포맷이 안뜬다.
      * 아마 환경변수 때문인 것 같음.
      * 따라서 quizbot은 root가 아닌 일반 계정으로 실행할 것!!!
      */
   const subprocess = youtubedl.exec(
-    audio_url, 
+    audio_url,
     yt_dlp_option,
     {
       timeout: 20000,
       killSignal: 'SIGKILL'
     }
-  );       
+  );
 
   let result_type = DOWNLOAD_RESULT_TYPE.ERROR;
   let stdout = '';
   let stderr = '';
 
   // 표준 출력 스트림 데이터 수집
-  subprocess.stdout.on('data', (data) =>
+  subprocess.stdout.on('data', (data: any) =>
   {
     stdout += data.toString();
   });
 
   // 표준 오류 스트림 데이터 수집
-  subprocess.stderr.on('data', (data) =>
+  subprocess.stderr.on('data', (data: any) =>
   {
     stderr += data.toString();
   });
@@ -360,7 +360,7 @@ const executeDownloadProcess = async (audio_url, yt_dlp_option) =>
 
     result_type = getDownloadResultType(stdout);
   }
-  catch(err)
+  catch(err: any)
   {
     logger.debug(`download process error occurred! ${err.message}`);
 
@@ -379,11 +379,11 @@ const executeDownloadProcess = async (audio_url, yt_dlp_option) =>
   };
 };
 
-const getDownloadResultType = (result_message) => 
+const getDownloadResultType = (result_message: string): number =>
 {
   const lines = result_message.split('\n');
 
-  for (let i = lines.length - 1; i >= 0; --i) 
+  for (let i = lines.length - 1; i >= 0; --i)
   {
     const line = lines[i].trim();
     if(line.startsWith('[download]') == false)
@@ -426,11 +426,11 @@ const getDownloadResultType = (result_message) =>
       return DOWNLOAD_RESULT_TYPE.SUCCESS;
     }
   }
-    
+
   return DOWNLOAD_RESULT_TYPE.UNKNOWN;
 };
 
-const getExpectedErrorType = (error_message) => 
+const getExpectedErrorType = (error_message: any): number =>
 {
   if(error_message == undefined || (typeof error_message !== 'string' && !(error_message instanceof String)))
   {
@@ -439,7 +439,7 @@ const getExpectedErrorType = (error_message) =>
 
   const lines = error_message.split('\n');
 
-  for (let i = lines.length - 1; i >= 0; --i) 
+  for (let i = lines.length - 1; i >= 0; --i)
   {
     const line = lines[i].trim();
     if(line.includes('ERROR:') == false)
@@ -462,24 +462,24 @@ const getExpectedErrorType = (error_message) =>
       return DOWNLOAD_RESULT_TYPE.PREMIUM;
     }
   }
-    
+
   return DOWNLOAD_RESULT_TYPE.ERROR;
 };
 
-const logFailedUrl = (url_list) =>
+const logFailedUrl = (url_list: string): void =>
 {
   const cache_root_path = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
   const failed_url_path = path.join(cache_root_path, "failed_url.txt");
-  fs.appendFile(failed_url_path, `${url_list}\n`, 'utf8', (err) => 
+  fs.appendFile(failed_url_path, `${url_list}\n`, 'utf8', (err: any) =>
   {
-    if (err) 
+    if (err)
     {
       console.error(`Log Failed Url write url_list: ${url_list}, error: ${err.message}`);
-    } 
+    }
   });
 };
 
-const convertToWebm = (video_id) => 
+const convertToWebm = (video_id: string): Promise<void> | undefined =>
 {
   if(video_id == undefined)
   {
@@ -510,38 +510,38 @@ const convertToWebm = (video_id) =>
 
   logger.warn(`converting file ${video_id}.${ext} to webm`);
 
-  let ffmpeg_handler = new ffmpeg(cache_file_path);
+  const ffmpeg_handler = new ffmpeg(cache_file_path);
   ffmpeg_handler.format('webm');
 
-  return new Promise((resolve, reject)=>
-  { 
-        
+  return new Promise<void>((resolve, reject)=>
+  {
+
     ffmpeg_handler.saveToFile(converted_file_path)
-      .on('end', function() 
+      .on('end', function()
       {
         resolve();
-            
+
         logger.warn(`converted to ${converted_file_path}`);
 
-        fs.unlink(cache_file_path, err => 
+        fs.unlink(cache_file_path, (err: any) =>
         {
-          if(err != null && err.code == 'ENOENT') 
+          if(err != null && err.code == 'ENOENT')
           {
             console.log(`Failed to unlink ${cache_file_path}, err: ${err.message}`);
           }
-        }); //기존 파일 삭제    
+        }); //기존 파일 삭제
       })
-      .on('error', function(err) 
+      .on('error', function(err: any)
       {
         resolve();
-            
+
         logger.error(`converting error occurred!: ${converted_file_path}, ${err.message}`);
         resolve();
       });
   });
 };
 
-const forceCaching = async (audio_url_list_path, thread_index=0) =>
+const forceCaching = async (audio_url_list_path: string, thread_index = 0): Promise<number> =>
 {
   if(fs.existsSync(audio_url_list_path) == false)
   {
@@ -556,19 +556,19 @@ const forceCaching = async (audio_url_list_path, thread_index=0) =>
   let failed_count = 0;
   let failed_url_list = '';
 
-  for (let i = 0; i < audio_url_list.length; i++) 
+  for (let i = 0; i < audio_url_list.length; i++)
   {
     try
     {
       console.log(`caching... ${i+1} / ${audio_url_list.length}`);
 
       const audio_url = audio_url_list[i];
-        
+
       if(audio_url == undefined || audio_url.trim() == '')
       {
         continue;
       }
-        
+
       const video_id = utility.extractYoutubeVideoID(audio_url);
       if(video_id == undefined)
       {
@@ -577,7 +577,7 @@ const forceCaching = async (audio_url_list_path, thread_index=0) =>
         ++failed_count;
         continue;
       }
-        
+
       const cache_file_path = getAudioCache(video_id);
       const cache_info = getAudioCacheInfo(video_id);
 
@@ -592,32 +592,32 @@ const forceCaching = async (audio_url_list_path, thread_index=0) =>
         console.log(`Skip downloading cache reason: ${cache_info.cache_result.causation_message}`);
         continue;
       }
-        
+
       const result = await downloadAudioCache(audio_url, video_id);
-        
+
       if(result.success == false)
       {
         console.error(`Failed to caching ${audio_url}. error: ${result.causation_message}`);
-    
+
         if(result.need_retry == false)
         {
           console.warn(`Do not need to retry... skip this`);
           continue;
         }
-    
+
         failed_url_list += `${audio_url}\n`;
         ++failed_count;
         continue;
       }
-        
+
       ++new_cached_count;
     }
-    catch(err)
+    catch(err: any)
     {
       console.error(`Error occurred! ${err.stack}`);
     }
   }
-    
+
   console.log(`new cached ${new_cached_count}!. failed ${failed_count}...`);
   if(failed_count > 0)
   {

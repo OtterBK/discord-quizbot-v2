@@ -14,7 +14,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 
-const audio_cache_manager = require('../../quizbot/managers/audio_cache_manager.js');
+const audio_cache_manager = require('../../quizbot/managers/audio_cache_manager');
 const youtubedl = require('youtube-dl-exec');
 
 //youtube-dl-exec의 실제 subprocess처럼 stdout/stderr(EventEmitter)를 갖고,
