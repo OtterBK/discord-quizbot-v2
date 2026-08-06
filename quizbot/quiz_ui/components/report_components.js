@@ -8,17 +8,17 @@ const { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = req
 
 const modal_chat_report = new ModalBuilder()
   .setCustomId('modal_chat_report_')
-  .setTitle('신고ID')
+  .setTitle('채팅 신고하기')
   .addComponents(
     new ActionRowBuilder()
       .addComponents(
         new TextInputBuilder()
           .setCustomId('txt_input_report_detail')
-          .setLabel('신고 사유를 입력해주세요.')
+          .setLabel('신고 사유를 입력해주세요. (최대 100자)')
           .setStyle(TextInputStyle.Paragraph)
           .setMaxLength(100)
           .setRequired(true)
-          .setPlaceholder('')
+          .setPlaceholder('예시) 욕설/도배/부적절한 발언 등 신고 사유를 간단히 적어주세요.')
       ),
   );
 

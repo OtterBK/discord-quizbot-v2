@@ -45,7 +45,8 @@ const submitReportChatModal = (interaction) =>
   const chat_info = report_chat_info.extractChatInfo(chat_id);
   if(chat_info === undefined || content === undefined)
   {
-    interaction.reply({content: `\`\`\`🔸 신고에 실패했습니다. (No Cache Content)\n다시 시도해보세요.\`\`\``});
+    //채팅 캐시는 5분 뒤 만료됨(chat_cache.js) - 그 사이 신고 버튼을 누르지 않고 방치하면 여기로 옴
+    interaction.reply({content: `\`\`\`🔸 신고에 실패했습니다. (신고 가능 시간이 지났어요)\n신고할 메시지에 다시 신고 버튼을 눌러 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral});
     return;
   }
 
@@ -55,7 +56,7 @@ const submitReportChatModal = (interaction) =>
   const result = 0;
   const report_type = report_chat_info.REPORT_PROCESSED_RESULT_TYPE.IN_PROGRESS;
 
-  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\`\`\``, flags: MessageFlags.Ephemeral});
+  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\n🔸 관리자가 검토 후 처리하며, 처리 결과는 개별로 안내드리지 않는 점 양해 부탁드려요.\`\`\``, flags: MessageFlags.Ephemeral});
 
   db_manager.insertChatInfo(report_chat_info.chat_info_key_fields, [chat_id, content, sender_id, result]);
   db_manager.insertReportInfo(report_chat_info.report_info_key_fields, [chat_id, reporter_id, report_detail, report_type]);
