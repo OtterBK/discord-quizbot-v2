@@ -149,10 +149,20 @@ class ServerSettingUI extends QuizBotControlComponentUI
 
     this.embed.footer = undefined;
 
+    //토스트에 raw 값(30000, true/false, -1 등)이 그대로 노출되던 문제 - select 옵션에 이미 있는
+    //사람이 읽을 수 있는 라벨(예: "30초", "사용", "무제한")을 찾아서 대신 보여줌
+    const selected_value_label = this.getSelectedValueLabel(selected_value) ?? selected_value;
+
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 옵션 값을 ${selected_value}로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`🔸 옵션 값을 ${selected_value_label}로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
     return this;
+  }
+
+  getSelectedValueLabel(selected_value)
+  {
+    const options = this.option_value_component?.components[0]?.options ?? [];
+    return options.find((option) => option.data.value === selected_value)?.data.label;
   }
 
   handleSaveOption(interaction)
