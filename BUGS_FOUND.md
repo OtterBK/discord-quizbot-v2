@@ -116,3 +116,12 @@
 - 실제 동작: `fs.writeFileSync(info_file_path, JSON.stringify(cache_info), 'utf-8', (err) => {...})`처럼 4번째 인자로 에러 콜백을 넘기고 있는데, `fs.writeFileSync`는 동기 함수라 콜백을 받지 않는다(3번째 인자까지만 유효: `path, data, options`). 4번째 인자는 조용히 무시되며, 쓰기 중 에러가 나면 이 콜백이 아니라 예외가 그 자리에서 던져진다.
 - 기대 동작: 콜백은 어차피 호출되지 않으므로 삭제하거나, 진짜 비동기 에러 핸들링이 필요하면 `fs.writeFile`로 바꿔야 함.
 - 상태: 보류 — 이미 `reWriteCacheInfo` 전체가 `try/catch`로 감싸져 있어 `writeFileSync`가 던지는 예외는 정상적으로 `catch(err) { logger.error(...) }`로 처리되고 있음. 즉 에러 핸들링 자체는 (다른 경로로) 이미 되고 있어 기능적 영향은 없고, 죽은 콜백 인자만 정리하면 되는 사소한 코드 정리 건이라 이번 Phase 범위(구조 분리) 밖으로 보고 기록만 남김.
+
+### [TS 전환] `processFollowUpAction`의 길드밴 분기가 `applyGuildBan`을 await하지 않아 "이미 밴됨" 안내가 절대 뜨지 않음
+
+- 파일/위치: `quizbot/managers/report/report_manual_processing.ts:277` (TS 전환 전 `report_manual_processing.js`에도 동일하게 존재)
+- 발견일: 2026-08-07 (TS_MIGRATION_AND_CONVENIENCE_PLAN.md A-3 3단계, report/ 전환 중)
+- 재현 조건: 관리자가 후속 조치 버튼 중 "길드정지"(`ps_flwup_guild_ban_`)를 이미 밴된 길드에 대해 다시 누름.
+- 실제 동작: `const is_banned = applyGuildBan(guild_id);` — `applyGuildBan`은 `async` 함수(`return ban_manager.banId(guild_id);`)라 반환값은 항상 Promise 객체이고, Promise는 항상 truthy이므로 `if(is_banned)` 분기가 매번 참으로 평가됨. 그 결과 실제로는 이미 밴돼 있어 `ban_manager.banId`가 `false`를 반환하는 경우에도 관리자에게는 항상 "밴 처리했습니다" 메시지가 뜨고, "이미 밴돼있습니다" 분기는 코드상 존재하지만 절대 도달하지 않음.
+- 기대 동작: `const is_banned = await applyGuildBan(guild_id);`로 await을 추가해 실제 boolean 결과를 받아야 함.
+- 상태: 미수정 — TS 전환(타입만 추가) 커밋(`230e9b8`) 중 발견했으나, strict mode 전환과 무관한 별개의 pre-existing 버그라 원본 동작을 그대로 보존하고 이번 커밋에서는 고치지 않음. 파급력이 낮고(관리자에게만 보이는 안내 메시지 문구 차이일 뿐, 실제 밴 처리 자체는 `ban_manager.banId`의 멱등성 덕에 정상 동작함) 사용자 확인 후 별도 `fix:` 커밋으로 처리 예정.
