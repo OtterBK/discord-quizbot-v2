@@ -26,6 +26,8 @@ const {
   multiplayer_lobby_participant_comp,
   modal_multiplayer_quiz_setting,
   request_basket_reopen_comp,
+  multiplayer_leave_confirm_comp,
+  multiplayer_kick_confirm_comp,
 } = require("./components.js");
 
 const { 
@@ -338,8 +340,13 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     {
       'multiplayer_start': this.requestStartLobby.bind(this),
       'multiplayer_lobby_kick_select_menu': this.requestKick.bind(this),
+      'multiplayer_kick_confirmed': this.confirmKick.bind(this),
+      'multiplayer_kick_cancel': this.cancelKick.bind(this),
       'multiplayer_ready': this.requestReadyLobby.bind(this),
       'multiplayer_participant_select_menu': () => this, //비호스트용 열람 전용 메뉴, 선택해도 상태 변화 없음(의도된 동작)
+      'multiplayer_leave_lobby': this.requestLeaveLobby.bind(this),
+      'multiplayer_leave_confirmed': this.confirmLeaveLobby.bind(this),
+      'multiplayer_leave_cancel': this.cancelLeaveLobby.bind(this),
     };
   }
 
@@ -423,7 +430,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
       });
   }
 
-  requestKick(interaction)
+  requestKick(interaction) //서버 선택 시 즉시 추방하지 않고 확인 절차부터 거침(오클릭 방지)
   {
     const selected_value = interaction.values[0];
 
@@ -440,6 +447,26 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     }
 
     const target_guild_info = this.participant_guilds_info[selected_value];
+    this.pending_kick_target_guild_info = target_guild_info; //확인/취소 버튼 클릭 시 참조
+
+    interaction.explicit_replied = true;
+    interaction.reply({
+      content: `\`\`\`🌐 정말 [ ${target_guild_info.guild_name} ] 서버를 추방하시겠습니까?\`\`\``,
+      components: [multiplayer_kick_confirm_comp],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  confirmKick(interaction)
+  {
+    const target_guild_info = this.pending_kick_target_guild_info;
+    if(target_guild_info === undefined)
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`🌐 이미 처리됐거나 만료된 요청입니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    this.pending_kick_target_guild_info = undefined;
 
     const target_guild_name = target_guild_info.guild_name;
     const target_guild_id = target_guild_info.guild_id;
@@ -453,18 +480,47 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
         target_guild_id: target_guild_id,
       }
     )
-      .then(result => 
+      .then(result =>
       {
         if(result.state === true)
         {
-          interaction.deferUpdate();
-          // interaction.reply({ content: `\`\`\`🌐 ${target_guild_name} 서버를 추방하였습니다.\`\`\`` , flags: MessageFlags.Ephemeral});
+          interaction.reply({ content: `\`\`\`🌐 ${target_guild_name} 서버를 추방하였습니다.\`\`\``, flags: MessageFlags.Ephemeral });
         }
         else
         {
           interaction.reply({ content: `\`\`\`🌐 ${target_guild_name} 서버 추방에 실패했습니다.\n원인: ${result.reason}\`\`\``, flags: MessageFlags.Ephemeral });
         }
       });
+  }
+
+  cancelKick(interaction)
+  {
+    this.pending_kick_target_guild_info = undefined;
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🌐 추방을 취소했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+  }
+
+  requestLeaveLobby(interaction) //"나가기" 버튼 - 다른 서버들도 같이 대기 중인 로비라 확인 절차를 거침
+  {
+    interaction.explicit_replied = true;
+    interaction.reply({
+      content: `\`\`\`🌐 정말 로비에서 나가시겠습니까?\n(다른 서버가 함께 대기 중이라면 그 서버들에게도 영향이 갑니다)\`\`\``,
+      components: [multiplayer_leave_confirm_comp],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  confirmLeaveLobby(interaction)
+  {
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🌐 로비에서 나갑니다.\`\`\``, flags: MessageFlags.Ephemeral });
+    this.leaveLobby();
+  }
+
+  cancelLeaveLobby(interaction)
+  {
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🌐 나가기를 취소했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
   }
 
   handleSubmitModalQuizSetting(interaction)

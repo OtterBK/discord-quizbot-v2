@@ -248,13 +248,16 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
     if(multiplayer_lobby_info.is_ingame)
     {
-      interaction.channel.send({content: `\`\`\`🌐 ${multiplayer_lobby_info.session_name} 은 이미 게임 중입니다.\`\`\``});
+      //개인적인 실패 사유라 채널 전체 공개(channel.send) 대신 클릭한 사람에게만 보이는 ephemeral로 전환
+      interaction.explicit_replied = true;
+      interaction.reply({content: `\`\`\`🌐 ${multiplayer_lobby_info.session_name} 은 이미 게임 중입니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return undefined;
     }
 
     if(this.is_joining)
     {
-      interaction.channel.send({content: `\`\`\`🌐 이미 ${multiplayer_lobby_info.session_name}에 참여 시도 중입니다.\n잠시 후 다시 시도해보세요.\`\`\``});
+      interaction.explicit_replied = true;
+      interaction.reply({content: `\`\`\`🌐 이미 ${multiplayer_lobby_info.session_name}에 참여 시도 중입니다.\n잠시 후 다시 시도해보세요.\`\`\``, flags: MessageFlags.Ephemeral});
       return undefined;
     }
 

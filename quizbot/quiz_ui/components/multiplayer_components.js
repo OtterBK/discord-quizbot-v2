@@ -123,7 +123,7 @@ const multiplayer_lobby_host_tag_comp = new ActionRowBuilder()
       .setLabel('장바구니 모드')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId('back')
+      .setCustomId('multiplayer_leave_lobby') //다른 서버들도 같이 대기 중인 로비라 확인 절차를 거치도록 customId('back')이 아닌 별도 처리로 변경
       .setLabel('나가기')
       .setStyle(ButtonStyle.Danger),
   );
@@ -143,7 +143,7 @@ const multiplayer_lobby_host_basket_comp = new ActionRowBuilder()
       .setLabel('장르 선택 모드')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId('back')
+      .setCustomId('multiplayer_leave_lobby') //다른 서버들도 같이 대기 중인 로비라 확인 절차를 거치도록 customId('back')이 아닌 별도 처리로 변경
       .setLabel('나가기')
       .setStyle(ButtonStyle.Danger),
   );
@@ -155,7 +155,7 @@ const multiplayer_lobby_participant_comp = new ActionRowBuilder()
       .setLabel('준비')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId('back')
+      .setCustomId('multiplayer_leave_lobby') //다른 서버들도 같이 대기 중인 로비라 확인 절차를 거치도록 customId('back')이 아닌 별도 처리로 변경
       .setLabel('나가기')
       .setStyle(ButtonStyle.Danger),
   );
@@ -180,6 +180,32 @@ const multiplayer_participant_select_row = new ActionRowBuilder()
       )
   );
 
+//"나가기"/"서버 추방하기"는 나 혼자만의 화면이 아니라 같이 대기 중인 다른 서버에도 영향을 주는
+//동작이라 확인 절차를 거치도록 함
+const multiplayer_leave_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('multiplayer_leave_cancel')
+      .setLabel('아니요, 나가지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('multiplayer_leave_confirmed')
+      .setLabel('네, 로비에서 나갑니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+const multiplayer_kick_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('multiplayer_kick_cancel')
+      .setLabel('아니요, 추방하지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('multiplayer_kick_confirmed')
+      .setLabel('네, 추방합니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
 const multiplayer_chat_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -202,5 +228,7 @@ module.exports = {
   multiplayer_lobby_kick_select_menu,
   multiplayer_participant_select_menu,
   multiplayer_participant_select_row,
+  multiplayer_leave_confirm_comp,
+  multiplayer_kick_confirm_comp,
   multiplayer_chat_comp,
 };
