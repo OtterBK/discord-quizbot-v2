@@ -10,12 +10,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const components = require('../../quizbot/quiz_ui/components.js');
-const base_components = require('../../quizbot/quiz_ui/components/base_components.js');
-const custom_quiz_components = require('../../quizbot/quiz_ui/components/custom_quiz_components.js');
-const omakase_components = require('../../quizbot/quiz_ui/components/omakase_components.js');
+const components = require('../../quizbot/quiz_ui/components');
+const base_components = require('../../quizbot/quiz_ui/components/base_components');
+const custom_quiz_components = require('../../quizbot/quiz_ui/components/custom_quiz_components');
+const omakase_components = require('../../quizbot/quiz_ui/components/omakase_components');
 const multiplayer_components = require('../../quizbot/quiz_ui/components/multiplayer_components.js');
-const report_components = require('../../quizbot/quiz_ui/components/report_components.js');
+const report_components = require('../../quizbot/quiz_ui/components/report_components');
 
 test('components.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 61개)', () =>
 {

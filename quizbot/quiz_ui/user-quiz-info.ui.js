@@ -24,7 +24,7 @@ const {
   quiz_delete_confirm_admin_comp,
   modal_quiz_info,
   modal_question_info,
-} = require('./components.js');
+} = require('./components');
 
 const { 
   QuizbotUI,

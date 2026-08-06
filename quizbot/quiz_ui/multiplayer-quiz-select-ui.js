@@ -18,7 +18,7 @@ const {
   btn_search,
   multiplayer_select_control,
   modal_multiplayer_create_lobby,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizBotControlComponentUI

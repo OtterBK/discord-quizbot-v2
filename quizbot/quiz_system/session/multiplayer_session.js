@@ -20,7 +20,7 @@ const {
   multiplayer_participant_select_menu,
   multiplayer_participant_select_row,
   multiplayer_chat_comp,
-} = require('../../quiz_ui/components.js');
+} = require('../../quiz_ui/components');
 
 const { QuizSession, DummyQuizSession } = require('./quiz_session.js');
 const Question = require('../lifecycle/question/question.js'); //instanceof 체크용

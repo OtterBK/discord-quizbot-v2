@@ -14,7 +14,7 @@ const {
   option_control_btn_component,
   option_component,
   option_value_components,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizBotControlComponentUI

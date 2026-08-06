@@ -10,7 +10,7 @@ const logger = require('../../../utility/logger.js')('ReportManager');
 const db_manager = require('../db_manager.js');
 const {
   modal_chat_report,
-} = require("../../quiz_ui/components.js");
+} = require("../../quiz_ui/components");
 
 const report_state = require('./report_state');
 const chat_cache = require('./chat_cache');

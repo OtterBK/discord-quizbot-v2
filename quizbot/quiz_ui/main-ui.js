@@ -7,7 +7,7 @@ const { sync_objects, sendMultiplayerSignal } = require('../managers/ipc_manager
 const {
   select_btn_component,
   main_ui_component,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

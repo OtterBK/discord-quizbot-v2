@@ -64,7 +64,7 @@ const omakase_quiz_info_tag_comp = new ActionRowBuilder()
       .setLabel('뒤로가기')
       .setStyle(ButtonStyle.Secondary),
   );
-  
+
 const omakase_quiz_info_basket_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -88,7 +88,7 @@ const omakase_quiz_info_basket_comp = new ActionRowBuilder()
       .setLabel('뒤로가기')
       .setStyle(ButtonStyle.Secondary),
   );
-  
+
 
 //오마카세 퀴즈용 퀴즈 설정 modal
 const modal_omakase_quiz_setting = new ModalBuilder()
@@ -104,7 +104,7 @@ const modal_omakase_quiz_setting = new ModalBuilder()
           .setMinLength(1)
           .setMaxLength(3)
           .setPlaceholder('예시) 30')
-      ) 
+      )
   )
   .addComponents(
     new ActionRowBuilder()
@@ -146,11 +146,11 @@ const omakase_custom_quiz_type_tags_select_menu =  new ActionRowBuilder()
   let total_menu_count = 0;
   for(const [tag_name, tag_value] of Object.entries(QUIZ_TAG))
   {
-    if(tag_value > 4) //4이하까지만 유형 태그임
+    if((tag_value as number) > 4) //4이하까지만 유형 태그임
     {
-      continue; 
+      continue;
     }
-  
+
     const tag_option = { label: `${tag_name}`, value: `${tag_value}` };
     omakase_custom_quiz_type_tags_select_menu.components[0].addOptions(tag_option);
     total_menu_count++;
@@ -171,11 +171,11 @@ const omakase_custom_quiz_tags_select_menu =  new ActionRowBuilder()
   let total_menu_count = 0;
   for(const [tag_name, tag_value] of Object.entries(QUIZ_TAG))
   {
-    if(tag_value !== 0 && tag_value <= 4) //4이하는 장르 태그가 아님
+    if(tag_value !== 0 && (tag_value as number) <= 4) //4이하는 장르 태그가 아님
     {
       continue;
     }
-  
+
     const tag_option = { label: `${tag_name}`, value: `${tag_value}` };
     omakase_custom_quiz_tags_select_menu.components[0].addOptions(tag_option);
     total_menu_count++;

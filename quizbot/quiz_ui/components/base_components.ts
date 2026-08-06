@@ -200,7 +200,7 @@ const option_component = new ActionRowBuilder()
       .setPlaceholder(`${text_contents.server_setting_ui.select_menu.title}`)
       .addOptions(
 
-        text_contents.server_setting_ui.select_menu.options.map(option_info => 
+        text_contents.server_setting_ui.select_menu.options.map((option_info: any) =>
         {
           return { label: option_info.label, description: option_info.description, value: option_info.value };
         })
@@ -208,7 +208,7 @@ const option_component = new ActionRowBuilder()
       ),
   );
 
-const option_value_components = {
+const option_value_components: Record<string, any> = {
 
   audio_play_time:  createOptionValueComponents('audio_play_time'),
   hint_type:  createOptionValueComponents('hint_type'),
@@ -219,10 +219,10 @@ const option_value_components = {
   use_message_intent:  createOptionValueComponents('use_message_intent'),
   score_show_max:  createOptionValueComponents('score_show_max'),
   max_chance:  createOptionValueComponents('max_chance'),
-  
+
 };
 
-function createOptionValueComponents(option_name)
+function createOptionValueComponents(option_name: string)
 {
   return new ActionRowBuilder()
     .addComponents(
@@ -230,12 +230,12 @@ function createOptionValueComponents(option_name)
         .setCustomId('option_value_select')
         .setPlaceholder(`${text_contents.server_setting_ui.select_menu.option_values.title}`)
         .addOptions(
-    
-          text_contents.server_setting_ui.select_menu.option_values[option_name].map(option_value_info => 
+
+          text_contents.server_setting_ui.select_menu.option_values[option_name].map((option_value_info: any) =>
           {
             return { label: option_value_info.label, description: option_value_info.description, value: option_value_info.value };
           })
-    
+
         ),
     );
 }

@@ -28,7 +28,7 @@ const {
   request_basket_reopen_comp,
   multiplayer_leave_confirm_comp,
   multiplayer_kick_confirm_comp,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

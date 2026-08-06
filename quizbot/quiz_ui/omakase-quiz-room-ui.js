@@ -17,7 +17,7 @@ const {
   omakase_custom_quiz_type_tags_select_menu,
   omakase_custom_quiz_tags_select_menu,
   request_basket_reopen_comp,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

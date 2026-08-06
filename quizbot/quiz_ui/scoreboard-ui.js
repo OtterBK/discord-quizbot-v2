@@ -11,7 +11,7 @@ const db_manager = require('../managers/db_manager.js');
 
 const {
   only_back_comp,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

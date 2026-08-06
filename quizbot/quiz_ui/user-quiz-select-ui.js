@@ -15,7 +15,7 @@ const {
   modal_complex_page_jump,
   btn_search,
   btn_done,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizBotControlComponentUI

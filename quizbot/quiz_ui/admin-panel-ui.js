@@ -3,7 +3,7 @@
 //#region 로컬 modules
 const {
   admin_panel_comp,
-} = require("./components.js");
+} = require("./components");
 
 const {
   QuizbotUI,

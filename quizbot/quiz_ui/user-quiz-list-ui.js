@@ -14,7 +14,7 @@ const { UserQuizInfo, loadUserQuizListFromDB } = require('../managers/user_quiz_
 const {
   my_quiz_control_comp,
   modal_quiz_info,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizBotControlComponentUI

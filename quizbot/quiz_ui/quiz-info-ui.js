@@ -15,7 +15,7 @@ const {
   omakase_basket_select_menu,
   omakase_basket_readonly_select_menu,
   omakase_basket_select_row,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

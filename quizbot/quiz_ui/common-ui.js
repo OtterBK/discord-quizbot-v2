@@ -18,7 +18,7 @@ const {
   page_select_menu,
   page_select_row,
   control_btn_component,
-} = require("./components.js");
+} = require("./components");
 
 /** QuizBotUI 기본 UI*/
 class QuizbotUI 

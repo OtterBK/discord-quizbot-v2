@@ -9,7 +9,7 @@ const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 
 const {
   only_back_comp,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

@@ -10,7 +10,7 @@ const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.L
 const {
   select_quiz_type_btn_component,
   only_back_comp,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,

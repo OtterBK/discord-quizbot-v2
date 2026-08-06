@@ -11,7 +11,7 @@ const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const {
 
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizBotControlComponentUI

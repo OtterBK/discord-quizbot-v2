@@ -22,7 +22,7 @@ const {
   question_edit_comp2,
   question_answer_type_select_menu,
   question_control_btn_component,
-} = require("./components.js");
+} = require("./components");
 
 const { 
   QuizbotUI,
