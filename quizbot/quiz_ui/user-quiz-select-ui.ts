@@ -21,7 +21,7 @@ const {
   QuizBotControlComponentUI
 } = require("./common-ui");
 
-const { UserQuizInfoUI } = require("./user-quiz-info.ui.js");
+const { UserQuizInfoUI } = require("./user-quiz-info.ui");
 const { QuizInfoUI } = require("./quiz-info-ui");
 //#endregion
 
