@@ -11,7 +11,7 @@ const { SYSTEM_CONFIG, ANSWER_TYPE } = require('../../config/system_setting.js')
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 
-const { UserQuestionInfo } = require('../managers/user_quiz_info_manager.js');
+const { UserQuestionInfo } = require('../managers/user_quiz_info_manager');
 
 const {
   modal_question_info,

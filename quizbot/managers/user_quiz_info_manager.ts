@@ -6,7 +6,7 @@ const db_manager = require('./db_manager.js');
 const logger = require('../../utility/logger.js')('UserQuizInfoManager');
 
 //만약 fields 추가 및 수정되면 여기에 그냥 넣으면 된다
-const QuizInfoColumn = 
+const QuizInfoColumn =
 [
   "creator_id",
   "creator_name",
@@ -37,7 +37,7 @@ QuizInfoColumn.forEach((field) =>
 });
 
 //만약 fields 추가 및 수정되면 여기에 그냥 넣으면 된다
-const QuestionInfoColumn = 
+const QuestionInfoColumn =
 [
   "quiz_id",
   "question_audio_url",
@@ -76,6 +76,10 @@ QuestionInfoColumn.forEach((field) =>
 //만약 fields 추가 및 수정되면 여기에 그냥 넣으면 된다
 class UserQuizInfo //유저 제작 퀴즈 정보
 {
+  data: Record<string, any>;
+  quiz_id: any;
+  question_list: UserQuestionInfo[];
+
   constructor()
   {
     this.data = {};
@@ -91,9 +95,9 @@ class UserQuizInfo //유저 제작 퀴즈 정보
     this.question_list = []; //UserQuestionInfo 타입
   }
 
-  async saveDataToDB()
+  async saveDataToDB(): Promise<any>
   {
-    let quiz_info_value_fields = Object.values(this.data);
+    const quiz_info_value_fields = Object.values(this.data);
 
     let result = undefined;
     //quiz info DB에 저장
@@ -115,20 +119,20 @@ class UserQuizInfo //유저 제작 퀴즈 정보
     return undefined;
   }
 
-  async delete() //퀴즈 삭제는 정말 삭제하기 보다는 is_use를 false로
+  async delete(): Promise<void> //퀴즈 삭제는 정말 삭제하기 보다는 is_use를 false로
   {
     db_manager.disableQuizInfo(this.quiz_id);
   }
 
-  async loadQuestionListFromDB() //quiz 객체에서 question 목록 로드 가능
+  async loadQuestionListFromDB(): Promise<void> //quiz 객체에서 question 목록 로드 가능
   {
-    const question_list = [];
+    const question_list: UserQuestionInfo[] = [];
 
     const result = await db_manager.selectQuestionInfo([this.quiz_id]);
 
     for(const result_row of result.rows)
     {
-      let user_question_info = new UserQuestionInfo();
+      const user_question_info = new UserQuestionInfo();
 
       user_question_info.question_id = result_row.question_id;
 
@@ -149,7 +153,7 @@ class UserQuizInfo //유저 제작 퀴즈 정보
     this.question_list = question_list;
   }
 
-  async saveQuestionToDB()
+  async saveQuestionToDB(): Promise<void>
   {
     //quiz question 전체 db에 저장
     for(const question of this.question_list)
@@ -158,12 +162,12 @@ class UserQuizInfo //유저 제작 퀴즈 정보
     }
   }
 
-  async addPlayedCount()
+  async addPlayedCount(): Promise<void>
   {
     db_manager.addQuizInfoPlayedCount(this.quiz_id);
   }
 
-  async updateModifiedTime()
+  async updateModifiedTime(): Promise<void>
   {
     db_manager.updateQuizInfoModifiedTime(this.quiz_id);
   }
@@ -171,6 +175,9 @@ class UserQuizInfo //유저 제작 퀴즈 정보
 
 class UserQuestionInfo //유저 제작 문제 정보
 {
+  data: Record<string, any>;
+  question_id: any;
+
   constructor()
   {
     this.data = {};
@@ -184,9 +191,9 @@ class UserQuestionInfo //유저 제작 문제 정보
 
   }
 
-  async saveDataToDB()
+  async saveDataToDB(): Promise<any>
   {
-    let question_info_value_fields = Object.values(this.data);
+    const question_info_value_fields = Object.values(this.data);
 
     let result = undefined;
     //quiz info DB에 저장
@@ -208,16 +215,16 @@ class UserQuestionInfo //유저 제작 문제 정보
     return undefined;
   }
 
-  async delete()
+  async delete(): Promise<void>
   {
     db_manager.deleteQuestionInfo(this.question_id);
   }
 }
 
-const loadUserQuizListFromDB = async (creator_id) => 
+const loadUserQuizListFromDB = async (creator_id?: string): Promise<UserQuizInfo[]> =>
 { //creator_id 기준으로 quiz 목록 로드, creator_id가 undefined면 전체 조회
 
-  let user_quiz_list = [];
+  const user_quiz_list: UserQuizInfo[] = [];
 
   let result;
 
@@ -230,14 +237,14 @@ const loadUserQuizListFromDB = async (creator_id) =>
     result = await db_manager.selectQuizInfo(creator_id);
   }
 
-  if(result == undefined) 
+  if(result == undefined)
   {
     return [];
   }
 
   for(const result_row of result.rows)
   {
-    let user_quiz_info = new UserQuizInfo();
+    const user_quiz_info = new UserQuizInfo();
 
     user_quiz_info.quiz_id = result_row.quiz_id;
 
@@ -258,7 +265,7 @@ const loadUserQuizListFromDB = async (creator_id) =>
   return user_quiz_list;
 };
 
-const loadQuestionListFromDBByTags = async (quiz_type_tags_value, tag_value, limit, certified_filter=true) => 
+const loadQuestionListFromDBByTags = async (quiz_type_tags_value: number, tag_value: number, limit: number, certified_filter = true): Promise<[number, UserQuestionInfo[]]> =>
 { //tag로 문제 목록 가져오기. 이야 이거 비용 좀 비쌀듯
 
   if(quiz_type_tags_value == 0) //퀴즈 유형을 선택하지 않았다면
@@ -273,13 +280,13 @@ const loadQuestionListFromDBByTags = async (quiz_type_tags_value, tag_value, lim
     'creator_icon_url',
     'simple_description'
   ];
-  const question_list = [];
+  const question_list: UserQuestionInfo[] = [];
 
   const result = await db_manager.selectRandomQuestionListByTags(quiz_type_tags_value, tag_value, limit, certified_filter);
 
   for(const result_row of result.rows)
   {
-    let user_question_info = new UserQuestionInfo();
+    const user_question_info = new UserQuestionInfo();
 
     user_question_info.question_id = result_row.question_id;
 
@@ -311,7 +318,7 @@ const loadQuestionListFromDBByTags = async (quiz_type_tags_value, tag_value, lim
   return [total_question_count, question_list];
 };
 
-const loadQuestionListByBasket = async (basket_condition_query, limit) => 
+const loadQuestionListByBasket = async (basket_condition_query: string, limit: number): Promise<[number, UserQuestionInfo[]]> =>
 { //quiz_id 로 랜덤 문제 불러오기
 
   if(basket_condition_query == '') //선택된 퀴즈 basket이 없다면
@@ -326,13 +333,13 @@ const loadQuestionListByBasket = async (basket_condition_query, limit) =>
     'creator_icon_url',
     'simple_description'
   ];
-  const question_list = [];
+  const question_list: UserQuestionInfo[] = [];
 
   const result = await db_manager.selectRandomQuestionListByBasket(basket_condition_query, limit);
 
   for(const result_row of result.rows)
   {
-    let user_question_info = new UserQuestionInfo();
+    const user_question_info = new UserQuestionInfo();
 
     user_question_info.question_id = result_row.question_id;
 
@@ -364,7 +371,7 @@ const loadQuestionListByBasket = async (basket_condition_query, limit) =>
   return [total_question_count, question_list];
 };
 
-const addPlayedCountByQuiz = (quiz_id) =>
+const addPlayedCountByQuiz = (quiz_id: string): void =>
 {
   db_manager.addQuizInfoPlayedCount(quiz_id);
 }

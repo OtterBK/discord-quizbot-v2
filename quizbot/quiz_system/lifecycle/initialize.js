@@ -15,7 +15,7 @@ const text_contents = require('../../../config/text_contents.json')[SYSTEM_CONFI
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
 const tagged_dev_quiz_manager = require('../../managers/tagged_dev_quiz_manager');
-const { loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz } = require('../../managers/user_quiz_info_manager.js');
+const { loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz } = require('../../managers/user_quiz_info_manager');
 
 //#region Initialize Cycle
 /** 처음 초기화 시 동작하는 Initialize Cycle들 **/
