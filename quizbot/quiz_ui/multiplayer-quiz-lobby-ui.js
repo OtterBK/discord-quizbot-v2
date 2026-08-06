@@ -35,7 +35,7 @@ const {
 } = require("./common-ui");
 
 
-const { AlertQuizStartUI } = require("./alert-quiz-start-ui.js");
+const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
 const { QuizInfoUI } = require('./quiz-info-ui.js');
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 

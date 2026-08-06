@@ -18,7 +18,7 @@ const {
 } = require("./common-ui");
 
 
-const { DevQuizInfoUI } = require("./dev-quiz-info-ui.js");
+const { DevQuizInfoUI } = require("./dev-quiz-info-ui");
 
 //#endregion
 

@@ -13,8 +13,8 @@ const {
   QuizbotUI,
 } = require("./common-ui");
 
-const { NotesSelectUI } = require("./note-select-ui.js");
-const { QuizToolGuideUI } = require("./quiz-tool-guide-ui.js");
+const { NotesSelectUI } = require("./note-select-ui");
+const { QuizToolGuideUI } = require("./quiz-tool-guide-ui");
 const { SelectQuizTypeUI } = require("./select-quiz-type-ui.js");
 const { ServerSettingUI } = require("./server-setting-ui.js");
 const { MultiplayerQuizSelectUI } = require("./multiplayer-quiz-select-ui.js");

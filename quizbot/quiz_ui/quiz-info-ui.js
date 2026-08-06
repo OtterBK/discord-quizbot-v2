@@ -21,7 +21,7 @@ const {
   QuizbotUI,
 } = require("./common-ui");
 
-const { AlertQuizStartUI } = require("./alert-quiz-start-ui.js");
+const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
 const { ServerSettingUI } = require("./server-setting-ui.js");
 const { cloneDeep } = require('lodash');
 

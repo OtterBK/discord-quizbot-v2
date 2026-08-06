@@ -11,7 +11,7 @@ const {
   only_back_comp,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
@@ -20,7 +20,9 @@ const {
 /** 일반 텍스트 표시 UI */
 class NoteUI extends QuizbotUI
 {
-  constructor(note_info)
+  note_info: any;
+
+  constructor(note_info: any)
   {
     super();
 
@@ -29,7 +31,7 @@ class NoteUI extends QuizbotUI
     this.initializeEmbed();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
     const description = fs.readFileSync(this.note_info['note_path'], {encoding: 'utf8', flag:'r'});
 

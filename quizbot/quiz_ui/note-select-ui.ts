@@ -6,21 +6,21 @@ const fs = require('fs');
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const {
 
 } = require("./components");
 
-const { 
+const {
   QuizBotControlComponentUI
 } = require("./common-ui");
 
-const { NoteUI } = require("./note-ui.js");
+const { NoteUI } = require("./note-ui");
 
 //#endregion
 
 /** 공지/패치노트 UI */
-class NotesSelectUI extends QuizBotControlComponentUI  
+class NotesSelectUI extends QuizBotControlComponentUI
 {
 
   constructor()
@@ -32,9 +32,8 @@ class NotesSelectUI extends QuizBotControlComponentUI
     this.initializeNoteSelectUIEventHandler();
   }
 
-  initializeEmbed() 
+  initializeEmbed()
   {
-    
 
     this.embed = {
       color: 0x87CEEB,
@@ -52,7 +51,7 @@ class NotesSelectUI extends QuizBotControlComponentUI
     this.main_description = text_contents.notes_select_ui.description;
 
     this.loadNoteContents(SYSTEM_CONFIG.NOTICES_PATH)
-      .then(content_list =>
+      .then((content_list: any) =>
       {
         this.notice_contents = content_list;
         this.cur_contents = this.notice_contents;
@@ -63,45 +62,45 @@ class NotesSelectUI extends QuizBotControlComponentUI
 
   initializeNoteSelectUIEventHandler()
   {
-    this.note_select_ui_handler = 
+    this.note_select_ui_handler =
     {
       'notice': this.handleNoticeSelect.bind(this),
       'patch_note': this.handlePatchNoteSelect.bind(this),
     };
   }
 
-  async loadNoteContents(notes_folder_path) 
+  async loadNoteContents(notes_folder_path: string)
   {
     // //파일 생성일로 정렬
     // const content_list_sorted_by_mtime = fs.readdirSync(notes_folder_path)
-    //     .map(function(v) { 
+    //     .map(function(v) {
     //         return { name:v.replace('.txt', ""),
     //                 mtime:fs.statSync(`${notes_folder_path}/${v}`).mtime,
     //                 note_path: `${notes_folder_path}/${v}`
-    //               }; 
+    //               };
     //     })
     //     .sort(function(a, b) { return b.mtime - a.mtime; });
-  
+
     //파일명으로 정렬
     const content_list_sorted_by_name = fs.readdirSync(notes_folder_path)
-      .sort((a, b) => 
+      .sort((a: string, b: string) =>
       {
         return b.localeCompare(a, 'ko');
       })
-      .map(function(v) 
-      { 
+      .map(function(v: string)
+      {
         return { name:v.replace('.txt', ""),
           mtime:fs.statSync(`${notes_folder_path}/${v}`).mtime,
           note_path: `${notes_folder_path}/${v}`
-        }; 
+        };
       });
 
     return content_list_sorted_by_name;
   }
 
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
-    if(this.isUnsupportedInteraction(interaction))  
+    if(this.isUnsupportedInteraction(interaction))
     {
       return;
     }
@@ -120,35 +119,35 @@ class NotesSelectUI extends QuizBotControlComponentUI
     {
       return this.handleSelectedIndexEvent(interaction);
     }
-    
+
   }
 
-  isNoteSelectUIEvent(interaction)
+  isNoteSelectUIEvent(interaction: any)
   {
     return this.note_select_ui_handler[interaction.customId] !== undefined;
   }
 
-  handleNoteSelectUIEvent(interaction)
+  handleNoteSelectUIEvent(interaction: any)
   {
     const handler = this.note_select_ui_handler[interaction.customId];
     return handler(interaction);
   }
 
-  handleNoticeSelect(interaction)
+  handleNoticeSelect(interaction: any)
   {
     this.cur_contents = this.notice_contents;
     this.pageMove(0);
     return this;
   }
 
-  handlePatchNoteSelect(interaction)
+  handlePatchNoteSelect(interaction: any)
   {
     this.cur_contents = this.patch_note_contents;
     this.pageMove(0);
     return this;
   }
 
-  handleSelectedIndexEvent(interaction)
+  handleSelectedIndexEvent(interaction: any)
   {
     const selected_index = this.convertToSelectedIndex(interaction.customId);
 
