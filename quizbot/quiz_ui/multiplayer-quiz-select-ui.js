@@ -156,9 +156,11 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
   handleRequestRefreshLobby(interaction)
   {
-    this.loadMultiplayerLobbyList();
-    interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 목록을 다시 불러왔습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.explicit_replied = true; //IPC 응답 기다리는 동안 전역 fallback이 먼저 deferUpdate 하지 않도록 미리 표시
+    this.loadMultiplayerLobbyList().then(() => //실제 목록 갱신(IPC 왕복 포함)이 끝난 뒤에 완료 메시지를 보내도록 순서 수정
+    {
+      interaction.reply({content: `\`\`\`🔸 목록을 다시 불러왔습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+    });
     return undefined;
   }
 

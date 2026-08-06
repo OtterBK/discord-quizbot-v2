@@ -40,6 +40,24 @@ const select_btn_component = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
   );
 
+//select-quiz-type-ui.js 전용 (옵션이 3개뿐인데 select_btn_component(1~5)를 그대로 쓰면
+//4,5번 버튼이 눌러도 아무 반응 없는 채로 남아있어서 이 화면만을 위한 3버튼짜리를 따로 둠
+const select_quiz_type_btn_component = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('1')
+      .setLabel('1')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('2')
+      .setLabel('2')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('3')
+      .setLabel('3')
+      .setStyle(ButtonStyle.Primary),
+  );
+
 //24.01.08 부터는 10개씩 보여준다. 대신 페이지 이동 뺐음
 const select_btn_component2 = new ActionRowBuilder()
   .addComponents(
@@ -294,6 +312,7 @@ const sort_by_select_menu = new ActionRowBuilder()
 module.exports = {
   select_btn_component,
   select_btn_component2,
+  select_quiz_type_btn_component,
   modal_page_jump,
   modal_complex_page_jump,
   page_select_menu,

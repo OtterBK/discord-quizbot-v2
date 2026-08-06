@@ -125,7 +125,7 @@ class NotesSelectUI extends QuizBotControlComponentUI
 
   isNoteSelectUIEvent(interaction)
   {
-    this.note_select_ui_handler[interaction.customId] !== undefined;
+    return this.note_select_ui_handler[interaction.customId] !== undefined;
   }
 
   handleNoteSelectUIEvent(interaction)

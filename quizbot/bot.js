@@ -593,13 +593,20 @@ process.on('uncaughtException', (err) =>
       error_count = 0;
     }
   }
-  catch (err) 
+  catch (err)
   {
     logger.error(`Cannot Handle Uncaught Error. err: ${err.message}`);
   }
 });
 
-const createCleanUp = function () 
+//UI 핸들러(quiz_ui/*.js) 등에서 발생한 예외가 catch 없이 프라미스 체인 밖으로 새어나가면
+//지금까지는 아무 로그도 안 남고 유저에게도 조용히 무반응으로만 보였음 - 최소한 로그는 남도록 처리
+process.on('unhandledRejection', (reason) =>
+{
+  logger.error(`Unhandled promise rejection!!! reason: ${reason?.stack ?? reason}`);
+});
+
+const createCleanUp = function ()
 {
   const interval = 60000;
   logger.info(`Creating cleanup timer. current interval: ${interval}ms`);

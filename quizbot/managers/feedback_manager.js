@@ -48,7 +48,7 @@ exports.addQuizLikeAuto = async (interaction, quiz_id, quiz_title) =>
   }
 
   exports.addQuizLike(quiz_id, guild_id, user_id)
-    .then((result) => 
+    .then((result) =>
     {
 
       if(result == true)
@@ -61,6 +61,11 @@ exports.addQuizLikeAuto = async (interaction, quiz_id, quiz_title) =>
         interaction.explicit_replied = true;
         interaction.reply({content: '```' + `💚 이미 [${quiz_title}] 퀴즈를 추천했네요. 감사합니다! 😄` + '```', flags: MessageFlags.Ephemeral});
       }
+    })
+    .catch((err) => //예전엔 여기 catch가 없어서 DB 에러 시 사용자에게 아무 응답도 안 갔음
+    {
+      logger.error(`Failed to process quiz like. quiz_id: ${quiz_id}, user_id: ${user_id}, err: ${err}`);
+      interaction.reply({content: '```' + `🔸 추천 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.` + '```', flags: MessageFlags.Ephemeral}).catch(() => {});
     });
 };
 

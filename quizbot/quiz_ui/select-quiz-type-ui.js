@@ -8,7 +8,7 @@
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
 const {
-  select_btn_component,
+  select_quiz_type_btn_component,
   only_back_comp,
 } = require("./components.js");
 
@@ -52,7 +52,7 @@ class SelectQuizTypeUI extends QuizbotUI
   {
     
 
-    this.components = [select_btn_component, only_back_comp ]; //이게 기본 component임
+    this.components = [select_quiz_type_btn_component, only_back_comp ]; //옵션이 3개뿐이라 전용 3버튼 컴포넌트 사용
   }
   
   onInteractionCreate(interaction)

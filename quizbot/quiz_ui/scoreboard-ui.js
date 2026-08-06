@@ -67,8 +67,8 @@ class ScoreboardUI extends QuizbotUI
       my_scoreboard = my_scoreboard_result.rows[0];
     }
 
-    let description = `⭐ ${this.guild.name ?? this.guild.id} 서버의 현 시즌 전적 
-    🔸) ${my_scoreboard.win}승 ${my_scoreboard.lose}패. MMR: ${my_scoreboard.mmr}\n\n\n`;
+    let description = `⭐ ${this.guild.name ?? this.guild.id} 서버의 현 시즌 전적\n`
+      + `🔸) ${my_scoreboard.win}승 ${my_scoreboard.lose}패. MMR: ${my_scoreboard.mmr}\n\n\n`;
 
     const top_scoreboard_result = await db_manager.selectTop10Scoreboard();
     if(top_scoreboard_result === undefined || top_scoreboard_result.rowCount === 0)
@@ -76,6 +76,7 @@ class ScoreboardUI extends QuizbotUI
       description = `순위 데이터를 불러오지 못했습니다.`;
 
       this.embed.description = description;
+      this.update(); //이 분기에서 update()를 안 불러서 "불러오는 중..." 화면에 멈춰있던 버그 수정
       return;
     }
 

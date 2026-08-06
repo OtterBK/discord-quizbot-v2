@@ -339,6 +339,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
       'multiplayer_start': this.requestStartLobby.bind(this),
       'multiplayer_lobby_kick_select_menu': this.requestKick.bind(this),
       'multiplayer_ready': this.requestReadyLobby.bind(this),
+      'multiplayer_participant_select_menu': () => this, //비호스트용 열람 전용 메뉴, 선택해도 상태 변화 없음(의도된 동작)
     };
   }
 

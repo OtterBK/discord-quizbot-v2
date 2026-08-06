@@ -75,8 +75,9 @@ class QuizInfoUI extends QuizbotUI
       'modal_quiz_setting': this.handleSubmitModalQuizSetting.bind(this),
       'use_tag_mode': this.handleRequestUseTagMode.bind(this), 
       'use_basket_mode': this.handleRequestUseBasketMode.bind(this), 
-      'load_basket_items': this.handleLoadBasketItems.bind(this), 
-      'basket_select_menu': this.handleBasketSelected.bind(this), 
+      'load_basket_items': this.handleLoadBasketItems.bind(this),
+      'basket_select_menu': this.handleBasketSelected.bind(this),
+      'basket_readonly_select_menu': () => this, //읽기 전용 조회 메뉴, 선택해도 상태 변화 없음(의도된 동작)
     };
   }
 
