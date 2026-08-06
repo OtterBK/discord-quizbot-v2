@@ -13,7 +13,7 @@ const utility = require('../../utility/utility.js');
 const quiz_content_loader = require('../../utility/util/quiz_content_loader.js');
 const audio_utility = require('../../utility/util/audio_utility.js');
 const network_utility = require('../../utility/util/network_utility.js');
-const misc_utility = require('../../utility/util/misc_utility.js');
+const misc_utility = require('../../utility/util/misc_utility');
 
 test('utility.js: 4개 도메인 파일의 export를 빠짐없이 재수출한다 (총 25개)', () =>
 {

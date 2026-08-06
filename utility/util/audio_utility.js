@@ -8,7 +8,7 @@ const mm = require('music-metadata');
 
 const { SYSTEM_CONFIG, BGM_TYPE } = require('../../config/system_setting.js');
 const logger = require('../logger.js')('Utility');
-const misc_utility = require('./misc_utility.js');
+const misc_utility = require('./misc_utility');
 
 //미리 로드해둘 것들
 let bgm_long_timers = undefined;
