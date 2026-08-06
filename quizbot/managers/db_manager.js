@@ -5,11 +5,11 @@
 //db_manager.js는 각 도메인별 파일을 재수출(re-export)하는 얇은 facade로 남긴다.
 //db_core.js가 내부적으로 sendQuery를 도메인 파일들에 노출하지만, 원본에는 없던 export이므로
 //facade에서는 원본과 동일하게 initialize/executeQuery만 재수출한다.
-const db_core = require('./db/db_core.js');
-const db_option = require('./db/db_option.js');
-const db_quiz = require('./db/db_quiz.js');
-const db_report = require('./db/db_report.js');
-const db_scoreboard = require('./db/db_scoreboard.js');
+const db_core = require('./db/db_core');
+const db_option = require('./db/db_option');
+const db_quiz = require('./db/db_quiz');
+const db_report = require('./db/db_report');
+const db_scoreboard = require('./db/db_scoreboard');
 
 module.exports = {
   initialize: db_core.initialize,

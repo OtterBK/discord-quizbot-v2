@@ -8,11 +8,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const db_manager = require('../../quizbot/managers/db_manager.js');
-const db_core = require('../../quizbot/managers/db/db_core.js');
-const db_option = require('../../quizbot/managers/db/db_option.js');
-const db_quiz = require('../../quizbot/managers/db/db_quiz.js');
-const db_report = require('../../quizbot/managers/db/db_report.js');
-const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard.js');
+const db_core = require('../../quizbot/managers/db/db_core');
+const db_option = require('../../quizbot/managers/db/db_option');
+const db_quiz = require('../../quizbot/managers/db/db_quiz');
+const db_report = require('../../quizbot/managers/db/db_report');
+const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
 test('db_manager.js: 도메인 파일들을 원본과 동일한 32개 이름으로 재수출한다', () =>
 {

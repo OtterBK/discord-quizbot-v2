@@ -23,7 +23,7 @@ const pool = new pg.Pool({
 
 let is_initialized = false;
 
-const sendQuery = (query_string, values=[]) =>
+const sendQuery = (query_string: string, values: any[] = []): Promise<any> =>
 {
   if(is_initialized == false)
   {
@@ -34,11 +34,11 @@ const sendQuery = (query_string, values=[]) =>
   }
 
   return pool.query(query_string, values)
-    .then((result) =>
+    .then((result: any) =>
     {
       return result;
     })
-    .catch(err =>
+    .catch((err: any) =>
     {
       logger.error(`query error, query: ${query_string}, values: ${values}\nerr: ${err}`);
       return undefined;
@@ -47,11 +47,11 @@ const sendQuery = (query_string, values=[]) =>
 
 exports.sendQuery = sendQuery;
 
-exports.initialize = () =>
+exports.initialize = (): Promise<boolean> =>
 {
   return new Promise((resolve, reject) =>
   {
-    pool.connect(err =>
+    pool.connect((err: any) =>
     {
       if (err)
       {
@@ -68,7 +68,7 @@ exports.initialize = () =>
   });
 };
 
-exports.executeQuery = async (query, values) =>
+exports.executeQuery = async (query: string, values: any[]): Promise<any> =>
 {
   return pool.query(query, values);
 };
