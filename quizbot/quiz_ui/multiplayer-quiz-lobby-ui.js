@@ -32,7 +32,7 @@ const {
 
 const { 
   QuizbotUI,
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 
 const { AlertQuizStartUI } = require("./alert-quiz-start-ui.js");

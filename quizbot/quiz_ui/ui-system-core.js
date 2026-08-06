@@ -9,7 +9,7 @@ const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../config/system_settin
 const PRIVATE_CONFIG = require('../../config/private_config.json');
 const logger = require('../../utility/logger.js')('QuizUI');
 
-const { QuizbotUI } = require('./common-ui.js');
+const { QuizbotUI } = require('./common-ui');
 const { MainUI } = require("./main-ui.js");
 const { UserQuizListUI } = require("./user-quiz-list-ui.js");
 const { AdminPanelUI } = require("./admin-panel-ui.js");

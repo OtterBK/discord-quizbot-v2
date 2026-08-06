@@ -13,7 +13,7 @@ const {
 
 const {
   QuizbotUI,
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 //#endregion
 

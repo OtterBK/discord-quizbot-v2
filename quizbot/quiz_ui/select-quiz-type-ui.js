@@ -14,7 +14,7 @@ const {
 
 const { 
   QuizbotUI,
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 
 const { DevQuizSelectUI } = require("./dev-quiz-select-ui.js");

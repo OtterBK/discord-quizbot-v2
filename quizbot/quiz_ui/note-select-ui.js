@@ -13,7 +13,7 @@ const {
 
 const { 
   QuizBotControlComponentUI
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 const { NoteUI } = require("./note-ui.js");
 

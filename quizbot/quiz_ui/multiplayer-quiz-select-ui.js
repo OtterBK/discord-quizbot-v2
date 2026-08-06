@@ -22,7 +22,7 @@ const {
 
 const { 
   QuizBotControlComponentUI
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 const { MultiplayerQuizLobbyUI } = require("./multiplayer-quiz-lobby-ui.js");
 const { ScoreboardUI } = require("./scoreboard-ui.js");

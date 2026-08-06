@@ -9,7 +9,7 @@ const { MessageFlags } = require('discord.js');
 //#region 로컬 modules
 
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE,} = require('../../config/system_setting.js');
-const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
+const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('../../utility/logger.js')('QuizUI');
 const {
   select_btn_component,
@@ -21,59 +21,68 @@ const {
 } = require("./components");
 
 /** QuizBotUI 기본 UI*/
-class QuizbotUI 
+class QuizbotUI
 {
+  //화면 클래스마다 필요에 따라 임의의 프로퍼티를 this에 얹어서 쓰는 관행이라
+  //(quiz_info, note_info, cur_contents 등 파일마다 제각각) 매번 서브클래스에서
+  //선언하는 대신 인덱스 시그니처로 허용한다. 런타임 동작에는 영향 없음.
+  [key: string]: any;
+
+  holder: any;
+  expired: boolean;
+  embed: any;
+  components: any[];
 
   constructor()
   {
-    this.holder = undefined; 
+    this.holder = undefined;
     this.expired = false; //UI가 정상 해제됐는지 여부
 
     this.embed = {};
     this.components = [ select_btn_component, select_btn_component2 ]; //이게 기본 component임
   }
-  
+
   //각 ui 별 on은 필요시 구현
-  on(event_name, event_object)
+  on(event_name: string, event_object: any): any
   {
-    switch(event_name) 
+    switch(event_name)
     {
     case CUSTOM_EVENT_TYPE.interactionCreate:
       return this.onInteractionCreate(event_object);
-          
+
     case CUSTOM_EVENT_TYPE.receivedMultiplayerSignal:
       return this.onReceivedMultiplayerSignal(event_object);
-    
+
     default: return undefined;
     }
   }
-  
+
   onReady() //ui 최초 등록 됐을 때
   {
-  
-  }
-  
-  onInteractionCreate(event_object) //더미용 이벤트 콜백
-  {
-  
+
   }
 
-  onReceivedMultiplayerSignal(event_object) //더미용 이벤트 콜백
+  onInteractionCreate(event_object: any): any //더미용 이벤트 콜백
   {
-  
+
   }
-  
+
+  onReceivedMultiplayerSignal(event_object: any): any //더미용 이벤트 콜백
+  {
+
+  }
+
   onAwaked() //UI 재활성화 됐을 때
   {
-  
+
   }
 
   onExpired() //UI 사라질 떄
   {
     this.expired = true;
   }
-  
-  update()
+
+  update(): void
   {
     if(this.holder === undefined)
     {
@@ -83,8 +92,8 @@ class QuizbotUI
 
     this.holder.updateUI();
   }
-  
-  sendDelayedUI(ui, do_resend)
+
+  sendDelayedUI(ui: any, do_resend: boolean): any
   {
     if(this.holder === undefined)
     {
@@ -95,40 +104,40 @@ class QuizbotUI
     return this.holder.sendDelayedUI(ui, do_resend);
   }
 
-  goToBack()
+  goToBack(): void
   {
     if(this.holder === undefined)
     {
       logger.error(`Failed to self goToBack UI guild_id:${this.guild_id}, embeds: ${JSON.stringify(this.embed)}, err: ${'this UI has undefined UI Holder!!!'}`);
-      return;  
+      return;
     }
-    
+
     this.holder.goToBack();
   }
 
-  sendMessageReply(message)
+  sendMessageReply(message: any): any
   {
     if(this.holder === undefined)
     {
       logger.error(`Failed to self reply message of base message guild_id:${this.guild_id}, embeds: ${JSON.stringify(this.embed)}, err: ${'this UI has undefined UI Holder!!!'}`);
       return;
     }
-    
+
     return this.holder.sendMessageReply(message);
   }
-  
-  freeHolder()
+
+  freeHolder(): void
   {
     this.holder?.free();
   }
 
   //selectmenu 에서 value 값에 해당하는 선택지를 default 활성화해줌
-  selectDefaultOptionByValue(select_menu, value)
+  selectDefaultOptionByValue(select_menu: any, value: any): void
   {
     const options = select_menu.options;
     for(const option of options)
     {
-      let option_data = option.data;
+      const option_data = option.data;
       if(option_data.value === value)
       {
         option_data['default'] = true;
@@ -139,9 +148,9 @@ class QuizbotUI
       }
     }
   }
-  
+
   //embed url 전부 제거
-  resetEmbedURL()
+  resetEmbedURL(): void
   {
     if(this.embed?.thumbnail != undefined)
     {
@@ -159,24 +168,33 @@ class QuizbotUI
     }
   }
 
-  getMessageCreatedTime()
+  getMessageCreatedTime(): any
   {
     return this.holder?.getMessageCreatedTime();
   }
 
-  isUnsupportedInteraction(interaction)
+  isUnsupportedInteraction(interaction: any): boolean
   {
     return !interaction.isButton() && !interaction.isStringSelectMenu() && !interaction.isModalSubmit();
   }
 }
-  
+
 //QuizBotControlComponentUI, 컨트롤 컴포넌트가 함께 있는 UI
-class QuizBotControlComponentUI extends QuizbotUI 
+class QuizBotControlComponentUI extends QuizbotUI
 {
+  control_btn_component: any;
+  page_jump_component: any;
+  cur_contents: any;
+  cur_page: number;
+  total_page: number;
+  count_per_page: number;
+  main_description: any;
+  page_move_handler: Record<string, (interaction: any) => any>;
+
   constructor()
   {
     super();
-  
+
     this.control_btn_component = cloneDeep(control_btn_component);
     this.page_jump_component = cloneDeep(page_select_row);
     this.components = [select_btn_component, select_btn_component2, this.control_btn_component ]; //이게 기본 component임
@@ -190,9 +208,9 @@ class QuizBotControlComponentUI extends QuizbotUI
     this.initializePageHandler();
   }
 
-  initializePageHandler()
+  initializePageHandler(): void
   {
-    this.page_move_handler = 
+    this.page_move_handler =
     {
       'request_modal_page_jump': this.requestPageJumpModal.bind(this),
       'modal_page_jump': this.submitPageJumpModal.bind(this),
@@ -202,12 +220,12 @@ class QuizBotControlComponentUI extends QuizbotUI
     };
   }
 
-  isPageMoveEvent(interaction)
+  isPageMoveEvent(interaction: any): boolean
   {
     return this.page_move_handler[interaction.customId] !== undefined;
   }
 
-  handlePageMoveEvent(interaction)
+  handlePageMoveEvent(interaction: any): any
   {
     /** false => 페이지 이동 관련 아님, undefined => 페이지 이동 관련이긴하나 페이지가 바뀌진 않음, true => 페이지가 바뀜 */
 
@@ -215,17 +233,17 @@ class QuizBotControlComponentUI extends QuizbotUI
     return handler(interaction);
   }
 
-  requestPageJumpModal(interaction)
+  requestPageJumpModal(interaction: any): undefined
   {
     interaction.explicit_replied = true;
     interaction.showModal(modal_page_jump); //페이지 점프 입력 모달 전달
     return undefined;
   }
 
-  submitPageJumpModal(interaction)
+  submitPageJumpModal(interaction: any): any
   {
     const input_page_value = interaction.fields.getTextInputValue('txt_input_page_jump');
-  
+
     if(input_page_value === undefined || input_page_value === '')
     {
       return undefined;
@@ -243,14 +261,14 @@ class QuizBotControlComponentUI extends QuizbotUI
     {
       interaction.explicit_replied = true;
       interaction.reply({content: `\`\`\`🔸 ${input_page_value} 페이지는 없네요...\`\`\``, flags: MessageFlags.Ephemeral});
-      return undefined; 
+      return undefined;
     }
 
     if(this.cur_page === selected_page_num) //현재와 동일한 페이지라면
     {
       return undefined; //페이지 바뀐게 없다면 return;
     }
-      
+
     this.pageMove(selected_page_num - 1);
     interaction.explicit_replied = true;
     interaction.deferUpdate();
@@ -258,7 +276,7 @@ class QuizBotControlComponentUI extends QuizbotUI
     return this;
   }
 
-  goToPreviousPage(interaction)
+  goToPreviousPage(interaction: any): any
   {
     if(this.cur_page <= 0) //이미 맨 앞 페이지
     {
@@ -269,7 +287,7 @@ class QuizBotControlComponentUI extends QuizbotUI
     return this;
   }
 
-  goToNextPage(interaction)
+  goToNextPage(interaction: any): any
   {
     if(this.cur_page + 1 >= this.total_page) //다음 페이지가 없음
     {
@@ -280,81 +298,81 @@ class QuizBotControlComponentUI extends QuizbotUI
     return this;
   }
 
-  pageMove(page_num)
+  pageMove(page_num: number): void
   {
     this.cur_page = page_num;
     this.displayContents(this.cur_page);
   }
-  
+
   /** Deprecated //이제 select menu 에서 페이지 선택하는 형식이 아닌 modal에서 페이지 입력하는 형식이라 필요 없다.
   setPageSelectMenuMax(max_page)
   {
     //selectmenu component의 options는 readonly 라서 다시 만들어야함
-  
+
     // if(max_page <= 1) //23.11.30 아 그냥 뺴지마, 신경쓸게 많음;
     // {
     //   // this.components = [select_btn_component, this.control_btn_component]; //페이지가 1개면 페이지 이동 menu 뺌
     //   const index_to_remove = this.components.indexOf(this.page_jump_component);
     //   if(index_to_remove !== -1)
     //   {
-    //     this.components.splice(index_to_remove, 1); 
+    //     this.components.splice(index_to_remove, 1);
     //   }
     //   return;
     // }
-  
+
     // this.components = [select_btn_component, this.control_btn_component, this.page_jump_component ]; //기본 component로 다시 지정
     // this.components.splice(2, 0, this.page_jump_component); //페이지 선택 메뉴 필요하면 삽입
-  
-    if(max_page <= 0) 
+
+    if(max_page <= 0)
     {
       return;
     }
-  
+
     const new_select_menu = cloneDeep(page_select_menu);
-  
+
     for(let i = 0; i < max_page && i < 25; ++i) //최대 25까지밖에 안됨
     {
       const page_option = { label: `${i+1}페이지`, description: ` `, value: `page_${i}` };
       new_select_menu.addOptions(page_option);
     }
-  
+
     this.page_jump_component.components[0] = new_select_menu;
     // this.components[2] = this.page_jump_component;
   }
   */
-  
-  displayContents(page_num=this.cur_page)
+
+  displayContents(page_num: number = this.cur_page): void
   {
-    if(this.cur_contents === undefined) 
+    if(this.cur_contents === undefined)
     {
       return;
     }
-  
+
     const contents = this.cur_contents;
-    const total_page = parseInt(contents.length / this.count_per_page) + (contents.length % this.count_per_page !== 0 ? 1 : 0);
-  
+    const total_page = parseInt(String(contents.length / this.count_per_page)) + (contents.length % this.count_per_page !== 0 ? 1 : 0);
+
     if(this.total_page === 0 || this.total_page !== total_page) //total page 변경 사항 있을 시
     {
       this.total_page = total_page; //나중에 쓸거라 저장
     }
-  
+
     this.cur_page = page_num;
 
-    let page_contents = [];
+    const page_contents = [];
     const from = this.count_per_page * page_num;
     const to = Math.min((this.count_per_page * (page_num + 1)), contents.length);
-  
+
     for(let i = from; i < to; i++)
     {
       const content = this.cur_contents[i];
-      if(content === undefined) 
+      if(content === undefined)
       {
         continue;
       }
-      
+
       page_contents.push(content);
     }
-  
+
     let contents_message = this.main_description ?? "";
     for(let i = 0; i < page_contents.length; ++i)
     {
@@ -362,34 +380,34 @@ class QuizBotControlComponentUI extends QuizbotUI
       const num_icon = text_contents.icon["ICON_NUM_"+(i+1)];
       contents_message += `${num_icon})  ${cur_content.icon ?? ''} ${cur_content.name}\n\n`;
     }
-  
-    this.embed.description = contents_message + " \n";
-  
-    let current_page_text = total_page === 0 ? 0 : page_num + 1;
-    let page_message = `${text_contents.icon.ICON_PAGE} ${current_page_text} / ${total_page} ${text_contents.icon.PAGE_TEXT}`;
 
-    this.embed.footer = { 
+    this.embed.description = contents_message + " \n";
+
+    const current_page_text = total_page === 0 ? 0 : page_num + 1;
+    const page_message = `${text_contents.icon.ICON_PAGE} ${current_page_text} / ${total_page} ${text_contents.icon.PAGE_TEXT}`;
+
+    this.embed.footer = {
       text: page_message,
     };
   }
 
-  convertToSelectedIndex(target)
+  convertToSelectedIndex(target: any): number | undefined
   {
     const selected_index = parseInt(target);
     if(isNaN(selected_index) || selected_index < 0 || selected_index > 10) //1~10번 사이 눌렀을 경우만
     {
-      return undefined; 
+      return undefined;
     }
 
     return selected_index;
   }
 
-  isSelectedIndexEvent(interaction)
+  isSelectedIndexEvent(interaction: any): boolean
   {
     return this.convertToSelectedIndex(interaction.customId) !== undefined;
   }
 
-  handleSelectedIndexEvent(interaction) //더미용
+  handleSelectedIndexEvent(interaction: any): void //더미용
   {
     logger.warn(`Called Dummy handleSelectedIndexEvent. from ${interaction.customId} / ${interaction.guild.id}`);
   }

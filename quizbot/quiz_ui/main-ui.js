@@ -11,7 +11,7 @@ const {
 
 const { 
   QuizbotUI,
-} = require("./common-ui.js");
+} = require("./common-ui");
 
 const { NotesSelectUI } = require("./note-select-ui.js");
 const { QuizToolGuideUI } = require("./quiz-tool-guide-ui.js");
