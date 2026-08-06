@@ -274,7 +274,7 @@ const processFollowUpAction = async (interaction: any): Promise<void> =>
     }
 
     let result_message = '';
-    const is_banned = applyGuildBan(guild_id);
+    const is_banned = await applyGuildBan(guild_id);
     if(is_banned)
     {
       result_message = `Guild ${guild.name}/${guild.id} has been banned from multiplayer quiz.`;
