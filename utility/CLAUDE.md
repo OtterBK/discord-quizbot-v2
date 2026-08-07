@@ -13,8 +13,8 @@ facade(`utility.js`) 자체에 죽은 import 5개(`EmbedBuilder`/`axios`/`PRIVAT
 
 ## `SeekStream/` — 로컬 오디오 파일 seek 재생
 
-- **`SeekStream.js`** — 원래 YouTube 스트림용이던 걸 로컬 파일용으로 개조("24.01.18 custom node modules 의존성 없앨겸 file stream 용으로 마개조"). `quizbot/quiz_system/lifecycle/prepare.js`에서만 실제로 쓰임(노래 퀴즈 재생 시 특정 지점부터 재생하는 기능).
-- **`WebmSeeker.js`** — WEBM/EBML 컨테이너를 직접 파싱해 seek 지점의 byte offset을 찾는 저수준 `Duplex` 스트림. **TS 컴파일 결과물로 보임**(`Object.defineProperty(exports, "__esModule"...)`, sourcemap 주석 있으나 `.map` 파일은 없음) — 소스가 아니라 생성된 코드를 직접 수정하는 셈이니 수정 시 유의. `play-audio` npm 패키지(EBML 파싱)에 의존. 바이너리 포맷 파싱이라 고위험 영역.
+- **`SeekStream.js`** — 원래 YouTube 스트림용이던 걸 로컬 파일용으로 개조("24.01.18 custom node modules 의존성 없앨겸 file stream 용으로 마개조"). `quizbot/quiz_system/lifecycle/prepare.js`에서만 실제로 쓰임(노래 퀴즈 재생 시 특정 지점부터 재생하는 기능). `seek()`가 헤더 파싱 후 `WebmSeeker.seek(content_length)`(Cues 테이블 기반 정확한 byte offset)를 먼저 시도하고, 실패/범위초과(`Error` 또는 `0` 반환)면 `loop()`의 전체 파일 평균 비트레이트 추정(`per_sec_bytes * sec`)으로 폴백함(`this.accurate_start_point`, 2026-08-08 수정) — 아래 `WebmSeeker.seek()` 항목 참고.
+- **`WebmSeeker.js`** — WEBM/EBML 컨테이너를 직접 파싱해 seek 지점의 byte offset을 찾는 저수준 `Duplex` 스트림. **TS 컴파일 결과물로 보임**(`Object.defineProperty(exports, "__esModule"...)`, sourcemap 주석 있으나 `.map` 파일은 없음) — 소스가 아니라 생성된 코드를 직접 수정하는 셈이니 수정 시 유의. `play-audio` npm 패키지(EBML 파싱)에 의존. 바이너리 포맷 파싱이라 고위험 영역. **`seek(content_length)`(71-93번 줄)** — webm 파일 자체에 내장된 Cues 엘리먼트(실제 timestamp→byte position 매핑, 10초 간격으로 박혀있음을 실제 캐시 파일로 확인함)를 읽어 정확한 클러스터 byte offset을 계산 + 클러스터 내부 로컬 비트레이트로 보간. 2026-08-08 이전까지는 **정의만 되고 어디서도 호출되지 않는 죽은 코드**였음(webm 시작 지점 부정확 버그의 원인, `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` 7/8번) — `SeekStream.seek()`에서 연결함. Cues가 없거나(`return new Error('Failed to Parse Cues')`) seek 대상이 마지막 cue 범위를 벗어나면 `0`을 반환하는 엣지케이스가 있어 호출부에서 `> 0` 검증 필요.
 
 ## 그 외 (전부 독립 실행 스크립트/모듈, 순서대로 사용 빈도 높은 것부터)
 

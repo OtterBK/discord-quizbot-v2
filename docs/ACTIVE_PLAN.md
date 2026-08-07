@@ -28,25 +28,21 @@
 `docs/B1_BULK_IMPORT_EXPORT_TODO.md`에 옵션별 추천안과 함께 정리돼 있음. 착수 시 그 문서부터 열어서
 사용자와 확정할 것.
 
-### B-2. A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건
+### B-2. A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건 — 10/12 완료(사용자 실제 검증까지 끝남)
 
 2026-08-07 멀티플레이 포함 전수 테스트 중 발견. `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 코드
-위치/원인까지 정리돼 있음 — 요약:
+위치/원인까지 정리돼 있음. **1/4/5번(실동작 버그), 2/3/6/9/10번(UX·텍스트), 7/8번(webm seek 부정확 —
+7번 실제 재생 경로/8번 미리듣기 경로)은 2026-08-08 수정 + 사용자 실제 봇 재생 검증까지 완료** — 상세는
+`docs/COMPLETED_WORK_LOG.md` 참고.
 
-1. 퀴즈만들기 메시지 전체를 ephemeral로 (버그: `user.send()`엔 `flags: Ephemeral`이 안 먹음 + 전체 화면 감사 필요)
-2. "이미지 재로드" 버튼 스타일을 미리듣기 버튼과 통일 (`custom_quiz_components.ts`, 1줄 수정)
-3. 미리듣기 랜덤 구간 재생 시 안내 문구 추가 (`user-question-info-ui.ts`의 `sendAudioPreview`)
-4. 미리듣기 연타 시 같은 오디오 중복 다운로드 — 진행 중 추적 가드 필요 (`audio_cache_manager.ts`)
-5. **원인 특정 완료**: 문제 복제 시 `Interaction has already been acknowledged` — `duplicateQuestion()`의
-   `explicit_replied` 설정을 함수 맨 첫 줄로 옮기면 끝(1줄 수정)
-6. 유저 퀴즈 목록 정렬 드롭다운 텍스트 어색함 — 정확한 위치 특정 필요
-7. (TODO만) webm 오디오 시작 지점 부정확 (SeekStream 비트레이트 추정 방식의 한계로 추정, 조사 필요)
-8. (TODO만) 미리듣기 vs 실제 재생 구간 불일치 (7번과 별개 원인일 가능성, 조사 필요)
-9. 멀티플레이 로비 문제 수 "최대 50" 표시 → 실제 60으로 텍스트 통일. **`docs/UI_IMPROVEMENT_PLAN_ROUND2.md`
-   B-6의 [P3] 항목("모달의 문제 수 라벨이 최대 50이지만 실제 상한 60")과 동일 건 — 하나로 합쳐서 처리.**
-10. 멀티플레이 퀴즈 설명에 "/퀴즈로 UI 재생성 가능" 안내 문구 추가
-11. (TODO만) MMR 시스템 개선 — 논의부터 시작
-12. (TODO만) 공식/유저 퀴즈 무작위 추첨 알고리즘 평가 — 논의부터 시작
+**다음 세션 할 일 — 남은 2건(둘 다 순수 TODO, 코드 조사보다 사용자와 논의부터 시작할 것)**:
+
+- **11. MMR 시스템 개선** — `quizbot/managers/multiplayer_mmr.js`(`calcWinnerMMR`/`calcLoserMMR`). 구체적으로
+  뭐가 문제인지 아직 정리 안 됨 — 사용자에게 어떤 상황에서 MMR이 이상하게 느껴졌는지부터 물어볼 것.
+- **12. 공식/유저 퀴즈 무작위 추첨 알고리즘 평가** — 오마카세/멀티플레이 등에서 문제 뽑는 알고리즘
+  (`db_quiz.ts`의 `selectRandomQuestionListByTags`/`selectRandomQuestionListByBasket` 등 관련 추정).
+  구체적 불만 사항 아직 없음 — 사용자에게 뭐가 아쉬웠는지부터 물어볼 것.
+- 둘 다 급한 건 아님(사용자 확인, 2026-08-08) — 우선순위 낮게 잡아도 됨.
 
 ### B-3. UI_IMPROVEMENT_PROPOSAL.md 잔여 2건 (1라운드)
 

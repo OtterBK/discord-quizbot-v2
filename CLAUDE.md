@@ -67,11 +67,20 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 - UI 클래스(`quiz_ui/*.js`)는 관례상 유닛테스트 대상이 아님 (Discord 인터랙션 의존이 커서) — 대신 `managers/`의 순수 로직/DB 래퍼가 테스트 대상. UI를 손댔으면 `node -e`로 require 스모크테스트만 해도 충분한 경우가 많음.
 - `npm test` / `npm run lint` (0 error 기준, warning은 기존 관행 수준 유지)
 
+## 빌드/배포 (실제 운영 봇이 `dist/`에서 도는 경우 주의)
+
+- `npm run build`(`tsc && copy-js-assets.js`)가 `.ts`는 컴파일, `.js`는 byte-for-byte 복사해서 `dist/`를 만듦. **운영 중인 봇 프로세스가 `dist/`를 참조한다면, 소스(`utility/`, `quizbot/` 등)만 고치고 재빌드를 안 하면 변경이 전혀 반영 안 됨** — 실제로 이 문제로 수정한 버그가 안 고쳐진 것처럼 보인 적 있음(2026-08-08). 코드 수정 후 사용자가 직접 재생/재현 테스트를 할 예정이면 `npm run build`부터 안내할 것.
+- Windows PowerShell 기본 실행 정책이 `npm run build`(`npm.ps1`)를 막을 수 있음 — `npm.cmd run build`로 우회하거나 `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`로 영구 해결.
+
 ## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동)
 
 > **새 세션은 아래 두 문서부터 읽을 것** — 나머지 문서에 흩어진 완료/미완료 상태를 요약해서
 > 가리키는 진입점: `docs/ACTIVE_PLAN.md`(뭐가 아직 안 끝났는지), `docs/COMPLETED_WORK_LOG.md`
 > (뭐가 언제 끝났는지). 상세 내역이 필요할 때만 아래 원본 문서로 내려갈 것.
+>
+> **기능 추가/수정 작업을 끝냈으면**(사용자가 별도로 요청하지 않아도) 다음을 갱신할 것: (1) 관련
+> `CLAUDE.md`(루트 또는 하위 디렉터리)에 한두 줄 반영, (2) `docs/ACTIVE_PLAN.md`와
+> `docs/COMPLETED_WORK_LOG.md`, (3) 관련 있으면 `docs/TEST_CHECKLIST.md`.
 
 **진행 기록/컨벤션 (로그성 기록, 계속 개별 문서로 유지)**
 - `docs/REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)

@@ -9,6 +9,7 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
 - `'back'` customId(컴포넌트: `only_back_comp`)는 `UIHolder`가 전역으로 가로채 자동 처리 — 개별 화면이 구현할 필요 없음.
 - `UIHolder`: `UI_HOLDER_TYPE.PUBLIC`(길드 채널, `holder_id=guild_id`) / `PRIVATE`(DM, `holder_id=user_id`). `ui-system-core.js`의 `createXXXUIHolder` 함수들이 진입점(`createMainUIHolder`/`createQuizToolUIHolder`/`createAdminPanelUIHolder`).
 - `onAwaked()`: 자식 화면에서 뒤로가기로 돌아왔을 때 호출됨(선택 개수/태그 텍스트 재계산 등에 씀).
+- **주의**: `interaction.user.send(...)`(순수 DM 전송)에 `flags: MessageFlags.Ephemeral`을 줘도 아무 효과 없음(`flags`는 `interaction.reply`/`deferReply`/`followUp`같은 인터랙션 응답 전용) — 에페메럴로 보내려면 반드시 `interaction.reply(...)`(이미 reply를 소비한 인터랙션이면 `interaction.followUp(...)`) 사용할 것 (2026-08-08, B-2 피드백 1번에서 4곳 발견해 수정).
 
 ## 진입/관리자 (직접 다뤄본 파일)
 
@@ -30,7 +31,7 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
 - **`multiplayer-quiz-lobby-ui.js`** — 멀티플레이 로비(IPC 기반, 가장 복잡). `CLIENT_SIGNAL`/`SERVER_SIGNAL` 송수신. 60초마다 메시지 신선도 체크(`checkNeedToRefresh`, 10분 넘으면 강제 재전송 — Discord 인터랙션 토큰 만료 대응). `requestKick`에 `selected_value > this.participant_guilds_info`(문자열-배열 비교, 항상 false인 죽은 검증)로 보이는 버그 있음.
 - **`quiz-info-ui.js`** — `DevQuizInfoUI`/`OmakaseQuizRoomUI`/`MultiplayerQuizLobbyUI` 공통 베이스(`QuizInfoUI`). 시작/설정/태그선택/바구니 버튼 핸들러 맵이 여기 있음 — 새 퀴즈 설정 화면 만들 때 여기부터 볼 것. `scoreboard` 버튼 핸들러는 **TODO 빈 껍데기**(실제 스코어보드는 `multiplayer-quiz-select-ui.js`에서 별도 진입). `BASKET_CACHE`(static, 길드별 장바구니 캐시, 서버 재시작 시 초기화)를 `OmakaseQuizRoomUI`/`MultiplayerQuizLobbyUI`와 공유.
 - **`user-quiz-select-ui.js`** — 유저 퀴즈 목록/검색/정렬 + 장바구니 담기 모드(생성자에 `basket_items` 넘기면 담기 모드로 전환). `onReady()`에서 전체 유저 퀴즈를 한 번에(`loadUserQuizListFromDB(undefined)`) 불러와 클라이언트 사이드에서 필터/정렬.
-- **`user-question-info-ui.js`** — 유저 퀴즈의 문제 편집기. **파일 자체 주석: "건드릴 엄두가 안난다... 우선 돌아가면 장땡"** — 조심해서 다룰 것. 문제 최대 50개 제한. 이미지 URL 변경 시 `update()` 대신 강제 재전송(`sendDelayedUI(this, true)`) — Discord embed edit이 새 이미지 URL을 바로 안 불러오는 문제 우회. `duplicateQuestion`(B-3', 2026-08-07)은 현재 문제를 복사해 바로 다음 위치에 삽입. `sendAudioPreview`(B-2, 2026-08-07)는 미리듣기 버튼 핸들러 — `updatePrivateUI()`(카드 edit) 대신 `interaction.reply({files, flags: Ephemeral})`로 직접 응답(B-2-1 "새 메시지 금지" 방침의 명시적 예외, 상세는 `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` B-2 섹션 참고).
+- **`user-question-info-ui.js`** — 유저 퀴즈의 문제 편집기. **파일 자체 주석: "건드릴 엄두가 안난다... 우선 돌아가면 장땡"** — 조심해서 다룰 것. 문제 최대 50개 제한. 이미지 URL 변경 시 `update()` 대신 강제 재전송(`sendDelayedUI(this, true)`) — Discord embed edit이 새 이미지 URL을 바로 안 불러오는 문제 우회. `duplicateQuestion`(B-3', 2026-08-07)은 현재 문제를 복사해 바로 다음 위치에 삽입 — `interaction.explicit_replied = true`는 반드시 함수 맨 첫 줄에서 설정할 것(await 이후로 미루면 `bot.js` 전역 fallback이 먼저 `deferUpdate()`를 호출해 "Interaction has already been acknowledged" 에러가 남, 2026-08-08 수정). `sendAudioPreview`(B-2, 2026-08-07)는 미리듣기 버튼 핸들러 — `updatePrivateUI()`(카드 edit) 대신 `interaction.reply({files, flags: Ephemeral})`로 직접 응답(B-2-1 "새 메시지 금지" 방침의 명시적 예외, 상세는 `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` B-2 섹션 참고).
 - **`alert-quiz-start-ui.js`** — "퀴즈 시작합니다" 안내(정적, 인터랙션 없음). 모든 퀴즈 시작 경로의 종착점.
 - **`scoreboard-ui.js`** — 서버별/글로벌 랭킹. `db_manager.selectGlobalScoreboard`/`selectTop10Scoreboard` 사용. 제목에 "베타 시즌"이 하드코딩돼 있음.
 - **`server-setting-ui.js`** — 서버 옵션 편집. `quiz_option.js`의 `OptionStorage`를 **클론해서** 편집하다가 "저장" 버튼을 눌러야 커밋됨 — 저장 안 하고 나가면 변경사항 사라짐(의도된 동작).
