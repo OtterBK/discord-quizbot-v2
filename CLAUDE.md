@@ -69,10 +69,11 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 
 ## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동)
 
-> 문서 수가 많아지고 있어서(현재 13개) 완료/보류/설계전용 상태별로 통합 정리하는 걸 검토 중 —
-> 진행되면 이 목록도 갱신할 것. 그 전까지는 아래 개별 문서가 각자 최신 상태의 원본임.
+> **새 세션은 아래 두 문서부터 읽을 것** — 나머지 문서에 흩어진 완료/미완료 상태를 요약해서
+> 가리키는 진입점: `docs/ACTIVE_PLAN.md`(뭐가 아직 안 끝났는지), `docs/COMPLETED_WORK_LOG.md`
+> (뭐가 언제 끝났는지). 상세 내역이 필요할 때만 아래 원본 문서로 내려갈 것.
 
-**진행 기록/컨벤션**
+**진행 기록/컨벤션 (로그성 기록, 계속 개별 문서로 유지)**
 - `docs/REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)
 - `docs/CONTRIBUTING_REFACTOR.md` — 브랜치/커밋 컨벤션 (`refactor:`/`fix:`/`feat:`/`test:`/`docs:` prefix 분리 원칙)
 - `docs/BUGS_FOUND.md` — 리팩터 중 발견한 버그 로그 (수정 완료/보류 상태 포함, 보류 항목은 왜 지금 안 고쳤는지 이유도 적혀있음)
@@ -81,9 +82,10 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 - `docs/RELOCATED_COMMENTS.md` — 코드 이동 중 자리를 못 찾은 주석 원문 보존
 - `docs/DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
 
-**TS 전환 + 편의 기능 (진행 중)**
-- `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함 — 새 세션에서 이어갈 때 가장 먼저 읽을 문서.
+**작업계획서 (완료/미완료 요약은 ACTIVE_PLAN/COMPLETED_WORK_LOG에, 상세는 여기)**
+- `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함.
 - `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
+- `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` — A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건(미착수).
 - `docs/TEST_CHECKLIST.md` — 수동 테스트 체크리스트. 기능 추가/수정 시 관련 항목을 갱신(추가 또는 `[ ]`로 되돌리기)할 것.
 
 **UI/UX 개선 (별도 라운드, 상태 제각각)**
