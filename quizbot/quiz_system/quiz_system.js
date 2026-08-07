@@ -21,7 +21,7 @@ const { MultiplayerLobbySession, MultiplayerQuizSession } = require('./session/m
 //#endregion
 
 //#region 상수 타입 정의
-const { QUIZ_SESSION_TYPE } = require('./constants.js');
+const { QUIZ_SESSION_TYPE } = require('./constants');
 
 exports.QUIZ_SESSION_TYPE = QUIZ_SESSION_TYPE;
 
@@ -29,7 +29,7 @@ exports.QUIZ_SESSION_TYPE = QUIZ_SESSION_TYPE;
 
 //#region global 변수 정의
 /** global 변수 **/
-const session_registry = require('./session_registry.js');
+const session_registry = require('./session_registry');
 
 //#endregion
 

@@ -6,8 +6,8 @@
 const { MessageFlags } = require('discord.js');
 
 const { QuizLifeCycleWithUtility } = require('../quiz_lifecycle.js');
-const { CYCLE_TYPE } = require('../../constants.js');
-const session_registry = require('../../session_registry.js');
+const { CYCLE_TYPE } = require('../../constants');
+const session_registry = require('../../session_registry');
 const option_system = require('../../../quiz_option/quiz_option.js');
 const OPTION_TYPE = option_system.OPTION_TYPE;
 const { SYSTEM_CONFIG, ANSWER_TYPE, BGM_TYPE } = require('../../../../config/system_setting.js');

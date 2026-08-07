@@ -10,7 +10,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { MultiplayerLobbySession, MultiplayerQuizSession, MULTIPLAYER_STATE } = require('../../../quizbot/quiz_system/session/multiplayer_session.js');
-const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants.js');
+const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants');
 const ipc_manager = require('../../../quizbot/managers/ipc_manager');
 
 function makeFakeGuild()

@@ -10,8 +10,8 @@
 const cloneDeep = require('lodash/cloneDeep.js');
 const { PermissionsBitField, MessageFlags } = require('discord.js');
 
-const { CYCLE_TYPE, QUIZ_SESSION_TYPE } = require('../constants.js');
-const session_registry = require('../session_registry.js');
+const { CYCLE_TYPE, QUIZ_SESSION_TYPE } = require('../constants');
+const session_registry = require('../session_registry');
 const { CLIENT_SIGNAL, SERVER_SIGNAL } = require('../../managers/multiplayer_signal.js');
 const { CUSTOM_EVENT_TYPE, BGM_TYPE } = require('../../../config/system_setting.js');
 const utility = require('../../../utility/utility.js');

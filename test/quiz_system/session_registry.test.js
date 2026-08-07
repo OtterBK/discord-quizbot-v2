@@ -7,7 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const session_registry = require('../../quizbot/quiz_system/session_registry.js');
+const session_registry = require('../../quizbot/quiz_system/session_registry');
 const quiz_system = require('../../quizbot/quiz_system/quiz_system.js');
 const { CUSTOM_EVENT_TYPE } = require('../../config/system_setting.js');
 

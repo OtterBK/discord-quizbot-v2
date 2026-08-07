@@ -13,7 +13,7 @@ const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizSystem');
-const session_registry = require('./session_registry.js');
+const session_registry = require('./session_registry');
 
 //#region 퀴즈 플레이에 사용될 UI
 class QuizPlayUI

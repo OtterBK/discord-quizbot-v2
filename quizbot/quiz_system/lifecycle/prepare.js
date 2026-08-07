@@ -7,7 +7,7 @@ const fs = require('fs');
 const { createAudioResource, StreamType } = require('@discordjs/voice');
 
 const { QuizLifeCycle } = require('./quiz_lifecycle.js');
-const { CYCLE_TYPE } = require('../constants.js');
+const { CYCLE_TYPE } = require('../constants');
 const option_system = require('../../quiz_option/quiz_option.js');
 const OPTION_TYPE = option_system.OPTION_TYPE;
 const { SYSTEM_CONFIG, QUIZ_TYPE } = require('../../../config/system_setting.js');

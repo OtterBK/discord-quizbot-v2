@@ -6,7 +6,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { CYCLE_TYPE, QUIZ_SESSION_TYPE } = require('../../quizbot/quiz_system/constants.js');
+const { CYCLE_TYPE, QUIZ_SESSION_TYPE } = require('../../quizbot/quiz_system/constants');
 
 test('CYCLE_TYPE: 퀴즈 생명주기 단계가 모두 정의되어 있다', () =>
 {

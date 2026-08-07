@@ -4,7 +4,7 @@
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
 const Question = require('./question.js');
-const { CYCLE_TYPE } = require('../../constants.js');
+const { CYCLE_TYPE } = require('../../constants');
 const logger = require('../../../../utility/logger.js')('QuizSystem');
 
 //Song Type Question

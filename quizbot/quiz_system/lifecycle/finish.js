@@ -4,8 +4,8 @@
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
 const { QuizLifeCycle } = require('./quiz_lifecycle.js');
-const { CYCLE_TYPE } = require('../constants.js');
-const session_registry = require('../session_registry.js');
+const { CYCLE_TYPE } = require('../constants');
+const session_registry = require('../session_registry');
 
 //#region Finish Cycle
 /** Quiz session 종료 **/

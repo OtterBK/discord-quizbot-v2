@@ -17,8 +17,8 @@ const CorrectAnswer = require('../../../quizbot/quiz_system/lifecycle/correct_an
 const Explain = require('../../../quizbot/quiz_system/lifecycle/explain.js');
 const Ending = require('../../../quizbot/quiz_system/lifecycle/ending.js');
 
-const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants.js');
-const session_registry = require('../../../quizbot/quiz_system/session_registry.js');
+const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants');
+const session_registry = require('../../../quizbot/quiz_system/session_registry');
 const utility = require('../../../utility/utility.js');
 
 function makeFakeQuizUI()

@@ -4,7 +4,7 @@
 //모든 lifecycle 클래스(Initialize, Explain, Prepare, Question 등)의 공통 베이스.
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
-const { CYCLE_TYPE } = require('../constants.js');
+const { CYCLE_TYPE } = require('../constants');
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../../config/system_setting.js');
 const option_system = require('../../quiz_option/quiz_option.js');
 const OPTION_TYPE = option_system.OPTION_TYPE;

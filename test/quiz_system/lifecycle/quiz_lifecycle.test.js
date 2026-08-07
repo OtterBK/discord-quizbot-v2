@@ -9,7 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { QuizLifeCycle, QuizLifeCycleWithUtility } = require('../../../quizbot/quiz_system/lifecycle/quiz_lifecycle.js');
-const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants.js');
+const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants');
 const { CUSTOM_EVENT_TYPE } = require('../../../config/system_setting.js');
 const feedback_manager = require('../../../quizbot/managers/feedback_manager');
 const utility = require('../../../utility/utility.js');
