@@ -12,15 +12,15 @@ const logger = require('../../../../utility/logger.js')('QuizSystem');
 class QuestionImage extends Question
 {
   static cycle_type = CYCLE_TYPE.QUESTIONING;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }
 
   async act()
   {
-    let quiz_data = this.quiz_session.quiz_data;
-    let game_data = this.quiz_session.game_data;
+    const quiz_data = this.quiz_session.quiz_data;
+    const game_data = this.quiz_session.game_data;
     const option_data = this.quiz_session.option_data;
 
     const current_question = this.current_question;
@@ -44,13 +44,13 @@ class QuestionImage extends Question
     const image_resource = current_question['image_resource'];
 
     //이미지 표시
-    let quiz_ui = this.quiz_session.quiz_ui; 
+    const quiz_ui = this.quiz_session.quiz_ui;
     quiz_ui.setImage(image_resource);
     await quiz_ui.update(); //대기 해줘야한다. 안그러면 타이밍 이슈 땜에 이미지가 2번 올라간다.
 
     //카운트다운 BGM 재생
     const bgm_type = is_long == true ? BGM_TYPE.COUNTDOWN_LONG : BGM_TYPE.COUNTDOWN_10;
-    let resource = undefined;
+    const resource = undefined;
     this.sendBGM(bgm_type);
 
     this.checkAutoHint(audio_play_time); //자동 힌트 체크

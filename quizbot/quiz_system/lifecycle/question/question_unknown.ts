@@ -12,7 +12,7 @@ const text_contents = require('../../../../config/text_contents.json')[SYSTEM_CO
 class QuestionUnknown extends Question
 {
   static cycle_type = CYCLE_TYPE.QUESTIONING;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }
