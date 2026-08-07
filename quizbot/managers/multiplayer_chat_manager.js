@@ -1,5 +1,5 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-const { getQuizSession } = require('../quiz_system/quiz_system.js');
+const { getQuizSession } = require('../quiz_system/quiz_system');
 const utility = require('../../utility/utility.js');
 const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
 const db_manager = require('./db_manager.js');

@@ -7,7 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const QuizPlayUI = require('../../quizbot/quiz_system/quiz_play_ui.js');
+const QuizPlayUI = require('../../quizbot/quiz_system/quiz_play_ui');
 
 test('생성 시 기본 embed와 버튼 컴포넌트를 준비한다', () =>
 {

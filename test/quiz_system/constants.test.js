@@ -38,7 +38,7 @@ test('QUIZ_SESSION_TYPE: 퀴즈 세션 종류가 모두 정의되어 있다', ()
 
 test('quiz_system.js가 QUIZ_SESSION_TYPE을 그대로 재노출(re-export)한다 (하위 호환)', () =>
 {
-  const quiz_system = require('../../quizbot/quiz_system/quiz_system.js');
+  const quiz_system = require('../../quizbot/quiz_system/quiz_system');
 
   assert.equal(quiz_system.QUIZ_SESSION_TYPE, QUIZ_SESSION_TYPE);
 });

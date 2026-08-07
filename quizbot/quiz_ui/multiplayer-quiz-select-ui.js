@@ -12,7 +12,7 @@ const ban_manager = require('../managers/ban_manager');
 
 const { SYSTEM_CONFIG, } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE]; 
-const quiz_system = require('../quiz_system/quiz_system.js');
+const quiz_system = require('../quiz_system/quiz_system');
 const {
   modal_complex_page_jump,
   btn_search,

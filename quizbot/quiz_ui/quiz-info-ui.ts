@@ -8,7 +8,7 @@ const { MessageFlags } = require('discord.js');
 const { SYSTEM_CONFIG, DEV_QUIZ_TAG, QUIZ_TAG } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
-const quiz_system = require('../quiz_system/quiz_system.js'); //퀴즈봇 메인 시스템
+const quiz_system = require('../quiz_system/quiz_system'); //퀴즈봇 메인 시스템
 const {
   quiz_info_comp,
   modal_quiz_setting,

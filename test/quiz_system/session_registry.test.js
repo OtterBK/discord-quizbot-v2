@@ -8,7 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const session_registry = require('../../quizbot/quiz_system/session_registry');
-const quiz_system = require('../../quizbot/quiz_system/quiz_system.js');
+const quiz_system = require('../../quizbot/quiz_system/quiz_system');
 const { CUSTOM_EVENT_TYPE } = require('../../config/system_setting.js');
 
 //각 테스트 사이에 registry 상태가 섞이지 않도록 초기화

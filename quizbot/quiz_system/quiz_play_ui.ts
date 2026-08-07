@@ -18,7 +18,11 @@ const session_registry = require('./session_registry');
 //#region 퀴즈 플레이에 사용될 UI
 class QuizPlayUI
 {
-  constructor(channel)
+  //update()/setImage() 등에서 files/embed 등을 자유롭게 갈아끼우는 관행이라
+  //user_quiz_info_manager.ts의 UserQuizInfo와 같은 패턴으로 인덱스 시그니처를 둔다.
+  [key: string]: any;
+
+  constructor(channel: any)
   {
     this.channel = channel;
     this.ui_instance = undefined;
@@ -50,12 +54,12 @@ class QuizPlayUI
         // .setEmoji(`${text_contents.icon.ICON_STOP}`)
           .setStyle(ButtonStyle.Danger),
       );
- 
+
     this.ox_quiz_comp = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
           .setCustomId('choice_O')
-          .setEmoji(`${text_contents.icon.ICON_O}`) 
+          .setEmoji(`${text_contents.icon.ICON_O}`)
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId('choice_X')
@@ -91,10 +95,10 @@ class QuizPlayUI
     this.components = [ ];
   }
 
-  setImage(image_resource)
+  setImage(image_resource: any)
   {
 
-    if(image_resource == undefined) 
+    if(image_resource == undefined)
     {
       this.embed.image = { url: '' };
       return;
@@ -102,7 +106,7 @@ class QuizPlayUI
 
     if(image_resource.includes(SYSTEM_CONFIG.DEV_QUIZ_PATH) == true) //dev path 포함하면 로컬 이미지 취급
     {
-      const file_name = image_resource.split('/').pop(); 
+      const file_name = image_resource.split('/').pop();
       this.files = [ { attachment: image_resource, name: file_name } ];
       this.embed.image = { url: "attachment://" + file_name };
     }
@@ -114,12 +118,12 @@ class QuizPlayUI
     }
   }
 
-  setTitle(title)
+  setTitle(title: any)
   {
     this.embed.title = title;
   }
 
-  async send(previous_delete, remember_ui = true)
+  async send(previous_delete: any, remember_ui = true)
   {
     if(previous_delete == true)
     {
@@ -128,7 +132,7 @@ class QuizPlayUI
 
     const objects = this.createSendObject();
     await this.channel.send(objects) //await로 대기
-      .then((ui_instance) => 
+      .then((ui_instance: any) =>
       {
         if(remember_ui == false)
         {
@@ -136,7 +140,7 @@ class QuizPlayUI
         }
         this.ui_instance = ui_instance;
       })
-      .catch(err => 
+      .catch((err: any) =>
       {
         if(err.code === RESTJSONErrorCodes.UnknownChannel || err.code === RESTJSONErrorCodes.MissingPermissions || err.code === RESTJSONErrorCodes.MissingAccess)
         {
@@ -147,20 +151,20 @@ class QuizPlayUI
           {
             quiz_session.forceStop();
           }
-		
+
           if(err.code === RESTJSONErrorCodes.MissingPermissions || err.code === RESTJSONErrorCodes.MissingAccess) //권한 부족해서 종료된거면 알려주자
           {
             quiz_session.owner.send({content: `\`\`\`🔸 ${guild_id}에서 진행한 퀴즈가 강제 종료되었습니다.\n이유: 봇에게 메시지 보내기 권한이 부족합니다.\n봇을 추방하고 관리자가 다시 초대하도록 해보세요.\n${err.code}\`\`\``});
-		        logger.info(`Send Forcestop Reason MissingPermissions to ${quiz_session.owner.id}, guild_id: ${guild_id}, err.code: ${err.code}`);
+            logger.info(`Send Forcestop Reason MissingPermissions to ${quiz_session.owner.id}, guild_id: ${guild_id}, err.code: ${err.code}`);
           }
-	
+
           return;
         }
         logger.error(`Failed to Send QuizPlayUI, guild_id:${this.guild_id}, embed: ${JSON.stringify(this.embed)}, objects:${JSON.stringify(objects)}, err: ${err.stack}`);
       })
-      .finally(() => 
+      .finally(() =>
       {
-        
+
       });
     this.files = undefined; //파일은 1번 send하면 해제
   }
@@ -172,7 +176,7 @@ class QuizPlayUI
       return;
     }
     this.ui_instance.delete()
-      .catch(err => 
+      .catch((err: any) =>
       {
         if(err.code === RESTJSONErrorCodes.UnknownMessage || err.code === RESTJSONErrorCodes.UnknownInteraction) //이미 삭제됐으면 땡큐지~
         {
@@ -195,7 +199,7 @@ class QuizPlayUI
 
       const objects = this.createSendObject();
       await this.ui_instance.edit(objects)
-        .catch(err => 
+        .catch((err: any) =>
         {
           if(err.code === RESTJSONErrorCodes.UnknownMessage || err.code === RESTJSONErrorCodes.UnknownInteraction) //뭔가 이상함
           {
@@ -203,9 +207,9 @@ class QuizPlayUI
           }
           logger.error(`Failed to Update QuizPlayUI, guild_id:${this.guild_id}, embed: ${JSON.stringify(this.embed)}, objects:${JSON.stringify(objects)}, err: ${err.stack}`);
         })
-        .finally(() => 
+        .finally(() =>
         {
-            
+
         });
     }
   }
@@ -215,19 +219,19 @@ class QuizPlayUI
     if(this.files != undefined)
     {
       return {
-        files: this.files, 
-        embeds: [ this.embed ], 
+        files: this.files,
+        embeds: [ this.embed ],
         components: this.components
       };
     }
 
     return {
-      embeds: [ this.embed ], 
+      embeds: [ this.embed ],
       components: this.components
     };
   }
 
-  setButtonStatus(button_index, status)
+  setButtonStatus(button_index: any, status: any)
   {
     const components = this.quiz_play_comp.components;
     if(button_index >= components.length)

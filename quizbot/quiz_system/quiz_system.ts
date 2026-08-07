@@ -36,7 +36,7 @@ const session_registry = require('./session_registry');
 //#region exports 정의
 /** exports **/
 
-exports.initialize = (client) =>
+exports.initialize = (client: any) =>
 {
   if(client == undefined)
   {
@@ -48,7 +48,7 @@ exports.initialize = (client) =>
   return true;
 };
 
-exports.checkReadyForStartQuiz = (guild, owner) =>
+exports.checkReadyForStartQuiz = (guild: any, owner: any) =>
 {
   let result = false;
   let reason = '';
@@ -58,7 +58,7 @@ exports.checkReadyForStartQuiz = (guild, owner) =>
     return { 'result': result, 'reason': reason };
   }
 
-  if(this.getQuizSession(guild.id) != undefined)
+  if((this as any).getQuizSession(guild.id) != undefined)
   {
     reason = text_contents.reason.already_ingame;
     return { 'result': result, 'reason': reason };
@@ -69,7 +69,7 @@ exports.checkReadyForStartQuiz = (guild, owner) =>
   return { 'result': result, 'reason': reason };
 };
 
-exports.getQuizSession = (guild_id) =>
+exports.getQuizSession = (guild_id: any) =>
 {
 
   if(session_registry.quiz_session_map.hasOwnProperty(guild_id) == false)
@@ -80,7 +80,7 @@ exports.getQuizSession = (guild_id) =>
   return session_registry.quiz_session_map[guild_id];
 };
 
-exports.startQuiz = (guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SESSION_TYPE.NORMAL) =>
+exports.startQuiz = (guild: any, owner: any, channel: any, quiz_info: any, quiz_session_type: any=QUIZ_SESSION_TYPE.NORMAL) =>
 {
   const guild_id = guild.id;
 
@@ -115,7 +115,7 @@ exports.getLocalQuizSessionCount = () =>
 exports.getMultiplayerQuizSessionCount = () =>
 {
   let multiplayer_session_count = 0;
-  for(const quiz_session of Object.values(session_registry.quiz_session_map))
+  for(const quiz_session of Object.values(session_registry.quiz_session_map) as any[])
   {
     if(quiz_session.isMultiplayerSession())
     {
@@ -131,7 +131,7 @@ exports.startFFmpegAgingManager = () =>
   return ffmpegAgingManager();
 };
 
-exports.relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀티플레이 신호 전달
+exports.relayMultiplayerSignal = (multiplayer_signal: any) => //관련 세션에 멀티플레이 신호 전달
 {
   let handled = false; //한 곳이라도 handle 했으면 한거임
   const guild_ids = multiplayer_signal.guild_ids;
@@ -144,7 +144,7 @@ exports.relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀�
       {
         handled = quiz_session.on(CUSTOM_EVENT_TYPE.receivedMultiplayerSignal, multiplayer_signal);
       }
-      catch(err)
+      catch(err: any)
       {
         logger.error(`Quiz system Relaying multiplayer Signal error occurred! ${err.stack}`);
       }
@@ -154,7 +154,7 @@ exports.relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀�
   return handled;
 };
 
-exports.forceStopSession = (guild) =>
+exports.forceStopSession = (guild: any) =>
 {
   logger.info(`${guild.id} called force stop session`);
 
@@ -191,7 +191,7 @@ function ffmpegAgingManager() //TODO ps-node 모듈을 이용한 방식으로 �
     let kill_count = 0;
 
     const iter = ffmpeg_aging_map.entries();
-    const target_keys = [];
+    const target_keys: any[] = [];
     for(let i = 0; i < ffmpeg_aging_map.size; ++i)
     {
       const [ffmpeg_handler, created_date] = iter.next().value;

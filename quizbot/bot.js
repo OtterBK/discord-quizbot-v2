@@ -26,7 +26,7 @@ const {
 
 const command_manager = require('./managers/command_manager');
 const quizbot_ui = require('./quiz_ui/ui-system-core');
-const quiz_system = require('./quiz_system/quiz_system.js');
+const quiz_system = require('./quiz_system/quiz_system');
 const option_system = require('./quiz_option/quiz_option.js');
 const utility = require('../utility/utility.js');
 const logger = require('../utility/logger.js')('Main');
