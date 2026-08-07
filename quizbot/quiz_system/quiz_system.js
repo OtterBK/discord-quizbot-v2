@@ -15,7 +15,7 @@ const logger = require('../../utility/logger.js')('QuizSystem');
 //session/quiz_session.js, session/multiplayer_session.js로 분리 (REFACTOR_PLAN.md Phase 2)
 //quiz_system.js는 이제 세션 생성/조회용 facade 함수만 갖고, 실제 세션 클래스 구현은
 //전부 session/, lifecycle/ 하위로 옮겨졌다.
-const { NormalQuizSession, DummyQuizSession } = require('./session/quiz_session.js');
+const { NormalQuizSession, DummyQuizSession } = require('./session/quiz_session');
 const { MultiplayerLobbySession, MultiplayerQuizSession } = require('./session/multiplayer_session.js');
 
 //#endregion

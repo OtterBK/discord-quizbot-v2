@@ -33,7 +33,11 @@ const HOLD = require('../lifecycle/hold');
 
 class QuizSession
 {
-  constructor(guild, owner, channel, quiz_info, quiz_session_type)
+  //lifecycle 클래스들이 quiz_session에 자유롭게 임시 프로퍼티를 얹는 관행이라
+  //(prepare.ts의 skip_prepare 등) common-ui.ts의 QuizbotUI와 같은 패턴으로 인덱스 시그니처를 둔다.
+  [key: string]: any;
+
+  constructor(guild: any, owner: any, channel: any, quiz_info: any, quiz_session_type: any)
   {
     logger.info(`Creating ${quiz_session_type} Quiz Session, guild_id: ${guild.id}`);
 
@@ -56,12 +60,12 @@ class QuizSession
     this.game_data = undefined; //얘는 자주 바뀐다.
     this.option_data = undefined; //옵션
 
-    this.scoreboard = new Map(); //scoreboard 
+    this.scoreboard = new Map(); //scoreboard
 
     this.force_stop = false; //강제종료 여부
 
-    this.ipv4 = undefined; 
-    this.ipv6 = undefined; 
+    this.ipv4 = undefined;
+    this.ipv6 = undefined;
 
     this.already_liked = true; //이미 like 버튼 눌렀는지 여부. 기본 true 깔고 initializeCustom에서만 false 또는 true 다시 정함
 
@@ -94,9 +98,9 @@ class QuizSession
       const audio_stream_for_close = this.game_data['audio_stream_for_close'];
       if(audio_stream_for_close != undefined && audio_stream_for_close.length != 0)
       {
-        audio_stream_for_close.forEach((audio_stream_array) => 
+        audio_stream_for_close.forEach((audio_stream_array: any) =>
         {
-          audio_stream_array.forEach((audio_stream) => 
+          audio_stream_array.forEach((audio_stream: any) =>
           {
             if(audio_stream == undefined) return;
 
@@ -137,7 +141,7 @@ class QuizSession
     this.game_data = null; //얘는 자주 바뀐다.
     this.option_data = null; //옵션
 
-    this.scoreboard = null; //scoreboard 
+    this.scoreboard = null; //scoreboard
 
     this.ipv4 = null;
     this.ipv6 = null;
@@ -195,7 +199,7 @@ class QuizSession
     case QUIZ_TYPE.CUSTOM: this.inputLifeCycle(CYCLE_TYPE.QUESTIONING, new QuestionCustom(this)); break;
     case QUIZ_TYPE.OMAKASE: this.inputLifeCycle(CYCLE_TYPE.QUESTIONING, new QuestionOmakase(this)); break;
 
-    default: this.inputLifeCycle(CYCLE_TYPE.QUESTIONING, new QuestionUnknown(this));            
+    default: this.inputLifeCycle(CYCLE_TYPE.QUESTIONING, new QuestionUnknown(this));
     }
 
     this.inputLifeCycle(CYCLE_TYPE.CORRECTANSWER, new CorrectAnswer(this));
@@ -211,7 +215,7 @@ class QuizSession
     logger.info(`Created Cycle of Quiz Session, guild_id: ${this.guild_id}, Cycle: ${this.cycle_info}`);
   }
 
-  inputLifeCycle(cycle_type, cycle)
+  inputLifeCycle(cycle_type: any, cycle: any)
   {
     this.cycle_info += `${cycle.constructor.name} -> `;
     this.lifecycle_map[cycle_type] = cycle;
@@ -222,7 +226,7 @@ class QuizSession
     this.goToCycle(CYCLE_TYPE.INITIALIZING);
   }
 
-  getCycle(cycle_type)
+  getCycle(cycle_type: any)
   {
     if(this.lifecycle_map?.hasOwnProperty(cycle_type) == false)
     {
@@ -242,7 +246,7 @@ class QuizSession
     return cycle;
   }
 
-  goToCycle(cycle_type)
+  goToCycle(cycle_type: any)
   {
     const target_cycle = this.getCycle(cycle_type);
     if(target_cycle == undefined)
@@ -270,7 +274,7 @@ class QuizSession
   }
 
   /** 세션 이벤트 핸들링 **/
-  on(event_name, event_object)
+  on(event_name: any, event_object: any)
   {
     const current_cycle = this.getCurrentCycle();
     if(current_cycle == undefined)
@@ -280,12 +284,12 @@ class QuizSession
     current_cycle.on(event_name, event_object);
   }
 
-  sendMessage(message)
+  sendMessage(message: any)
   {
     this.channel.send(message);
   }
 
-  sendMultiplayerSignal(signal)
+  sendMultiplayerSignal(signal: any)
   {
     //ipc_manager.js가 다시 quiz_system.js를 require하는 순환참조가 있어서
     //(REFACTOR_PLAN.md Phase 2에서 quiz_session.js를 분리하며 새로 생긴 경로),
@@ -309,7 +313,7 @@ class QuizSession
     logger.info(`Joined Voice channel, guild_id:${this.guild_id}, voice_channel_id:${voice_channel.id}`);
 
     //보이스 끊겼을 때 핸들링
-    voice_connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => 
+    voice_connection.on(VoiceConnectionStatus.Disconnected, async (oldState: any, newState: any) =>
     {
 
       if(this.force_stop == true || this.current_cycle_type == CYCLE_TYPE.FINISH) //강종이나 게임 종료로 끊긴거면
@@ -317,7 +321,7 @@ class QuizSession
         return;
       }
 
-      try 
+      try
       {
         //우선 끊어졌으면 재연결 시도를 해본다.
         logger.info(`Try voice reconnecting..., guild_id:${this.guild_id}`);
@@ -326,7 +330,7 @@ class QuizSession
           entersState(voice_connection, VoiceConnectionStatus.Connecting, 5_000),
         ]);
       }
-      catch (error) 
+      catch (error)
       {
         //근데 정말 연결 안되면 강제 종료한다.
         logger.info(`Failed to voice reconnecting, force stop this quiz session, guild_id:${this.guild_id}`);
@@ -334,23 +338,23 @@ class QuizSession
         {
           voice_connection.destroy();
         }
-        catch(error) 
+        catch(error)
         {
           return;
         }
-                
+
         await this.forceStop();
       }
     });
-		
+
     //보이스 커넥션 생성 실패 문제 해결 방안 https://github.com/discordjs/discord.js/issues/9185, https://github.com/umutxyp/MusicBot/issues/97
-    const networkStateChangeHandler = (oldNetworkState, newNetworkState) => 
+    const networkStateChangeHandler = (oldNetworkState: any, newNetworkState: any) =>
     {
       const newUdp = Reflect.get(newNetworkState, 'udp');
       clearInterval(newUdp?.keepAliveInterval);
     };
 
-    voice_connection.on('stateChange', (oldState, newState) => 
+    voice_connection.on('stateChange', (oldState: any, newState: any) =>
     {
       const oldNetworking = Reflect.get(oldState, 'networking');
       const newNetworking = Reflect.get(newState, 'networking');
@@ -381,11 +385,11 @@ class QuizSession
     {
       clearTimeout(this.audio_play_force_stop_timer);
     }
-    
+
     if(!this.audio_playlist || this.audio_playlist.length === 0) //재생할게 없음
     {
       this.is_playing_audio_list = false;
-      return; 
+      return;
     }
 
     const audio_resource = this.audio_playlist.pop(); //하나 꺼내고
@@ -393,7 +397,7 @@ class QuizSession
     {
       await utility.sleep(this.audio_play_term);
     }
-    
+
     this.is_playing_audio_list = true;
     this.audio_player.play(audio_resource);
 
@@ -424,7 +428,7 @@ class QuizSession
 
 class NormalQuizSession extends QuizSession
 {
-  constructor(guild, owner, channel, quiz_info)
+  constructor(guild: any, owner: any, channel: any, quiz_info: any)
   {
     super(guild, owner, channel, quiz_info, QUIZ_SESSION_TYPE.NORMAL);
 
@@ -438,21 +442,21 @@ class NormalQuizSession extends QuizSession
 
     this.createCycle(); //Normal 은 바로 시작
     this.cycleLoop();
-  } 
+  }
 }
 
 class DummyQuizSession extends QuizSession
 {
-  constructor(guild, owner, channel, quiz_info, quiz_session_type=QUIZ_SESSION_TYPE.DUMMY)
+  constructor(guild: any, owner: any, channel: any, quiz_info: any, quiz_session_type: any=QUIZ_SESSION_TYPE.DUMMY)
   {
     super(guild, owner, channel, quiz_info, quiz_session_type); //dummy 세션으로 생성
 
     //DUMMY도 이 정도는 넣어주자
     this.inputLifeCycle(CYCLE_TYPE.HOLD, new HOLD(this));
-    this.inputLifeCycle(CYCLE_TYPE.FINISH, new Finish(this)); 
+    this.inputLifeCycle(CYCLE_TYPE.FINISH, new Finish(this));
 
     this.goToCycle(CYCLE_TYPE.HOLD);
-  } 
+  }
 }
 
 module.exports = { QuizSession, NormalQuizSession, DummyQuizSession };

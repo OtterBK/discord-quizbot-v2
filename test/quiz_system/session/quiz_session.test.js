@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { QuizSession } = require('../../../quizbot/quiz_system/session/quiz_session.js');
+const { QuizSession } = require('../../../quizbot/quiz_system/session/quiz_session');
 const { CYCLE_TYPE, QUIZ_SESSION_TYPE } = require('../../../quizbot/quiz_system/constants');
 const session_registry = require('../../../quizbot/quiz_system/session_registry');
 const { QUIZ_MAKER_TYPE, QUIZ_TYPE } = require('../../../config/system_setting.js');

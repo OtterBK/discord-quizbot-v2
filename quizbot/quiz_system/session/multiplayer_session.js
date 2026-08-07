@@ -22,7 +22,7 @@ const {
   multiplayer_chat_comp,
 } = require('../../quiz_ui/components');
 
-const { QuizSession, DummyQuizSession } = require('./quiz_session.js');
+const { QuizSession, DummyQuizSession } = require('./quiz_session');
 const Question = require('../lifecycle/question/question'); //instanceof 체크용
 const Prepare = require('../lifecycle/prepare'); //Prepare.fillAudioResource 정적 호출용
 
