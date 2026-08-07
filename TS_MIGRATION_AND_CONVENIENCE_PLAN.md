@@ -80,7 +80,7 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
 | 2 | `quizbot/managers/multiplayer_mmr.js`, `db/*.js` — ✅ **완료** | 순수 함수/쿼리 빌더 위주, 부수효과 적고 테스트 있음. 전부 원본에 이미 'use strict' 있어서 strict 전환 리스크 없었음 |
 | 3 | `quizbot/managers/*.js` (멀티플레이 제외) — ✅ **완료** | ban_manager, command_manager, ipc_manager, feedback_manager, monitoring_manager, tagged_dev_quiz_manager, report_manager+report/* 8개, user_quiz_info_manager, audio_cache_manager 총 15개 파일 |
 | 4 | `quizbot/quiz_ui/*.js` (멀티플레이 제외) — ✅ **완료** | 화면 클래스 대부분 — 양이 제일 많음. components/*(4개)+facade, common-ui(프레임워크 코어, 소비자보다 먼저 전환), leaf UI 5개, 중간 복잡도 7개, QuizInfoUI 계열+유저 퀴즈 관리 6개, ui-system-core(라우팅 코어, 마지막) 총 24개 파일 |
-| 5 | `quizbot/quiz_system/**` (멀티플레이 세션 제외) — 🔶 **진행 중, 아래 체크포인트 참고** | State 패턴 엔진 본체 |
+| 5 | `quizbot/quiz_system/**` (멀티플레이 세션 제외) — ✅ **완료** | State 패턴 엔진 본체 |
 | 6 | **`multiplayer_*` 전체** (managers/multiplayer_*, quiz_ui/multiplayer-*, quiz_system/session/multiplayer_session.js, IPC 시그널 레이어) | 실전 대결 테스트 완료 후 착수 |
 
 - 매 단계마다 `npm test`/`npm run lint` 통과 + 해당 파일 관련 `node -e` 스모크테스트로 검증(지금까지 계속 써온 방식 그대로).
@@ -93,26 +93,32 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
 
 ### A-3-체크포인트. 세션 인수인계 (컨텍스트 길어져서 새 대화로 넘어갈 때 참고)
 
-**2026-08-07 기준 정확한 위치**: A-5(quiz_system/**) 진행 중. 완료된 하위 단계:
+**2026-08-07 기준 정확한 위치**: **A-5(quiz_system/**, 멀티플레이 세션 제외) 완료.** 완료된 하위 단계:
 - A: `constants.ts`, `session_registry.ts`
 - B: 베이스 클래스 우선 전환 — `quiz_lifecycle.ts`(QuizLifeCycle/QuizLifeCycleWithUtility), `question.ts`(베이스 Question, 937줄)
 - C: 단순 lifecycle 7개 — `hold`/`finish`/`explain`/`time_over`/`clearing`/`correct_answer`/`ending`
 - D: question 하위 클래스 8개 — `question_unknown`/`song`/`intro`/`text`/`image`/`ox`/`custom`/`omakase`
-- E 일부: `initialize.ts`(880줄, Initialize+4개 하위클래스) 완료
+- E: `initialize.ts`(880줄, Initialize+4개 하위클래스)
 - F: `prepare.ts`(711줄, **A-5 최고난도** — YouTube/커스텀 오디오 파이프라인) 완료. `generateAudioResourceFromWeb`
   호출부가 원본부터 함수가 안 받는 5번째 인자(ip 정보)를 넘기고 있던 것 발견 — 동작 안 바꾸고 미사용 파라미터로
   선언만 추가해 TS 인자개수 체크 통과시킴(진짜 버그인지는 불명, 수정 안 하고 그대로 둠).
+- G: `session/quiz_session.js`(458줄) → `quiz_session.ts` — `QuizSession`/`NormalQuizSession`/`DummyQuizSession`.
+  `sendMultiplayerSignal()`의 지연 `require('.../ipc_manager')` 패턴은 그대로 유지(모듈 상단으로 안 옮김).
+- H: `quiz_system.js`(217줄, facade) → `quiz_system.ts` + `quiz_play_ui.js`(244줄) → `quiz_play_ui.ts` — **A-5 마지막**.
+  `checkReadyForStartQuiz`/`getMultiplayerQuizSessionCount`에서 top-level 화살표 함수 안 `this`(=
+  `module.exports` 자기참조) 접근이 `moduleDetection:force`로 인해 "undefined 타입" 에러가 남 —
+  A-2에서 `quiz_content_loader.ts` 전환 때 겪은 것과 똑같은 패턴. `(this as any).xxx(...)`로 해결.
 
-**다음 할 일 (git 커밋 `c7e3473`가 마지막, working tree는 이 전환 관련 파일만 커밋됨 —
-`TEST_CHECKLIST.md`/`config/private_config.json`은 이 세션과 무관한 이전 변경사항이라 손대지 않고 남겨둠)**:
-1. `session/quiz_session.js`(458줄) — `QuizSession`/`NormalQuizSession`/`DummyQuizSession`. **주의**:
-   `sendMultiplayerSignal()`이 순환참조 방지 위해 함수 본문 안에서 지연 `require('.../ipc_manager')` 하는
-   패턴이 있음 — 모듈 상단으로 옮기지 말 것(quiz_system/CLAUDE.md에 경고 있음).
-2. `quiz_system.js`(217줄, facade) + `quiz_play_ui.js`(244줄, `QuizPlayUI`) — A-5 마지막.
-3. 그 다음 A-3 표의 6단계(`multiplayer_*` 전체)는 **착수하지 말 것** — 실전 대결 테스트 끝나기 전까지 보류가
-   확정된 방침.
+**A-5 완료 후 다음 단계 관련 확정 사항(2026-08-07, 사용자 지시)**:
+- A-3 표의 6단계(`multiplayer_*` 전체)는 **여전히 착수하지 말 것** — 실전 대결 테스트 끝나기 전까지 보류.
+- **B단계(편의 기능)도 사용자가 명시적으로 재개를 지시하기 전까지 시작하지 말 것.** A-5가 끝났다고
+  자동으로 B-3'/B-4 등으로 넘어가면 안 됨 — "A-5 끝나면 잠깐 멈춰달라"는 이번 세션의 명시적 요청.
+  새 세션에서 이 문서를 읽고 이어갈 때도 이 지시가 여전히 유효한지 사용자에게 먼저 확인할 것.
+- 참고로 B단계 내부에서도 순서가 균일하지 않음: B-3'/B-4는 설계가 이미 끝나서 바로 구현 가능하지만,
+  B-1(포맷 스펙)과 B-2(UI 목업+`updatePrivateUI` 확장)는 착수 전에 사람이 결정해야 할 게 남아있음
+  (자세한 내용은 "권장 실행 순서" 섹션 참고).
 
-**전환 중 반복적으로 튀어나온 패턴들 (다음 파일에서도 또 나올 가능성 높음)**:
+**전환 중 반복적으로 튀어나온 패턴들 (앞으로 A-3 6단계 착수 시에도 다시 나올 가능성 높음)**:
 - **부모 클래스 우선 전환**: 자식 클래스 여러 개가 상속하는 베이스 클래스(`QuizLifeCycle`, `Question`)는
   자식들보다 먼저 `.ts`로 바꾸고 `[key: string]: any;` 인덱스 시그니처를 달아둠 — 그래야 자식 클래스들이
   제각각 만드는 임시 프로퍼티(`skip_prepare`, `prepared_question` 등)를 개별 선언 없이 그대로 컴파일 가능.
@@ -142,8 +148,9 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
   ⑦ `npm run lint`(0 error) → ⑧ `dist/`에서 `head -1`로 `'use strict'` 확인 → ⑨ `node -e`로 실제 동작
   스모크테스트 → ⑩ 커밋(한국어, 발견한 이슈/버그 있으면 본문에 기록) → ⑪ 이 문서의 표/체크포인트 갱신.
 
-**새 대화 시작 시 이어가는 방법**: 새 세션에서 "TS_MIGRATION_AND_CONVENIENCE_PLAN.md 읽고 A-5 이어서
-진행해줘 (quiz_session.js부터)"라고 지시하면 이 체크포인트 섹션을 보고 바로 이어갈 수 있음.
+**새 대화 시작 시 이어가는 방법**: A-5는 완료됐고, 다음은 A-3 6단계(멀티플레이, 실전 테스트 전까지 보류)
+아니면 B단계(편의 기능)인데 둘 다 "사용자가 먼저 지시해야 시작" 상태다. 새 세션에서 이 문서를 읽었다면
+바로 진행하지 말고, 사용자에게 "B-3'/B-4부터 시작할지, 다른 우선순위가 있는지" 먼저 확인할 것.
 
 ---
 
