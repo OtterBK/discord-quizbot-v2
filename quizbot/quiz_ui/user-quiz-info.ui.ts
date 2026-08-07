@@ -128,7 +128,7 @@ class UserQuizInfoUI extends QuizInfoUI
         { name: '🔄 업데이트 날짜', value: user_quiz_info.data.modified_time.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }), inline: true },
         { name: '🏳 플레이한 서버', value: `${user_quiz_info.data.played_count ?? 0}곳`, inline: true },
         { name: '👍 추천한 유저수', value: `${user_quiz_info.data.like_count ?? 0}명`, inline: true },
-        { name: '🏅 인증여부 (추천 10개↑ 시 자동 인증)', value: user_quiz_info.data.certified ? '⭕' : '❌', inline: true },
+        { name: '🏅 인증여부 (추천 10개↑)', value: user_quiz_info.data.certified ? '⭕' : '❌', inline: true },
         { name: '🏷 퀴즈 태그', value: tags_string === '' ? '선택 안함' : tags_string, inline: false }, //Discord embed field value는 빈 문자열 불가라 fallback 필요
       ],
     };
@@ -318,7 +318,8 @@ class UserQuizInfoUI extends QuizInfoUI
       //비공개에서 공개로 전환할 경우
       if(user_quiz_info.data.is_private == true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
       {
-        interaction.user.send({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, flags: MessageFlags.Ephemeral });
+        interaction.explicit_replied = true;
+        interaction.reply({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, flags: MessageFlags.Ephemeral });
         return;
       }
 
@@ -337,14 +338,16 @@ class UserQuizInfoUI extends QuizInfoUI
       const is_admin = interaction.user.id === PRIVATE_CONFIG?.ADMIN_ID;
       //어드민이면 삭제+영구밴 옵션도 보여줌 (quiz_delete_confirm_admin_comp는 오클릭 방지를 위해 여러 행으로 분리된 배열)
       const confirm_comp = is_admin ? quiz_delete_confirm_admin_comp : [quiz_delete_confirm_comp];
-      interaction.user.send({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\n[ ${user_quiz_info.data.quiz_title} ]\`\`\``, components: confirm_comp, flags: MessageFlags.Ephemeral });
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`🔸 ${text_contents.quiz_maker_ui.confirm_quiz_delete}\n[ ${user_quiz_info.data.quiz_title} ]\`\`\``, components: confirm_comp, flags: MessageFlags.Ephemeral });
       return;
     }
 
     if(interaction.customId === 'quiz_delete_confirmed') //퀴즈 정말정말정말로 삭제 버튼
     {
       this.freeHolder(); //더 이상 UI 못 쓰도록
-      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
+      interaction.explicit_replied = true;
+      interaction.reply({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
       return;
@@ -360,7 +363,8 @@ class UserQuizInfoUI extends QuizInfoUI
       ban_manager.banId(user_quiz_info.data.creator_id);
 
       this.freeHolder(); //더 이상 UI 못 쓰도록
-      interaction.user.send({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
+      interaction.explicit_replied = true;
+      interaction.reply({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
       return;

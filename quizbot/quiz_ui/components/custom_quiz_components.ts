@@ -414,7 +414,7 @@ const question_preview_comp = new ActionRowBuilder()
     new ButtonBuilder()
       .setCustomId('question_refresh')
       .setLabel('이미지 재로드')
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Secondary),
   )
   .addComponents(
     new ButtonBuilder()

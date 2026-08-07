@@ -309,7 +309,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
         title: quiz_title,
       };
 
-      interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈를 장바구니에 담았습니다. (${Object.keys(this.basket_items).length}개 / ${this.max_basket_size}개)\`\`\``});
+      interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈를 장바구니에 담았습니다. (${Object.keys(this.basket_items).length}개 / ${this.max_basket_size}개)\`\`\``, flags: MessageFlags.Ephemeral});
 
       const guild_id = interaction.guild.id;
       QuizInfoUI.BASKET_CACHE[guild_id] = this.basket_items;

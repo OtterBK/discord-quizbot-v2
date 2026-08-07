@@ -155,7 +155,33 @@ const reWriteCacheInfo = (video_id: string, cache_result: any): void =>
   }
 };
 
+//같은 video_id를 동시에 여러 번 다운로드 요청하면(미리듣기 연타 등) yt-dlp 프로세스를 중복 스폰하지 않고
+//이미 진행 중인 다운로드의 Promise를 그대로 재사용함 (B-2 전수테스트 피드백 4번)
+const downloading_promises = new Map<string, Promise<any>>();
+
 const downloadAudioCache = async (audio_url: string, video_id: string, ip_info: any = {ipv4: undefined, ipv6: undefined}): Promise<any> =>
+{
+  const existing_promise = downloading_promises.get(video_id);
+  if(existing_promise != undefined)
+  {
+    logger.debug(`${video_id} is already downloading. reusing in-flight download`);
+    return existing_promise;
+  }
+
+  const download_promise = executeDownloadAudioCache(audio_url, video_id, ip_info);
+  downloading_promises.set(video_id, download_promise);
+
+  try
+  {
+    return await download_promise;
+  }
+  finally
+  {
+    downloading_promises.delete(video_id);
+  }
+};
+
+const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip_info: any = {ipv4: undefined, ipv6: undefined}): Promise<any> =>
 {
   const cache_path = getHashedPath(video_id);
 
@@ -547,8 +573,11 @@ const generatePreviewClipStream = (cache_file_path: string, audio_start_point: n
 {
   const output_stream = new PassThrough();
 
+  //setStartTime()(input seek, -i 앞에 -ss)은 -c copy와 같이 쓰면 요청 시각 이전의 가장 가까운 webm
+  //클러스터 경계로 스냅백함(최대 10초 오차, 2026-08-08 B-2 피드백 8번). seekOutput()(-i 뒤에 -ss)으로
+  //바꾸면 컨테이너 seek 속도는 그대로 유지하면서 정확한 시각부터 시작함(-f null 드라이런으로 검증 완료).
   const command = ffmpeg(cache_file_path)
-    .setStartTime(audio_start_point)
+    .seekOutput(audio_start_point)
     .setDuration(audio_length_sec)
     .outputOptions('-c', 'copy')
     .format('webm');

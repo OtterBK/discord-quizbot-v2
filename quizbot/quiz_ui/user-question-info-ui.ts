@@ -496,6 +496,8 @@ class UserQuestionInfoUI extends QuizbotUI
       audio_duration_sec = parseInt(probed_audio_info.format.duration);
     }
 
+    const is_random_range = custom_audio_start === undefined; //구간 미지정 상태 = convertAudioRangeToString()의 "[랜덤 구간 재생]"과 동일한 케이스, 실제 게임에서는 매번 무작위 구간이 선택됨
+
     let audio_start_point = custom_audio_start;
     let audio_end_point = custom_audio_end;
     if(audio_start_point == undefined || audio_start_point >= audio_duration_sec) //시작 지점 미지정/범위 초과면 처음부터
@@ -517,7 +519,8 @@ class UserQuestionInfoUI extends QuizbotUI
     const clip_stream = audio_cache_manager.generatePreviewClipStream(cache_file_path, audio_start_point, audio_length_sec);
     const attachment = new AttachmentBuilder(clip_stream, {name: `${file_label}.webm`});
 
-    interaction.reply({content: `\`\`\`🔸 ${file_label} 미리듣기 (${audio_start_point}초 ~ ${audio_start_point + audio_length_sec}초)\`\`\``, files: [attachment], flags: MessageFlags.Ephemeral})
+    const random_range_notice = is_random_range ? `\n🔸 [랜덤 구간 재생] 실제 게임에서는 이 구간 중 무작위로 재생됩니다.` : '';
+    interaction.reply({content: `\`\`\`🔸 ${file_label} 미리듣기 (${audio_start_point}초 ~ ${audio_start_point + audio_length_sec}초)${random_range_notice}\`\`\``, files: [attachment], flags: MessageFlags.Ephemeral})
       .catch((err: any) =>
       {
         logger.error(`sendAudioPreview reply failed. video_id: ${video_id}, err: ${err.stack}`);
@@ -702,9 +705,10 @@ class UserQuestionInfoUI extends QuizbotUI
   /** 현재 보고 있는 문제를 그대로 복제해 바로 다음 위치에 삽입 */
   async duplicateQuestion(interaction: any)
   {
+    interaction.explicit_replied = true; //IPC/DB await 대기 중 전역 fallback이 먼저 deferUpdate 하지 않도록 미리 표시
+
     if(this.question_list !== undefined && this.question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
     {
-      interaction.explicit_replied = true;
       interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return;
     }
@@ -712,7 +716,6 @@ class UserQuestionInfoUI extends QuizbotUI
     const source_question_info = this.current_question_info;
     if(source_question_info === undefined)
     {
-      interaction.explicit_replied = true;
       interaction.deferUpdate();
       return;
     }
@@ -724,14 +727,12 @@ class UserQuestionInfoUI extends QuizbotUI
 
     if(question_id === undefined)
     {
-      interaction.explicit_replied = true;
       interaction.reply({ content: `\`\`\`${this.quiz_info.quiz_id} / ${interaction.user.id}에서 문제를 복제하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return;
     }
 
     this.quiz_info.updateModifiedTime();
 
-    interaction.explicit_replied = true;
     interaction.deferUpdate();
 
     const insert_index = this.question_list.indexOf(source_question_info) + 1;

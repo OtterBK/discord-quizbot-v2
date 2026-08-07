@@ -291,17 +291,17 @@ const sort_by_select_menu = new ActionRowBuilder()
           .setValue('played_count'),
 
         new StringSelectMenuOptionBuilder()
-          .setLabel('전체 추천순')
+          .setLabel('추천순')
           .setDescription('가장 많이 추천 받은 퀴즈부터 표시합니다.')
           .setValue('like_count'),
 
         new StringSelectMenuOptionBuilder()
-          .setLabel('최신 퀴즈순')
+          .setLabel('최신순')
           .setDescription('최근 생성된 퀴즈부터 표시합니다.')
           .setValue('birthtime'),
 
         new StringSelectMenuOptionBuilder()
-          .setLabel('오래된 퀴즈순')
+          .setLabel('오래된순')
           .setDescription('가장 오래전에 생성된 퀴즈부터 표시합니다.')
           .setValue('birthtime_reverse'),
       )

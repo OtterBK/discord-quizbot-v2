@@ -54,7 +54,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     multiplayer_quiz_info['icon'] = '🌐';
 
     multiplayer_quiz_info['type_name'] = "**멀티플레이 퀴즈**"; 
-    multiplayer_quiz_info['description'] = `\`\`\`선택 메뉴에서 플레이하실 퀴즈 장르나 항목을 선택해주세요!\n선택하신 퀴즈에서 무작위로 문제를 제출합니다.\n\n'/챗' 명령어로 전체 대화가 가능합니다.\n\`\`\``; 
+    multiplayer_quiz_info['description'] = `\`\`\`선택 메뉴에서 플레이하실 퀴즈 장르나 항목을 선택해주세요!\n선택하신 퀴즈에서 무작위로 문제를 제출합니다.\n\n'/챗' 명령어로 전체 대화가 가능합니다.\n채팅이 밀려 화면이 안 보이면 '/퀴즈' 명령어를 다시 입력해 새로 받을 수 있습니다.\n\`\`\``;
 
     multiplayer_quiz_info['author'] = guild.name ?? guild.id;
     multiplayer_quiz_info['author_icon'] = guild.iconURL() ?? '';

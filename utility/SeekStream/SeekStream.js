@@ -94,6 +94,21 @@ class SeekStream
 
     this.stream.seekfound = false;
     this.bytes_count = 0;
+
+    //webm 파일 자체에 내장된 Cues 테이블(실제 timestamp->byte position 매핑)로 정확한 seek 시도.
+    //전체 파일 평균 비트레이트 추정(아래 loop()의 per_sec_bytes 방식, VBR에서 부정확)보다 훨씬 정확함
+    //(2026-08-08, docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md 7/8번 조사 중 WebmSeeker.seek()가 정확히
+    //동작하는데도 한 번도 호출되지 않고 있었던 걸 발견해 연결함). Cues가 없는 파일이거나 seek 대상 시각이
+    //Cues 범위를 벗어나면(WebmSeeker.seek()가 이 경우 0을 반환하는 엣지케이스가 있음) 기존 추정 방식으로 폴백.
+    if (this.sec > 0)
+    {
+      const accurate_offset = this.stream.seek(this.content_length);
+      if (!(accurate_offset instanceof Error) && typeof accurate_offset === 'number' && accurate_offset > 0)
+      {
+        this.accurate_start_point = accurate_offset;
+      }
+    }
+
     await this.loop();
   }
 
@@ -111,7 +126,7 @@ class SeekStream
       return;
     }
     const end = this.bytes_count + this.per_sec_bytes * 300;
-    const start_point = this.per_sec_bytes * this.sec;
+    const start_point = this.accurate_start_point ?? (this.per_sec_bytes * this.sec); //Cues 기반 정확한 offset이 있으면 우선 사용
     const end_point = this.duration == Infinity ? Infinity : start_point + (this.per_sec_bytes * this.duration);
     const stream = fs.createReadStream(this.file_path, { flags: 'r', start: start_point, end: end_point });
 

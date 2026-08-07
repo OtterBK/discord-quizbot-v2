@@ -185,9 +185,9 @@ class UserQuizListUI extends QuizBotControlComponentUI
     user_quiz_info.saveDataToDB()
       .then((created_quiz_id: any) =>
       {
-        if(created_quiz_id === undefined) //저장 실패
+        if(created_quiz_id === undefined) //저장 실패 (이미 168번째 줄에서 modal_interaction.reply()를 소비했으므로 followUp 사용)
         {
-          modal_interaction.user.send({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM(제육보끔#1916)으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral});
+          modal_interaction.followUp({content: `\`\`\`🔸 ${quiz_title} 퀴즈를 생성하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM(제육보끔#1916)으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral});
           return;
         }
 
