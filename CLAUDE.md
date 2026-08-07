@@ -92,6 +92,8 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 - `docs/DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
 
 **작업계획서 (완료/미완료 요약은 ACTIVE_PLAN/COMPLETED_WORK_LOG에, 상세는 여기)**
+- `docs/WEB_INTEGRATION_PLAN.md` — 퀴즈 선택 웹 연동(임시 토큰 기반 리모트 컨트롤) 작업계획서. 설계+UI
+  목업(`docs/WEB_UI_MOCKUP.html`)까지 완료, 코드 구현은 다음 세션부터 — Phase 0(인프라 스켈레톤)부터 시작.
 - `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함.
 - `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
 - `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` — A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건(미착수).

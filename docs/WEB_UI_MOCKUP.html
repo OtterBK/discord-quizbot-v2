@@ -1,0 +1,1242 @@
+<title>퀴즈 선택 웹 UI 목업</title>
+<style>
+  :root {
+    --bg: #F5F5F1;
+    --surface: #FFFFFF;
+    --surface-sunken: #ECEBE5;
+    --border: #DEDCD3;
+    --ink: #1C1D22;
+    --ink-dim: #5B5C63;
+    --ink-faint: #8B8C92;
+    --gold: #B9860B;
+    --gold-ink: #4A3600;
+    --gold-bg: #FCEFC7;
+    --violet: #6C5FBE;
+    --violet-bg: #ECE9FA;
+    --green: #2F8F4E;
+    --green-bg: #E3F4E8;
+    --red: #C43B3B;
+    --red-bg: #FBE7E7;
+    --shadow: 0 1px 2px rgba(20,20,15,0.05), 0 6px 20px -8px rgba(20,20,15,0.18);
+    --radius: 14px;
+    --font-ui: "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-num: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151C;
+      --surface: #1D1F28;
+      --surface-sunken: #171820;
+      --border: #2E313E;
+      --ink: #EEEDE6;
+      --ink-dim: #9C9DA6;
+      --ink-faint: #6B6C76;
+      --gold: #F2C037;
+      --gold-ink: #FFF4D2;
+      --gold-bg: #3A2E0C;
+      --violet: #A79CF0;
+      --violet-bg: #292447;
+      --green: #6FD08C;
+      --green-bg: #163524;
+      --red: #F0807F;
+      --red-bg: #3A1E1E;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 28px -10px rgba(0,0,0,0.55);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14151C;
+    --surface: #1D1F28;
+    --surface-sunken: #171820;
+    --border: #2E313E;
+    --ink: #EEEDE6;
+    --ink-dim: #9C9DA6;
+    --ink-faint: #6B6C76;
+    --gold: #F2C037;
+    --gold-ink: #FFF4D2;
+    --gold-bg: #3A2E0C;
+    --violet: #A79CF0;
+    --violet-bg: #292447;
+    --green: #6FD08C;
+    --green-bg: #163524;
+    --red: #F0807F;
+    --red-bg: #3A1E1E;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 28px -10px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    --bg: #F5F5F1;
+    --surface: #FFFFFF;
+    --surface-sunken: #ECEBE5;
+    --border: #DEDCD3;
+    --ink: #1C1D22;
+    --ink-dim: #5B5C63;
+    --ink-faint: #8B8C92;
+    --gold: #B9860B;
+    --gold-ink: #4A3600;
+    --gold-bg: #FCEFC7;
+    --violet: #6C5FBE;
+    --violet-bg: #ECE9FA;
+    --green: #2F8F4E;
+    --green-bg: #E3F4E8;
+    --red: #C43B3B;
+    --red-bg: #FBE7E7;
+    --shadow: 0 1px 2px rgba(20,20,15,0.05), 0 6px 20px -8px rgba(20,20,15,0.18);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  button, input, select { font-family: inherit; color: inherit; }
+  button { cursor: pointer; }
+  ::selection { background: var(--gold-bg); color: var(--gold-ink); }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(155deg, var(--gold) 0%, #8f6a06 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; box-shadow: var(--shadow);
+  }
+  .brand-text h1 { font-size: 15px; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+  .brand-text p { margin: 1px 0 0; font-size: 12px; color: var(--ink-dim); }
+  .brand-text .guild-chip { color: var(--violet); font-weight: 600; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .theme-toggle {
+    display: flex; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface); padding: 3px; gap: 2px; box-shadow: var(--shadow);
+  }
+  .theme-toggle button {
+    border: none; background: transparent; color: var(--ink-faint);
+    border-radius: 999px; width: 30px; height: 26px; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s ease, color .15s ease;
+  }
+  .theme-toggle button.active { background: var(--gold-bg); color: var(--gold-ink); }
+
+  /* ---------- Tabs ---------- */
+  .tabrail { display: flex; gap: 6px; border-bottom: 1px solid var(--border); }
+  .tabrail button {
+    border: none; background: transparent; color: var(--ink-dim);
+    font-size: 13.5px; font-weight: 600; padding: 10px 4px 12px; margin-right: 18px;
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .tabrail button .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); }
+  .tabrail button.active { color: var(--ink); border-bottom-color: var(--gold); }
+  .tabrail button.active .dot { background: var(--gold); }
+  .tabrail button:hover:not(.active) { color: var(--ink); }
+
+  .mode-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); padding: 2px 2px 0; }
+  .mode-desc b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- Layout grid per panel ---------- */
+  .panel { display: none; gap: 18px; }
+  .panel.active { display: grid; grid-template-columns: minmax(0,1fr) 300px; }
+  @media (max-width: 880px) {
+    .panel.active { grid-template-columns: 1fr; }
+    .detail-col { order: -1; }
+  }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+  /* ---------- Sections (omakase composition blocks) ---------- */
+  .section-block { padding: 14px 16px; }
+  .section-block + .section-block { border-top: 1px solid var(--border); }
+  .section-title { font-size: 12.5px; font-weight: 700; color: var(--ink-dim); margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .mode-switch { display: flex; gap: 8px; }
+  .mode-switch button {
+    flex: 1; padding: 10px 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface-sunken); font-weight: 700; font-size: 12.5px; color: var(--ink-dim);
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .15s ease;
+  }
+  .mode-switch button.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold-ink); }
+  .mode-switch button:hover:not(.active) { border-color: var(--violet); color: var(--ink); }
+
+  .hint-text { font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
+
+  /* ---------- Toolbar (search/sort/filter) ---------- */
+  .toolbar {
+    padding: 14px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-field {
+    flex: 1 1 200px;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-sunken); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 12px;
+  }
+  .search-field input { border: none; background: transparent; outline: none; font-size: 13.5px; width: 100%; color: var(--ink); }
+  .search-field input::placeholder { color: var(--ink-faint); }
+  .search-field svg { flex-shrink: 0; color: var(--ink-faint); }
+
+  select.sort-select {
+    border: 1px solid var(--border); background: var(--surface-sunken);
+    border-radius: 10px; padding: 8px 10px; font-size: 13px; font-weight: 500; outline: none;
+  }
+
+  .switch-field {
+    display: flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); background: var(--surface-sunken);
+    border-radius: 999px; padding: 7px 12px 7px 8px; font-size: 12px; font-weight: 600; color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .switch-field .track {
+    width: 28px; height: 16px; border-radius: 999px; background: var(--border);
+    position: relative; transition: background .15s ease; flex-shrink: 0;
+  }
+  .switch-field .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--surface); transition: transform .15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .switch-field.on { color: var(--ink); border-color: var(--green); }
+  .switch-field.on .track { background: var(--green); }
+  .switch-field.on .track::after { transform: translateX(12px); }
+
+  .tagbar { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 7px; border-bottom: 1px solid var(--border); }
+  .tag-chip {
+    border: 1px solid var(--border); background: var(--surface-sunken); color: var(--ink-dim);
+    border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 600; transition: all .15s ease;
+  }
+  .tag-chip:hover { border-color: var(--violet); color: var(--ink); }
+  .tag-chip.active { background: var(--violet-bg); border-color: var(--violet); color: var(--violet); }
+
+  /* ---------- Card grid (thumbnail-forward) ---------- */
+  .grid-wrap { padding: 14px 16px 18px; }
+  .quiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 12px; }
+  .quiz-card {
+    position: relative; text-align: left;
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: 13px; padding: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: border-color .15s ease, transform .12s ease, box-shadow .15s ease;
+  }
+  .quiz-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .quiz-card.selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-bg); }
+  .card-thumb {
+    position: relative; aspect-ratio: 16 / 10;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; color: rgba(255,255,255,0.92); overflow: hidden;
+  }
+  .card-thumb::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.35) 100%);
+  }
+  .thumb-glyph { position: relative; z-index: 1; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25)); }
+  .thumb-badge {
+    position: absolute; z-index: 2; font-size: 10px; font-weight: 700;
+    padding: 3px 7px; border-radius: 999px; backdrop-filter: blur(6px);
+    display: flex; align-items: center; gap: 3px;
+  }
+  .thumb-badge.verified { top: 8px; left: 8px; background: rgba(20,60,35,0.55); color: #B9F0C9; }
+  .thumb-badge.likes {
+    bottom: 8px; left: 8px; background: rgba(0,0,0,0.4); color: #fff;
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+  }
+  .thumb-check {
+    position: absolute; z-index: 2; top: 8px; right: 8px;
+    width: 22px; height: 22px; border-radius: 7px;
+    border: 1.5px solid rgba(255,255,255,0.85);
+    background: var(--gold); color: #2a2000;
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .card-body { padding: 11px 12px 12px; display: flex; flex-direction: column; gap: 7px; }
+  .quiz-card h3 {
+    margin: 0; font-size: 13px; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .quiz-card .creator { font-size: 11px; color: var(--ink-faint); }
+  .quiz-card .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .quiz-card .mini-tag {
+    font-size: 10px; background: var(--surface-sunken); border: 1px solid var(--border);
+    color: var(--ink-dim); padding: 2px 7px; border-radius: 999px;
+  }
+  .quiz-card .meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--ink-faint);
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Legacy notice (official quiz) ---------- */
+  .legacy-notice {
+    margin: 12px 16px 0;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; color: var(--ink-faint);
+    background: var(--surface-sunken); border: 1px dashed var(--border);
+    border-radius: 9px; padding: 8px 11px; line-height: 1.5;
+  }
+  .legacy-notice b { color: var(--ink-dim); font-weight: 700; }
+
+  /* ---------- Folder tree (official quiz) ---------- */
+  .breadcrumb {
+    padding: 12px 16px; display: flex; align-items: center; gap: 6px;
+    font-size: 12.5px; color: var(--ink-dim); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .breadcrumb button { border: none; background: transparent; color: inherit; font-weight: 600; padding: 2px 4px; border-radius: 6px; }
+  .breadcrumb button:hover { background: var(--surface-sunken); color: var(--ink); }
+  .breadcrumb .sep { color: var(--ink-faint); }
+  .breadcrumb button.current { color: var(--gold); }
+
+  .tree-list { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+  .tree-row {
+    display: flex; align-items: center; gap: 10px; padding: 7px 10px;
+    border-radius: 9px; border: 1px solid transparent; font-size: 13px; text-align: left;
+  }
+  .tree-row:hover { background: var(--surface-sunken); }
+  .tree-row.folder .icon { color: var(--violet); font-size: 16px; }
+  .tree-row.leaf.selected { background: var(--gold-bg); border-color: var(--gold); }
+  .tree-row .icon { flex-shrink: 0; width: 34px; text-align: center; }
+  .tree-row .tile {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: rgba(255,255,255,0.92);
+  }
+  .tree-row .label { flex: 1; font-weight: 600; }
+  .tree-row .sub { font-size: 11px; color: var(--ink-faint); font-weight: 500; }
+  .tree-row .chev { color: var(--ink-faint); font-size: 11px; }
+  .tree-row .count-pill {
+    font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 10.5px;
+    color: var(--ink-faint); background: var(--surface); border: 1px solid var(--border);
+    padding: 2px 6px; border-radius: 999px;
+  }
+
+  /* ---------- Detail column ---------- */
+  .detail-col { display: flex; flex-direction: column; gap: 14px; }
+  .detail-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .detail-card:empty { display: none; }
+  .detail-empty {
+    padding: 32px 18px; text-align: center; color: var(--ink-faint); font-size: 13px;
+    display: flex; flex-direction: column; gap: 8px; align-items: center; line-height: 1.6;
+  }
+  .detail-empty .glyph { font-size: 26px; }
+
+  .detail-title { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .detail-desc { font-size: 12.5px; color: var(--ink-dim); line-height: 1.5; }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .summary-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-row .k { color: var(--ink-faint); flex-shrink: 0; }
+  .summary-row .v { color: var(--ink); font-weight: 600; text-align: right; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-box { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px; }
+  .stat-box .k { font-size: 10.5px; color: var(--ink-faint); font-weight: 600; }
+  .stat-box .v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 700; margin-top: 2px; }
+
+  .field-label { font-size: 11.5px; font-weight: 700; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: block; }
+
+  .stepper { display: flex; align-items: center; gap: 10px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; }
+  .stepper button {
+    width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+    font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--ink);
+    flex-shrink: 0;
+  }
+  .stepper button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .stepper button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .stepper input.val {
+    flex: 1; width: 100%; text-align: center; font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    font-size: 16px; font-weight: 700; border: none; background: transparent; color: var(--ink);
+    -moz-appearance: textfield; outline: none; border-radius: 6px; min-width: 0;
+  }
+  .stepper input.val::-webkit-outer-spin-button, .stepper input.val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input.val:focus { background: var(--surface); box-shadow: 0 0 0 2px var(--gold-bg); }
+  .stepper .range { font-size: 10.5px; color: var(--ink-faint); font-family: var(--font-num); white-space: nowrap; padding-right: 2px; }
+
+  .cta-primary {
+    border: none; background: var(--gold); color: #2a2000; font-weight: 700; font-size: 13.5px;
+    padding: 12px 16px; border-radius: 10px; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px; transition: filter .15s ease, background .15s ease;
+  }
+  .cta-primary:hover { filter: brightness(1.08); }
+  .cta-primary:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+  .cta-primary.variant-danger { background: var(--red-bg); color: var(--red); }
+  .cta-primary.variant-danger:hover { background: var(--red); color: #fff; filter: none; }
+
+  /* ---------- Discord live-preview card ---------- */
+  .discord-preview { padding: 14px 15px 15px; display: flex; flex-direction: column; gap: 10px; }
+  .discord-preview .dp-head {
+    display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700;
+    color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .dp-mock { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px; display: flex; flex-direction: column; gap: 8px; }
+  .dp-mock .dp-lock { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--gold); }
+  .dp-mock .dp-body { font-size: 12px; color: var(--ink-dim); line-height: 1.5; }
+  .dp-mock .dp-body b { color: var(--ink); }
+  .dp-mock .dp-btn {
+    align-self: flex-start; margin-top: 2px; font-size: 11.5px; font-weight: 700;
+    background: var(--gold); color: #2a2000; border-radius: 7px; padding: 6px 12px;
+    opacity: 0.45; pointer-events: none;
+  }
+  .dp-mock.has-selection .dp-btn { opacity: 1; }
+  .dp-note { font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
+
+  .empty-hint { color: var(--ink-faint); font-size: 12px; padding: 6px 2px; }
+
+  /* ---------- Quiz-box FAB + drawer ---------- */
+  .quizbox-fab {
+    position: fixed; right: 22px; bottom: 22px; z-index: 25;
+    display: none; align-items: center; gap: 9px;
+    background: var(--gold); color: #2a2000; border: none;
+    border-radius: 999px; padding: 12px 18px 12px 15px;
+    font-weight: 800; font-size: 13.5px; box-shadow: var(--shadow);
+    transition: transform .12s ease;
+  }
+  .quizbox-fab.visible { display: flex; }
+  .quizbox-fab:hover { transform: translateY(-2px); }
+  .quizbox-fab .fab-count {
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    background: rgba(0,0,0,0.18); border-radius: 999px; padding: 2px 9px; font-size: 12px;
+  }
+  .quizbox-drawer {
+    position: fixed; right: 22px; bottom: 88px; z-index: 26;
+    width: min(340px, calc(100vw - 44px));
+    max-height: min(70vh, 560px);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); display: none; flex-direction: column; overflow: hidden;
+  }
+  .quizbox-drawer.open { display: flex; }
+  .qd-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .qd-head h2 { margin: 0; font-size: 13.5px; font-weight: 700; }
+  .qd-head button { border: none; background: var(--surface-sunken); color: var(--ink-dim); width: 24px; height: 24px; border-radius: 7px; font-size: 12px; }
+  .qd-head button:hover { color: var(--ink); }
+  .qd-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; min-height: 60px; }
+  .qd-row {
+    display: flex; align-items: center; gap: 9px; padding: 7px; border-radius: 10px;
+    border: 1px solid transparent; text-align: left; background: transparent; width: 100%;
+  }
+  .qd-row:hover { background: var(--surface-sunken); }
+  .qd-row.active { border-color: var(--gold); background: var(--gold-bg); }
+  .qd-row .mini-thumb { width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: rgba(255,255,255,0.92); }
+  .qd-row .qd-info { flex: 1; min-width: 0; }
+  .qd-row .qd-title { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qd-row .qd-sub { font-size: 10.5px; color: var(--ink-faint); font-family: var(--font-num); }
+  .qd-row .qd-remove { border: none; background: var(--surface); color: var(--ink-faint); width: 22px; height: 22px; border-radius: 7px; font-size: 11px; flex-shrink: 0; }
+  .qd-row .qd-remove:hover { color: var(--red); }
+  .qd-empty { padding: 30px 16px; text-align: center; color: var(--ink-faint); font-size: 12.5px; line-height: 1.6; }
+  .qd-footer { padding: 12px 14px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+  .qd-limit-note { font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
+  .qd-limit-badge {
+    display: inline-flex; align-items: center; gap: 4px; background: var(--gold-bg); color: var(--gold-ink);
+    font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 9px;
+  }
+
+  .footer-note { text-align: center; font-size: 11.5px; color: var(--ink-faint); padding-top: 6px; }
+  .footer-note code { font-family: var(--font-num); background: var(--surface-sunken); padding: 1px 5px; border-radius: 5px; }
+</style>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">🎯</div>
+      <div class="brand-text">
+        <h1>퀴즈 세팅</h1>
+        <p><span class="guild-chip">별빛 서버</span> · 어피치 님이 여는 중</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="theme-toggle" role="group" aria-label="테마 선택">
+        <button type="button" data-theme-btn="light" title="라이트">☀︎</button>
+        <button type="button" data-theme-btn="system" title="시스템">◐</button>
+        <button type="button" data-theme-btn="dark" title="다크">☾</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabrail" role="tablist">
+    <button type="button" class="active" data-tab="dev"><span class="dot"></span>공식 퀴즈</button>
+    <button type="button" data-tab="user"><span class="dot"></span>유저 퀴즈</button>
+    <button type="button" data-tab="omakase"><span class="dot"></span>오마카세 퀴즈</button>
+  </nav>
+  <div class="mode-desc" id="modeDesc"></div>
+
+  <!-- ================= OFFICIAL QUIZ PANEL ================= -->
+  <section class="panel active" data-panel="dev">
+    <div class="card">
+      <div class="breadcrumb" id="devBreadcrumb"></div>
+      <div class="legacy-notice">🗂️ <span><b>공식 퀴즈는 2023년부터 업데이트되지 않아요</b> — 신선한 콘텐츠는 유저 퀴즈 탭에서 만나보세요!</span></div>
+      <div class="tree-list" id="devTree"></div>
+    </div>
+    <div class="detail-col">
+      <div class="card detail-card" id="devDetailCard"></div>
+      <div class="card discord-preview" id="devDiscordPreview"></div>
+    </div>
+  </section>
+
+  <!-- ================= USER QUIZ PANEL ================= -->
+  <section class="panel" data-panel="user">
+    <div class="card">
+      <div class="toolbar">
+        <div class="search-field">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="text" id="userSearch" placeholder="퀴즈 이름, 제작자로 검색" />
+        </div>
+        <select class="sort-select" id="userSort">
+          <option value="like">인기순</option>
+          <option value="new">최신순</option>
+          <option value="name">이름순</option>
+        </select>
+        <div id="userVerifySlot"></div>
+      </div>
+      <div class="tagbar" id="userTagbar"></div>
+      <div class="grid-wrap">
+        <div class="quiz-grid" id="userGrid"></div>
+      </div>
+    </div>
+    <div class="detail-col">
+      <div class="card detail-card" id="userDetailCard"></div>
+      <div class="card discord-preview" id="userDiscordPreview"></div>
+    </div>
+  </section>
+
+  <!-- ================= OMAKASE QUIZ PANEL ================= -->
+  <section class="panel" data-panel="omakase">
+    <div class="card">
+      <div class="section-block">
+        <div class="section-title">📕 공식 퀴즈 장르 (선택사항, 다중선택)</div>
+        <div class="chip-row" id="omaOfficialTags"></div>
+      </div>
+      <div class="section-block">
+        <div class="section-title">📗 유저 퀴즈</div>
+        <div class="mode-switch">
+          <button type="button" id="omaModeGenreBtn">🎲 장르로 뽑기</button>
+          <button type="button" id="omaModeBasketBtn">🧺 직접 골라 담기</button>
+        </div>
+      </div>
+
+      <div id="omaGenrePanel">
+        <div class="section-block">
+          <div class="section-title">퀴즈 유형</div>
+          <div class="chip-row" id="omaDrawTypeTags"></div>
+        </div>
+        <div class="section-block">
+          <div class="section-title">퀴즈 장르 (선택 안하면 전체 장르)</div>
+          <div class="chip-row" id="omaDrawGenreTags"></div>
+        </div>
+        <div class="section-block" id="omaDrawCertifiedSlot"></div>
+      </div>
+
+      <div id="omaBasketPanel">
+        <div class="toolbar">
+          <div class="search-field">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="text" id="omaSearch" placeholder="퀴즈함에 담을 퀴즈 검색" />
+          </div>
+          <select class="sort-select" id="omaSort">
+            <option value="like">인기순</option>
+            <option value="new">최신순</option>
+            <option value="name">이름순</option>
+          </select>
+          <div id="omaVerifySlot"></div>
+        </div>
+        <div class="tagbar" id="omaTagbar"></div>
+        <div class="grid-wrap">
+          <div class="quiz-grid" id="omaGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-col">
+      <div class="card detail-card" id="omaSettingsCard"></div>
+      <div class="card detail-card" id="omaDetailCard"></div>
+      <div class="card discord-preview" id="omaDiscordPreview"></div>
+    </div>
+  </section>
+
+  <p class="footer-note">디자인 시안 · 실제 데이터 연동 전 목업입니다 · 토큰은 <code>history.replaceState</code>로 즉시 마스킹됩니다</p>
+</div>
+
+<button type="button" class="quizbox-fab" id="quizboxFab">
+  <span>🍱 퀴즈함</span><span class="fab-count" id="fabCount">0</span>
+</button>
+<div class="quizbox-drawer" id="quizboxDrawer">
+  <div class="qd-head">
+    <h2>퀴즈함</h2>
+    <button type="button" id="qdClose" title="닫기">✕</button>
+  </div>
+  <div class="qd-list" id="qdList"></div>
+  <div class="qd-footer" id="qdFooter"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- Theme ---------------- */
+  var root = document.documentElement;
+  var themeButtons = document.querySelectorAll("[data-theme-btn]");
+  function applyThemeUI(mode) {
+    if (mode === "system") { root.removeAttribute("data-theme"); }
+    else { root.setAttribute("data-theme", mode); }
+    themeButtons.forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-theme-btn") === mode);
+    });
+  }
+  themeButtons.forEach(function (b) {
+    b.addEventListener("click", function () { applyThemeUI(b.getAttribute("data-theme-btn")); });
+  });
+  applyThemeUI("system");
+
+  /* ---------------- Mode descriptions ---------------- */
+  var MODE_DESC = {
+    dev: "개발자가 예전에 만든 <b>공식 퀴즈</b>예요. 폴더를 열어 문제 세트를 하나 골라요.",
+    user: "다른 유저가 만든 퀴즈를 검색하고, 마음에 드는 하나를 골라요.",
+    omakase: "공식 퀴즈 장르와 유저 퀴즈를 섞어서 랜덤으로 출제해요. 유저 퀴즈는 <b>장르로 뽑거나</b> <b>직접 골라 담을 수</b> 있어요."
+  };
+  function updateModeDesc(tab) { document.getElementById("modeDesc").innerHTML = MODE_DESC[tab]; }
+
+  /* ---------------- Tabs ---------------- */
+  var tabButtons = document.querySelectorAll(".tabrail button");
+  var panels = document.querySelectorAll(".panel");
+  tabButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var target = btn.getAttribute("data-tab");
+      tabButtons.forEach(function (b) { b.classList.toggle("active", b === btn); });
+      panels.forEach(function (p) { p.classList.toggle("active", p.getAttribute("data-panel") === target); });
+      updateModeDesc(target);
+      quizboxFab.classList.toggle("visible", target === "omakase");
+      if (target !== "omakase") quizboxDrawer.classList.remove("open");
+    });
+  });
+
+  /* ---------------- Tag taxonomy (실제 QUIZ_TAG / DEV_QUIZ_TAG 비트플래그를 그대로 반영) ---------------- */
+  var QUIZ_TYPE_TAGS = ["음악 퀴즈", "그림 퀴즈", "텍스트 퀴즈"];
+  var QUIZ_GENRE_TAGS = ["가요", "애니", "게임", "방송", "드라마", "영화", "스포츠", "팝송", "K팝", "J팝", "보컬로이드", "기타"];
+  var USER_QUIZ_TAGS = QUIZ_TYPE_TAGS.concat(QUIZ_GENRE_TAGS); // 유저 퀴즈 브라우징용 (유형+장르 통합)
+  var DEV_GENRE_TAGS = ["애니", "게임", "드라마", "영화", "팝송", "K팝", "고전가요", "인디뮤직"]; // 공식 퀴즈는 장르만 있음(유형 없음)
+
+  /* 실제 썸네일 이미지 URL 대신, 태그 기반 그라디언트+글리프로 자리표시(placeholder) — 목업 전용 */
+  var THUMB_STYLES = {
+    // 유저 퀴즈 장르
+    "가요":       { from: "#5B4FCF", to: "#2C2470", glyph: "🎵" },
+    "K팝":        { from: "#D6459A", to: "#5B2E86", glyph: "🎤" },
+    "게임":       { from: "#B33DB8", to: "#521A5B", glyph: "🎮" },
+    "애니":       { from: "#8E6FD9", to: "#3E2E7A", glyph: "🌸" },
+    "드라마":     { from: "#C2554A", to: "#6B241D", glyph: "🎬" },
+    "영화":       { from: "#4A5FC2", to: "#1E2A66", glyph: "🎞️" },
+    "팝송":       { from: "#2E86C7", to: "#123A5E", glyph: "🎧" },
+    "J팝":        { from: "#D97AAE", to: "#7A2E52", glyph: "🎶" },
+    "보컬로이드": { from: "#38B6C2", to: "#14545C", glyph: "🎼" },
+    "방송":       { from: "#6B7280", to: "#2F333A", glyph: "📺" },
+    "스포츠":     { from: "#DB6B3C", to: "#7A3419", glyph: "⚽" },
+    "기타":       { from: "#8A7A63", to: "#453B2E", glyph: "🏷️" },
+    // 공식 퀴즈 전용 장르
+    "고전가요":   { from: "#A6742C", to: "#4E3410", glyph: "🏺" },
+    "인디뮤직":   { from: "#1E9E6B", to: "#0E5C3E", glyph: "🎹" },
+    // 유형 폴백
+    "음악 퀴즈":  { from: "#5B4FCF", to: "#2C2470", glyph: "🎵" },
+    "그림 퀴즈":  { from: "#E08A2E", to: "#8A4E13", glyph: "🖼️" },
+    "텍스트 퀴즈": { from: "#5C6470", to: "#2B3038", glyph: "📝" },
+    // 공식 퀴즈 폴더 트리(문제 형식 표기, 태그와 무관)
+    "노래":       { from: "#5B4FCF", to: "#2C2470", glyph: "🎵" },
+    "이미지":     { from: "#E08A2E", to: "#8A4E13", glyph: "🖼️" },
+    "텍스트":     { from: "#5C6470", to: "#2B3038", glyph: "📝" },
+    "OX":         { from: "#1E9E6B", to: "#0E5C3E", glyph: "⭕" },
+  };
+  function thumbStyleFor(q) { return THUMB_STYLES[q.tags[0]] || THUMB_STYLES["기타"]; }
+  function devThumbStyleFor(type) { return THUMB_STYLES[type] || THUMB_STYLES["텍스트"]; }
+
+  /* tags = [장르..., 유형] 순서 — 썸네일은 장르(더 다채로움) 우선, 유형은 마지막 칩으로 같이 표시 */
+  var userQuizzes = [
+    { id: "u1", title: "K-POP 노래 맞추기 4세대", creator: "쥬디쥬디", tags: ["가요", "K팝", "음악 퀴즈"], likes: 812, size: 60, verified: true, date: 9 },
+    { id: "u2", title: "롤(LoL) 챔피언 상식 OX", creator: "미드라이너킹", tags: ["게임", "텍스트 퀴즈"], likes: 431, size: 40, verified: true, date: 22 },
+    { id: "u3", title: "한국사 인물 맞추기", creator: "역덕후", tags: ["기타", "그림 퀴즈"], likes: 265, size: 50, verified: false, date: 3 },
+    { id: "u4", title: "발라드 명곡 전주 듣기", creator: "새벽감성", tags: ["가요", "음악 퀴즈"], likes: 198, size: 35, verified: false, date: 41 },
+    { id: "u5", title: "월드컵 축구선수 실루엣", creator: "축구광", tags: ["스포츠", "그림 퀴즈"], likes: 156, size: 30, verified: false, date: 15 },
+    { id: "u6", title: "애니 OST 인트로 퀴즈", creator: "오타쿠제이드", tags: ["애니", "음악 퀴즈"], likes: 733, size: 45, verified: true, date: 2 },
+    { id: "u7", title: "일반상식 OX 종합", creator: "잡학다식", tags: ["기타", "텍스트 퀴즈"], likes: 89, size: 80, verified: false, date: 60 },
+    { id: "u8", title: "여름 인기가요 2024", creator: "쥬디쥬디", tags: ["가요", "K팝", "음악 퀴즈"], likes: 344, size: 50, verified: false, date: 7 },
+    { id: "u9", title: "K-POP 안무 챌린지 OX", creator: "댄스머신", tags: ["K팝", "텍스트 퀴즈"], likes: 120, size: 25, verified: false, date: 5 },
+  ];
+
+  var devTree = {
+    name: "전체", children: [
+      {
+        name: "노래맞추기", children: [
+          { name: "K-POP", children: [
+            { name: "아이돌 히트곡", leaf: true, size: 100, type: "노래" },
+            { name: "발라드 명곡", leaf: true, size: 80, type: "노래" },
+          ]},
+          { name: "인트로 전용", leaf: true, size: 60, type: "노래" },
+        ]
+      },
+      {
+        name: "상식", children: [
+          { name: "역사", leaf: true, size: 50, type: "텍스트" },
+          { name: "과학", leaf: true, size: 45, type: "텍스트" },
+          { name: "지리", leaf: true, size: 40, type: "OX" },
+        ]
+      },
+      { name: "이미지 맞추기", leaf: true, size: 70, type: "이미지" },
+    ]
+  };
+
+  /* ---------------- helpers ---------------- */
+  function el(tag, cls, html) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  /* 태그는 AND 조건 다중선택 — 브라우징 필터용("전체" 포함) */
+  function renderTagbar(container, activeTagsSet, onChange) {
+    container.innerHTML = "";
+    var allChip = el("button", "tag-chip" + (activeTagsSet.size === 0 ? " active" : ""), "전체");
+    allChip.type = "button";
+    allChip.addEventListener("click", function () {
+      activeTagsSet.clear();
+      renderTagbar(container, activeTagsSet, onChange);
+      onChange();
+    });
+    container.appendChild(allChip);
+    USER_QUIZ_TAGS.forEach(function (t) {
+      var chip = el("button", "tag-chip" + (activeTagsSet.has(t) ? " active" : ""), t);
+      chip.type = "button";
+      chip.addEventListener("click", function () {
+        if (activeTagsSet.has(t)) activeTagsSet.delete(t); else activeTagsSet.add(t);
+        renderTagbar(container, activeTagsSet, onChange);
+        onChange();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  /* 순수 다중선택 칩("전체" 없음) — 오마카세의 장르 구성용 */
+  function renderSelectChips(container, allTags, activeSet, onChange) {
+    container.innerHTML = "";
+    allTags.forEach(function (t) {
+      var chip = el("button", "tag-chip" + (activeSet.has(t) ? " active" : ""), t);
+      chip.type = "button";
+      chip.addEventListener("click", function () {
+        if (activeSet.has(t)) activeSet.delete(t); else activeSet.add(t);
+        renderSelectChips(container, allTags, activeSet, onChange);
+        onChange();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function matchesTagsAnd(q, activeTagsSet) {
+    if (activeTagsSet.size === 0) return true;
+    var ok = true;
+    activeTagsSet.forEach(function (t) { if (q.tags.indexOf(t) === -1) ok = false; });
+    return ok;
+  }
+
+  function buildVerifyToggle(stateRef, onChange, label) {
+    label = label || "인증 퀴즈만";
+    var btn = el("button", "switch-field" + (stateRef.value ? " on" : ""), '<span class="track"></span><span>' + label + '</span>');
+    btn.type = "button";
+    btn.addEventListener("click", function () {
+      stateRef.value = !stateRef.value;
+      btn.classList.toggle("on", stateRef.value);
+      onChange();
+    });
+    return btn;
+  }
+
+  function buildQuizCard(q, isSelected, onClick, opts) {
+    opts = opts || {};
+    var card = el("button", "quiz-card" + (isSelected ? " selected" : ""));
+    card.type = "button";
+
+    var style = thumbStyleFor(q);
+    var thumb = el("div", "card-thumb");
+    thumb.style.background = "linear-gradient(155deg, " + style.from + " 0%, " + style.to + " 100%)";
+    thumb.appendChild(el("span", "thumb-glyph", style.glyph));
+    if (q.verified) thumb.appendChild(el("span", "thumb-badge verified", "✓ 인증"));
+    thumb.appendChild(el("span", "thumb-badge likes", "♥ " + q.likes));
+    if (opts.basketMode && opts.inBasket) thumb.appendChild(el("span", "thumb-check", "✓"));
+    card.appendChild(thumb);
+
+    var body = el("div", "card-body");
+    body.appendChild(el("h3", null, q.title));
+    body.appendChild(el("div", "creator", "by " + q.creator));
+
+    var tagsWrap = el("div", "tags");
+    q.tags.forEach(function (t) { tagsWrap.appendChild(el("span", "mini-tag", t)); });
+    body.appendChild(tagsWrap);
+
+    var metaRow = el("div", "meta-row");
+    metaRow.appendChild(el("span", null, "문제 " + q.size + "개"));
+    body.appendChild(metaRow);
+    card.appendChild(body);
+
+    card.addEventListener("click", onClick);
+    if (opts.basketMode && typeof opts.onContextToggle === "function") {
+      card.addEventListener("contextmenu", function (e) { e.preventDefault(); opts.onContextToggle(); });
+    }
+    return card;
+  }
+
+  function buildStepperBlock(max, onChange, getVal, opts) {
+    opts = opts || {};
+    var wrap = el("div");
+    wrap.appendChild(el("span", "field-label", opts.label || "문제 수"));
+    var stepper = el("div", "stepper");
+    var minus = el("button", null, "−"); minus.type = "button";
+    var input = document.createElement("input");
+    input.type = "number"; input.className = "val"; input.min = "1"; input.max = String(max);
+    var plus = el("button", null, "+"); plus.type = "button";
+    var range = el("span", "range", "/ " + max);
+    stepper.appendChild(minus); stepper.appendChild(input); stepper.appendChild(plus); stepper.appendChild(range);
+    function commit(raw) {
+      var n = parseInt(raw, 10);
+      if (isNaN(n)) n = 1;
+      n = clamp(n, 1, max);
+      input.value = String(n);
+      minus.disabled = n <= 1;
+      plus.disabled = n >= max;
+      onChange(n);
+    }
+    minus.addEventListener("click", function () { commit(getVal() - 1); });
+    plus.addEventListener("click", function () { commit(getVal() + 1); });
+    input.addEventListener("change", function () { commit(input.value); });
+    input.addEventListener("keydown", function (e) { if (e.key === "Enter") { commit(input.value); input.blur(); } });
+    commit(getVal());
+    wrap.appendChild(stepper);
+    return wrap;
+  }
+
+  function flashConfirm(btn) {
+    var original = btn.textContent;
+    btn.textContent = "✓ 디스코드로 전송됨";
+    btn.disabled = true;
+    setTimeout(function () { btn.textContent = original; btn.disabled = false; }, 1400);
+  }
+
+  /* ---------------- Discord live preview ---------------- */
+  function renderDiscordPreview(kind, payload) {
+    var mapId = { dev: "devDiscordPreview", user: "userDiscordPreview", omakase: "omaDiscordPreview" };
+    var host = document.getElementById(mapId[kind]);
+    if (!host) return;
+    host.innerHTML = "";
+    host.appendChild(el("div", "dp-head", "🔒 디스코드 채널 미리보기"));
+    var mock = el("div", "dp-mock" + (payload ? " has-selection" : ""));
+    mock.appendChild(el("div", "dp-lock", "🔒 어피치 님이 웹에서 세팅 중"));
+    var body;
+    if (kind === "omakase") {
+      body = payload
+        ? "현재 조합: <b>" + payload + "</b> · 실시간으로 갱신돼요"
+        : "아직 아무것도 선택하지 않았어요";
+    } else {
+      body = payload ? "현재 선택: <b>" + (payload.title || payload.name) + "</b>" : "아직 선택된 퀴즈가 없어요";
+    }
+    mock.appendChild(el("div", "dp-body", body));
+    mock.appendChild(el("button", "dp-btn", "퀴즈 시작"));
+    host.appendChild(mock);
+    host.appendChild(el("div", "dp-note", "웹에서 바꾸면 이 카드가 즉시 갱신되고, <b style=\"color:var(--ink-dim)\">명령어를 입력한 본인만</b> [퀴즈 시작]을 누를 수 있어요."));
+  }
+
+  /* ---------------- OFFICIAL (dev) panel ---------------- */
+  var devPath = [devTree];
+  var devSelected = null;
+
+  function renderDevBreadcrumb() {
+    var bc = document.getElementById("devBreadcrumb");
+    bc.innerHTML = "";
+    devPath.forEach(function (node, i) {
+      if (i > 0) bc.appendChild(el("span", "sep", "/"));
+      var b = el("button", i === devPath.length - 1 ? "current" : "", node.name);
+      b.type = "button";
+      b.addEventListener("click", function () { devPath = devPath.slice(0, i + 1); renderDevTree(); });
+      bc.appendChild(b);
+    });
+  }
+
+  function renderDevTree() {
+    renderDevBreadcrumb();
+    var list = document.getElementById("devTree");
+    list.innerHTML = "";
+    var current = devPath[devPath.length - 1];
+    (current.children || []).forEach(function (node) {
+      var row = el("button", "tree-row " + (node.leaf ? "leaf" : "folder") + (devSelected === node ? " selected" : ""));
+      row.type = "button";
+      if (node.leaf) {
+        var style = devThumbStyleFor(node.type);
+        var tile = el("span", "tile", style.glyph);
+        tile.style.background = "linear-gradient(155deg, " + style.from + " 0%, " + style.to + " 100%)";
+        row.appendChild(tile);
+      } else {
+        row.appendChild(el("span", "icon", "📁"));
+      }
+      row.appendChild(el("span", "label", node.name));
+      if (node.leaf) {
+        row.appendChild(el("span", "sub", node.type));
+        row.appendChild(el("span", "count-pill", node.size + "문제"));
+      } else {
+        row.appendChild(el("span", "chev", "›"));
+      }
+      row.addEventListener("click", function () {
+        if (node.leaf) { devSelected = node; renderDevDetail(); renderDevTree(); }
+        else { devPath = devPath.concat([node]); devSelected = null; renderDevDetail(); renderDevTree(); }
+      });
+      list.appendChild(row);
+    });
+  }
+
+  var devQuestionCount = 20;
+
+  function renderDevDetail() {
+    var card = document.getElementById("devDetailCard");
+    card.innerHTML = "";
+    if (!devSelected) {
+      card.appendChild(el("div", "detail-empty", '<div class="glyph">📂</div><div>왼쪽에서 문제 세트를 골라주세요</div>'));
+      renderDiscordPreview("dev", null);
+      return;
+    }
+    var q = devSelected;
+    devQuestionCount = clamp(devQuestionCount, 1, q.size);
+    card.appendChild(el("div", "detail-title", q.name));
+    card.appendChild(el("div", "detail-desc", devPath.slice(1).map(function (n) { return n.name; }).join(" · ") + " 폴더의 공식 퀴즈입니다."));
+
+    var stats = el("div", "stat-grid");
+    stats.appendChild(el("div", "stat-box", '<div class="k">유형</div><div class="v" style="font-size:13px">' + q.type + '</div>'));
+    stats.appendChild(el("div", "stat-box", '<div class="k">보유 문제</div><div class="v">' + q.size + '</div>'));
+    card.appendChild(stats);
+
+    card.appendChild(buildStepperBlock(q.size, function (v) { devQuestionCount = v; renderDiscordPreview("dev", q); }, function () { return devQuestionCount; }));
+
+    var cta = el("button", "cta-primary", "이 퀴즈로 선택 완료");
+    cta.addEventListener("click", function () { flashConfirm(cta); });
+    card.appendChild(cta);
+
+    renderDiscordPreview("dev", q);
+  }
+
+  renderDevTree();
+  renderDevDetail();
+
+  /* ---------------- USER panel ---------------- */
+  var userActiveTags = new Set();
+  var userVerifiedOnly = { value: false };
+  var userSelected = null;
+  var userQuestionCount = 20;
+
+  function filteredUserQuizzes() {
+    var kw = document.getElementById("userSearch").value.trim().toLowerCase();
+    var sort = document.getElementById("userSort").value;
+    var list = userQuizzes.filter(function (q) {
+      var matchesTag = matchesTagsAnd(q, userActiveTags);
+      var matchesKw = !kw || q.title.toLowerCase().indexOf(kw) !== -1 || q.creator.toLowerCase().indexOf(kw) !== -1;
+      var matchesVerified = !userVerifiedOnly.value || q.verified;
+      return matchesTag && matchesKw && matchesVerified;
+    });
+    list.sort(function (a, b) {
+      if (sort === "like") return b.likes - a.likes;
+      if (sort === "new") return a.date - b.date;
+      return a.title.localeCompare(b.title, "ko");
+    });
+    return list;
+  }
+
+  function renderUserGrid() {
+    var grid = document.getElementById("userGrid");
+    grid.innerHTML = "";
+    var list = filteredUserQuizzes();
+    if (list.length === 0) {
+      grid.appendChild(el("div", "empty-hint", "조건에 맞는 퀴즈가 없어요."));
+      return;
+    }
+    list.forEach(function (q) {
+      var card = buildQuizCard(q, userSelected === q, function () {
+        userSelected = q; userQuestionCount = 20; renderUserGrid(); renderUserDetail();
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function renderUserDetail() {
+    var card = document.getElementById("userDetailCard");
+    card.innerHTML = "";
+    if (!userSelected) {
+      card.appendChild(el("div", "detail-empty", '<div class="glyph">🔍</div><div>퀴즈를 검색하고 골라보세요</div>'));
+      renderDiscordPreview("user", null);
+      return;
+    }
+    var q = userSelected;
+    userQuestionCount = clamp(userQuestionCount, 1, q.size);
+    var style = thumbStyleFor(q);
+    var thumb = el("div", "card-thumb", '<span class="thumb-glyph">' + style.glyph + '</span>');
+    thumb.style.background = "linear-gradient(155deg, " + style.from + " 0%, " + style.to + " 100%)";
+    thumb.style.borderRadius = "10px";
+    card.appendChild(thumb);
+    card.appendChild(el("div", "detail-title", q.title));
+    card.appendChild(el("div", "detail-desc", "제작자 " + q.creator + (q.verified ? " · 인증된 퀴즈" : "")));
+    var tagsWrap = el("div", "detail-tags");
+    q.tags.forEach(function (t) { tagsWrap.appendChild(el("span", "mini-tag", t)); });
+    card.appendChild(tagsWrap);
+
+    var stats = el("div", "stat-grid");
+    stats.appendChild(el("div", "stat-box", '<div class="k">좋아요</div><div class="v">' + q.likes + '</div>'));
+    stats.appendChild(el("div", "stat-box", '<div class="k">보유 문제</div><div class="v">' + q.size + '</div>'));
+    card.appendChild(stats);
+
+    card.appendChild(buildStepperBlock(q.size, function (v) { userQuestionCount = v; renderDiscordPreview("user", q); }, function () { return userQuestionCount; }));
+
+    var cta = el("button", "cta-primary", "이 퀴즈로 선택 완료");
+    cta.addEventListener("click", function () { flashConfirm(cta); });
+    card.appendChild(cta);
+
+    renderDiscordPreview("user", q);
+  }
+
+  renderTagbar(document.getElementById("userTagbar"), userActiveTags, function () { renderUserGrid(); });
+  document.getElementById("userVerifySlot").appendChild(buildVerifyToggle(userVerifiedOnly, function () { renderUserGrid(); }, "인증 퀴즈만 보기"));
+  document.getElementById("userSearch").addEventListener("input", renderUserGrid);
+  document.getElementById("userSort").addEventListener("change", renderUserGrid);
+  renderUserGrid();
+  renderUserDetail();
+
+  /* ---------------- OMAKASE panel ---------------- */
+  var OMAKASE_QUIZ_SIZE = 100; // 실제 코드 기본값(quiz_size)
+  var officialGenres = new Set();          // 공식 퀴즈 장르 (dev_quiz_tags)
+  var omaUserMode = "basket";              // 'genre' | 'basket' — 실제 기본값은 basket_mode:true
+  var omaDrawTypeTags = new Set();         // 유저 퀴즈 장르모드: 유형 (custom_quiz_type_tags)
+  var omaDrawGenreTags = new Set();        // 유저 퀴즈 장르모드: 장르 (custom_quiz_tags)
+  var omaDrawCertified = { value: true };  // 인증 필터, 실제 기본값 true
+  var omaBrowseTags = new Set();           // 바구니 서브패널의 브라우징 필터(실제 필드 아님, 검색 편의용)
+  var omaBrowseVerifiedOnly = { value: false };
+  var omaBasket = [];
+  var omaSelected = null;
+  var omaQuestionCount = 30;               // 실제 기본값(selected_question_count)
+  var quizboxFab = document.getElementById("quizboxFab");
+  var quizboxDrawer = document.getElementById("quizboxDrawer");
+
+  function omaFiltered() {
+    var kw = document.getElementById("omaSearch").value.trim().toLowerCase();
+    var sort = document.getElementById("omaSort").value;
+    var list = userQuizzes.filter(function (q) {
+      var matchesTag = matchesTagsAnd(q, omaBrowseTags);
+      var matchesKw = !kw || q.title.toLowerCase().indexOf(kw) !== -1;
+      var matchesVerified = !omaBrowseVerifiedOnly.value || q.verified;
+      return matchesTag && matchesKw && matchesVerified;
+    });
+    list.sort(function (a, b) {
+      if (sort === "like") return b.likes - a.likes;
+      if (sort === "new") return a.date - b.date;
+      return a.title.localeCompare(b.title, "ko");
+    });
+    return list;
+  }
+
+  function toggleBasket(q) {
+    var idx = omaBasket.findIndex(function (b) { return b.id === q.id; });
+    if (idx === -1) omaBasket.push(q); else omaBasket.splice(idx, 1);
+    renderOmaGrid();
+    renderOmaDetail();
+    renderQuizboxDrawer();
+    refreshOmakase();
+  }
+
+  function renderOmaGrid() {
+    var grid = document.getElementById("omaGrid");
+    grid.innerHTML = "";
+    var list = omaFiltered();
+    if (list.length === 0) {
+      grid.appendChild(el("div", "empty-hint", "조건에 맞는 퀴즈가 없어요."));
+      return;
+    }
+    list.forEach(function (q) {
+      var inBasket = omaBasket.some(function (b) { return b.id === q.id; });
+      var card = buildQuizCard(q, omaSelected === q, function () { omaSelected = q; renderOmaDetail(); renderOmaGrid(); },
+        { basketMode: true, inBasket: inBasket, onContextToggle: function () { toggleBasket(q); } });
+      grid.appendChild(card);
+    });
+  }
+
+  function renderOmaDetail() {
+    var card = document.getElementById("omaDetailCard");
+    card.innerHTML = "";
+    if (omaUserMode !== "basket" || !omaSelected) {
+      return; // 요약 카드가 이미 있으니, 여기는 바구니 모드에서 뭔가 클릭했을 때만 채움 (:empty로 자동 숨김)
+    }
+    var q = omaSelected;
+    var style = thumbStyleFor(q);
+    var thumb = el("div", "card-thumb", '<span class="thumb-glyph">' + style.glyph + '</span>');
+    thumb.style.background = "linear-gradient(155deg, " + style.from + " 0%, " + style.to + " 100%)";
+    thumb.style.borderRadius = "10px";
+    card.appendChild(thumb);
+    card.appendChild(el("div", "detail-title", q.title));
+    card.appendChild(el("div", "detail-desc", "제작자 " + q.creator + (q.verified ? " · 인증된 퀴즈" : "")));
+    var tagsWrap = el("div", "detail-tags");
+    q.tags.forEach(function (t) { tagsWrap.appendChild(el("span", "mini-tag", t)); });
+    card.appendChild(tagsWrap);
+
+    var stats = el("div", "stat-grid");
+    stats.appendChild(el("div", "stat-box", '<div class="k">좋아요</div><div class="v">' + q.likes + '</div>'));
+    stats.appendChild(el("div", "stat-box", '<div class="k">보유 문제</div><div class="v">' + q.size + '</div>'));
+    card.appendChild(stats);
+
+    var inBasket = omaBasket.some(function (b) { return b.id === q.id; });
+    var cta = el("button", "cta-primary" + (inBasket ? " variant-danger" : ""), inBasket ? "✕ 퀴즈함에서 빼기" : "＋ 퀴즈함에 담기");
+    cta.addEventListener("click", function () { toggleBasket(q); });
+    card.appendChild(cta);
+  }
+
+  function renderQuizboxDrawer() {
+    document.getElementById("fabCount").textContent = String(omaBasket.length);
+
+    var list = document.getElementById("qdList");
+    list.innerHTML = "";
+    if (omaBasket.length === 0) {
+      list.appendChild(el("div", "qd-empty", "아직 담긴 퀴즈가 없어요.<br>직접 담기 모드에서 카드를 우클릭해보세요."));
+    } else {
+      omaBasket.forEach(function (q) {
+        var row = el("button", "qd-row" + (omaSelected === q ? " active" : ""));
+        row.type = "button";
+        var style = thumbStyleFor(q);
+        var mini = el("span", "mini-thumb", style.glyph);
+        mini.style.background = "linear-gradient(155deg, " + style.from + " 0%, " + style.to + " 100%)";
+        row.appendChild(mini);
+        var info = el("div", "qd-info");
+        info.appendChild(el("div", "qd-title", q.title));
+        info.appendChild(el("div", "qd-sub", "문제 " + q.size + "개"));
+        row.appendChild(info);
+        var rm = el("button", "qd-remove", "✕"); rm.type = "button";
+        rm.addEventListener("click", function (e) { e.stopPropagation(); toggleBasket(q); });
+        row.appendChild(rm);
+        row.addEventListener("click", function () { omaSelected = q; renderOmaDetail(); renderOmaGrid(); renderQuizboxDrawer(); });
+        list.appendChild(row);
+      });
+    }
+
+    var footer = document.getElementById("qdFooter");
+    footer.innerHTML = "";
+    var maxTotal = omaBasket.reduce(function (s, q) { return s + q.size; }, 0);
+    if (omaBasket.length > 25) {
+      footer.appendChild(el("span", "qd-limit-badge", "🎉 25개 초과! 웹에서만 가능한 자유예요"));
+    }
+    footer.appendChild(el("div", "qd-limit-note", "💡 디스코드 목록 UI는 25개까지만 지원하지만, 여기선 자유롭게 더 담을 수 있어요."));
+    footer.appendChild(el("div", "hint-text", "문제 수는 오른쪽 '오마카세 설정 요약' 카드에서 한 번에 정해요."));
+  }
+
+  quizboxFab.addEventListener("click", function () { quizboxDrawer.classList.toggle("open"); });
+  document.getElementById("qdClose").addEventListener("click", function () { quizboxDrawer.classList.remove("open"); });
+
+  /* --- 공식 퀴즈 장르 --- */
+  renderSelectChips(document.getElementById("omaOfficialTags"), DEV_GENRE_TAGS, officialGenres, function () { refreshOmakase(); });
+
+  /* --- 유저 퀴즈: 장르로 뽑기 모드 --- */
+  renderSelectChips(document.getElementById("omaDrawTypeTags"), QUIZ_TYPE_TAGS, omaDrawTypeTags, function () { refreshOmakase(); });
+  renderSelectChips(document.getElementById("omaDrawGenreTags"), QUIZ_GENRE_TAGS, omaDrawGenreTags, function () { refreshOmakase(); });
+  document.getElementById("omaDrawCertifiedSlot").appendChild(buildVerifyToggle(omaDrawCertified, function () { refreshOmakase(); }, "인증(추천 10개↑) 퀴즈만 출제"));
+
+  /* --- 유저 퀴즈: 직접 담기 모드(브라우징) --- */
+  renderTagbar(document.getElementById("omaTagbar"), omaBrowseTags, function () { renderOmaGrid(); });
+  document.getElementById("omaVerifySlot").appendChild(buildVerifyToggle(omaBrowseVerifiedOnly, function () { renderOmaGrid(); }, "인증 퀴즈만 보기"));
+  document.getElementById("omaSearch").addEventListener("input", renderOmaGrid);
+  document.getElementById("omaSort").addEventListener("change", renderOmaGrid);
+
+  /* --- 모드 전환 --- */
+  var omaGenrePanelEl = document.getElementById("omaGenrePanel");
+  var omaBasketPanelEl = document.getElementById("omaBasketPanel");
+  omaGenrePanelEl.style.display = "contents";
+  omaBasketPanelEl.style.display = "contents";
+
+  function setOmaMode(mode) {
+    omaUserMode = mode;
+    document.getElementById("omaModeGenreBtn").classList.toggle("active", mode === "genre");
+    document.getElementById("omaModeBasketBtn").classList.toggle("active", mode === "basket");
+    omaGenrePanelEl.style.display = mode === "genre" ? "contents" : "none";
+    omaBasketPanelEl.style.display = mode === "basket" ? "contents" : "none";
+    renderOmaDetail();
+    refreshOmakase();
+  }
+  document.getElementById("omaModeGenreBtn").addEventListener("click", function () { setOmaMode("genre"); });
+  document.getElementById("omaModeBasketBtn").addEventListener("click", function () { setOmaMode("basket"); });
+
+  function omakaseReadyToStart() {
+    if (officialGenres.size > 0) return true;
+    if (omaUserMode === "genre") return omaDrawTypeTags.size > 0;
+    return omaBasket.length > 0;
+  }
+
+  function buildOmaSummaryText() {
+    var parts = [];
+    if (officialGenres.size) parts.push("공식(" + Array.from(officialGenres).join("/") + ")");
+    if (omaUserMode === "genre") {
+      if (omaDrawTypeTags.size) parts.push("유저(" + Array.from(omaDrawTypeTags).join("/") + ")");
+    } else if (omaBasket.length) {
+      parts.push("퀴즈함 " + omaBasket.length + "개");
+    }
+    return parts.length ? parts.join(" + ") : null;
+  }
+
+  function renderOmaSettingsCard() {
+    var card = document.getElementById("omaSettingsCard");
+    card.innerHTML = "";
+    card.appendChild(el("div", "detail-title", "🍴 오마카세 설정 요약"));
+
+    var rows = el("div");
+    function row(k, v) {
+      var r = el("div", "summary-row");
+      r.appendChild(el("span", "k", k));
+      r.appendChild(el("span", "v", v));
+      rows.appendChild(r);
+    }
+    row("공식 퀴즈 장르", officialGenres.size ? Array.from(officialGenres).join(", ") : "선택 안함");
+    row("유저 퀴즈 모드", omaUserMode === "genre" ? "🎲 장르로 뽑기" : "🧺 직접 골라 담기");
+    if (omaUserMode === "genre") {
+      row("· 퀴즈 유형", omaDrawTypeTags.size ? Array.from(omaDrawTypeTags).join(", ") : "선택 안함");
+      row("· 퀴즈 장르", omaDrawGenreTags.size ? Array.from(omaDrawGenreTags).join(", ") : "전체 장르");
+      row("· 인증 필터", omaDrawCertified.value ? "인증된 퀴즈만" : "모든 퀴즈");
+    } else {
+      row("· 퀴즈함", omaBasket.length + "개 담김");
+    }
+    card.appendChild(rows);
+
+    card.appendChild(buildStepperBlock(OMAKASE_QUIZ_SIZE, function (v) { omaQuestionCount = v; refreshOmakase(); }, function () { return omaQuestionCount; }));
+
+    var ready = omakaseReadyToStart();
+    var cta = el("button", "cta-primary", "이 설정으로 시작");
+    cta.disabled = !ready;
+    cta.addEventListener("click", function () { flashConfirm(cta); });
+    card.appendChild(cta);
+    if (!ready) {
+      card.appendChild(el("div", "detail-desc", "공식 퀴즈 장르 / 유저 퀴즈 유형 / 퀴즈함 중 최소 하나는 선택해야 시작할 수 있어요."));
+    }
+  }
+
+  function refreshOmakase() {
+    renderOmaSettingsCard();
+    renderDiscordPreview("omakase", buildOmaSummaryText());
+  }
+
+  setOmaMode("basket");
+  renderOmaGrid();
+  renderOmaDetail();
+  renderQuizboxDrawer();
+
+  updateModeDesc("dev");
+})();
+</script>
