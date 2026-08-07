@@ -9,7 +9,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const Question = require('../../../../quizbot/quiz_system/lifecycle/question/question.js');
+const Question = require('../../../../quizbot/quiz_system/lifecycle/question/question');
 const { OPTION_TYPE } = require('../../../../quizbot/quiz_option/quiz_option.js');
 
 function makeFakeQuizSession(overrides = {})

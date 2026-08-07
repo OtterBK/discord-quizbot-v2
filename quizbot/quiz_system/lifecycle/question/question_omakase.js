@@ -3,7 +3,7 @@
 //quiz_system.js에서 분리 (REFACTOR_PLAN.md Phase 2)
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
-const Question = require('./question.js');
+const Question = require('./question');
 const { CYCLE_TYPE } = require('../../constants');
 const { SYSTEM_CONFIG, BGM_TYPE } = require('../../../../config/system_setting.js');
 const utility = require('../../../../utility/utility.js');
