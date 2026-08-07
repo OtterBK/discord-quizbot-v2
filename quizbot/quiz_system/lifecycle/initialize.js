@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 
-const { QuizLifeCycle } = require('./quiz_lifecycle.js');
+const { QuizLifeCycle } = require('./quiz_lifecycle');
 const { CYCLE_TYPE, MULTIPLAYER_COMMON_OPTION } = require('../constants');
 const QuizPlayUI = require('../quiz_play_ui.js');
 const option_system = require('../../quiz_option/quiz_option.js');

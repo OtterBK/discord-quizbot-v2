@@ -5,7 +5,7 @@
 
 const { MessageFlags } = require('discord.js');
 
-const { QuizLifeCycleWithUtility } = require('../quiz_lifecycle.js');
+const { QuizLifeCycleWithUtility } = require('../quiz_lifecycle');
 const { CYCLE_TYPE } = require('../../constants');
 const session_registry = require('../../session_registry');
 const option_system = require('../../../quiz_option/quiz_option.js');

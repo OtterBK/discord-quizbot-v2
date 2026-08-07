@@ -16,9 +16,24 @@ const feedback_manager = require('../../managers/feedback_manager');
 //#region 퀴즈 cycle 용 lifecycle의 base
 class QuizLifeCycle
 {
+  //각 서브클래스(Prepare/Initialize/Question 등)가 자기만의 프로퍼티를 자유롭게
+  //얹는 관행이라(quiz_ui.ts의 QuizbotUI와 같은 이유) 인덱스 시그니처를 둔다.
+  [key: string]: any;
+
   static cycle_type = CYCLE_TYPE.UNDEFINED;
 
-  constructor(quiz_session)
+  quiz_session: any;
+  force_stop: boolean;
+  next_cycle: string;
+  ignore_block: boolean;
+
+  //enter/act/exit는 서브클래스가 필요한 것만 선택적으로 구현(this.enter != undefined 식으로
+  //존재 여부를 확인해가며 호출)하는 관행이라 베이스 클래스에서는 optional로 선언한다.
+  enter?(): Promise<any>;
+  act?(): Promise<any>;
+  exit?(): Promise<any>;
+
+  constructor(quiz_session: any)
   {
     // this.quiz_session = weak(quiz_session); //strong ref cycle 떄문에 weak 타입으로
     this.quiz_session = quiz_session; //weak이 얼마나 성능에 영향을 미칠 지 모르겠다. 어차피 free()는 어지간해서 타니깐 이대로하자
@@ -37,7 +52,7 @@ class QuizLifeCycle
     this._enter();
   }
 
-  async asyncCallCycle(cycle_type) //비동기로 특정 cycle을 호출, PREPARE 같은거
+  async asyncCallCycle(cycle_type: string) //비동기로 특정 cycle을 호출, PREPARE 같은거
   {
     // logger.debug(`Async call cyle from quiz session, guild_id: ${this.guild_id}, target cycle Type: ${cycle_type}`);
     if(this.quiz_session?.force_stop == true) return;
@@ -52,13 +67,13 @@ class QuizLifeCycle
   async _enter() //처음 Cycle 들어왔을 때
   {
     let goNext = true;
-    if(this.enter != undefined) 
+    if(this.enter != undefined)
     {
       try
       {
-        goNext = (await this.enter()) ?? true;    
+        goNext = (await this.enter()) ?? true;
       }
-      catch(err)
+      catch(err: any)
       {
         if(this.force_stop == false)
           logger.error(`Failed enter step of quiz session cycle, guild_id: ${this.quiz_session?.guild_id}, current cycle Type: ${this.quiz_session?.current_cycle_type}, current cycle: ${this.constructor.name}, err: ${err.stack}`);
@@ -77,13 +92,13 @@ class QuizLifeCycle
   async _act() //Cycle 의 act
   {
     let goNext = true;
-    if(this.act != undefined) 
+    if(this.act != undefined)
     {
       try
       {
-        goNext = (await this.act()) ?? true;    
+        goNext = (await this.act()) ?? true;
       }
-      catch(err)
+      catch(err: any)
       {
         if(this.force_stop == false)
           logger.error(`Failed act step of quiz session cycle, guild_id: ${this.quiz_session?.guild_id}, current cycle Type: ${this.quiz_session?.current_cycle_type}, current cycle: ${this.constructor.name}, err: ${err.stack}`);
@@ -102,13 +117,13 @@ class QuizLifeCycle
   async _exit() //Cycle 끝낼 때
   {
     let goNext = true;
-    if(this.exit != undefined) 
+    if(this.exit != undefined)
     {
       try
       {
-        goNext = (await this.exit()) ?? true;    
+        goNext = (await this.exit()) ?? true;
       }
-      catch(err)
+      catch(err: any)
       {
         if(this.force_stop == false)
           logger.error(`Failed exit step of quiz session cycle, guild_id: ${this.quiz_session?.guild_id}, current cycle Type: ${this.quiz_session?.current_cycle_type}, current cycle: ${this.constructor.name}, err: ${err.stack}`);
@@ -125,7 +140,7 @@ class QuizLifeCycle
     if(this.next_cycle == CYCLE_TYPE.UNDEFINED) //다음 Lifecycle로
     {
       return;
-    }        
+    }
     this.quiz_session.goToCycle(this.next_cycle);
   }
 
@@ -144,14 +159,14 @@ class QuizLifeCycle
   }
 
   //이벤트 처리(비동기로 해도 무방)
-  async on(event_name, event_object)
+  async on(event_name: string, event_object: any)
   {
-    switch(event_name) 
+    switch(event_name)
     {
     case CUSTOM_EVENT_TYPE.interactionCreate:
       if(event_object.isButton() && event_object.customId === 'force_stop')  //강제 종료는 여기서 핸들링
       {
-        let interaction = event_object;
+        const interaction = event_object;
         if(interaction.member != this.quiz_session.owner)
         {
           const reject_message = '```' + `${text_contents.quiz_play_ui.only_owner_can_use_stop}` +'```';
@@ -183,28 +198,28 @@ class QuizLifeCycle
 
     case CUSTOM_EVENT_TYPE.receivedMultiplayerSignal:
       return this.onReceivedMultiplayerSignal(event_object);
-            
+
     }
   }
 
   /** 커스텀 이벤트 핸들러 **/
-  onInteractionCreate(interaction)
+  onInteractionCreate(interaction: any)
   {
 
   }
 
-  onMessageCreate(message)
+  onMessageCreate(message: any)
   {
 
   }
 
-  onReceivedMultiplayerSignal(multiplayer_signal)
+  onReceivedMultiplayerSignal(multiplayer_signal: any)
   {
 
   }
 }
 
-class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함한 class, 
+class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함한 class,
 {
   //오디오 재생
   /** Deprecated */
@@ -212,7 +227,7 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
   async startAudio(audio_player, resource, use_fade_in = true)
   {
     const fade_in_duration = SYSTEM_CONFIG.FADE_IN_DURATION;
-    if(SYSTEM_CONFIG.USE_INLINE_VOLUME) 
+    if(SYSTEM_CONFIG.USE_INLINE_VOLUME)
     {
       if(use_fade_in)
       {
@@ -223,13 +238,13 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
       if(resource.volume != undefined)
         resource.volume.setVolume(1.0);
     }
-        
-    audio_player.play(resource); 
+
+    audio_player.play(resource);
     return undefined;
   }
   */
 
-  startAudioList(resources, term = 0, fixed_play_time = null)
+  startAudioList(resources: any, term = 0, fixed_play_time: number | null = null)
   {
     const audio_player = this.quiz_session.audio_player;
     if(!audio_player)
@@ -244,7 +259,7 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
     this.quiz_session.playNextAudio();
   }
 
-  stopAudioList(force=false)
+  stopAudioList(force = false)
   {
     const audio_player = this.quiz_session.audio_player;
     if(!audio_player)
@@ -261,7 +276,7 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
     return audio_player.stop(force);
   }
 
-  sendBGM(bgm_type)
+  sendBGM(bgm_type: any)
   {
     this.stopAudioList();
     utility.playBGM(this.quiz_session.audio_player, bgm_type);
@@ -272,13 +287,13 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
   {
     const option_data = this.quiz_session.option_data;
     let scoreboard = this.quiz_session.scoreboard;
-    let scoreboard_fields = [];
+    const scoreboard_fields: any[] = [];
 
     if(scoreboard.size == 0)
     {
       return scoreboard_fields;
     }
-        
+
     scoreboard = utility.sortMapByProperty(scoreboard, 'score'); //우선 정렬 1번함
     this.quiz_session.scoreboard = scoreboard;
 
@@ -323,7 +338,7 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
   }
 
   //target_question에서 정답 표시용 노래 꺼내서 재생
-  async applyAnswerAudioInfo(target_question)
+  async applyAnswerAudioInfo(target_question: any)
   {
     let audio_play_time = undefined;
 
@@ -341,9 +356,9 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
   }
 
   //target_question에서 정답 표시용 이미지 정보 꺼내서 세팅
-  applyAnswerImageInfo(target_question)
+  applyAnswerImageInfo(target_question: any)
   {
-    let quiz_ui =  this.quiz_session.quiz_ui;
+    const quiz_ui =  this.quiz_session.quiz_ui;
     if(target_question['answer_image_resource'] == undefined) //정답 표시용 이미지 있다면 표시
     {
       quiz_ui.setImage(undefined);
@@ -373,7 +388,7 @@ class QuizLifeCycleWithUtility extends QuizLifeCycle //여러 기능을 포함�
     }
 
     //일정시간 후에 fadeout 시작
-    const fade_out_timer = setTimeout(() => 
+    const fade_out_timer = setTimeout(() =>
     {
       this.already_start_fade_out = true;
       if(resource == undefined || resource.volume == undefined) return;
