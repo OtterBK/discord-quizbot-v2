@@ -19,13 +19,13 @@ const { SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
 //#endregion
 
 /** global 변수 **/
-let ui_holder_map = {}; //UI holdermap은 그냥 quizbot-ui 에서 가지고 있게 하자
-let bot_client = undefined;
+let ui_holder_map: Record<string, any> = {}; //UI holdermap은 그냥 quizbot-ui 에서 가지고 있게 하자
+let bot_client: any = undefined;
 
 //#region exports 정의
 /** exports **/
 //main embed 인스턴스 반환
-const initialize = (client) => 
+const initialize = (client: any): boolean =>
 {
   if(client === undefined)
   {
@@ -38,7 +38,7 @@ const initialize = (client) =>
 };
 
 //퀴즈 플레이 툴
-const createMainUIHolder = (interaction) => 
+const createMainUIHolder = (interaction: any): any =>
 {
   const guild_id = interaction.guild.id;
   if(ui_holder_map.hasOwnProperty(guild_id))
@@ -48,7 +48,7 @@ const createMainUIHolder = (interaction) =>
     if(prev_uiHolder.isDisplayingMultiplayerLobby())
     {
       interaction.explicit_replied = true;
-      interaction.reply( { content:`\`\`\`🔸 현재 이 서버에서 멀티플레이 로비에 참가 중이기에 새로운 UI를 생성할 수 없습니다.\n만약 멀티플레이 로비에 참가 중이 아닌데도 해당 메시지가 표시된다면\n\`[/퀴즈정리]\` 명령어를 입력해보세요.\`\`\``, flags: MessageFlags.Ephemeral });
+      interaction.reply( { content:`\`\`\`🔸 현재 이 서버에서 멀티플레이 로비에 참가 중이기에 새로운 UI를 생성할 수 없습니다.\n만약 멀티플레이 로비에 참가 중이 아닌데도 해당 메시지가 표시된다면\n\`[/퀴즈정리]\` 명령어를 입력해보세요.\`\`\`` , flags: MessageFlags.Ephemeral });
 
       prev_uiHolder.sendDelayedUI(prev_uiHolder.ui, true);
       return undefined;
@@ -58,7 +58,7 @@ const createMainUIHolder = (interaction) =>
   }
   const uiHolder = new UIHolder(interaction, new MainUI(), UI_HOLDER_TYPE.PUBLIC);
   uiHolder.holder_id = guild_id;
-  ui_holder_map[guild_id] = uiHolder; 
+  ui_holder_map[guild_id] = uiHolder;
 
   uiHolder.updateUI();
 
@@ -66,8 +66,8 @@ const createMainUIHolder = (interaction) =>
 };
 
 //퀴즈 제작 툴
-const createQuizToolUIHolder = (interaction) => 
-{ 
+const createQuizToolUIHolder = (interaction: any): any =>
+{
   const user_id = interaction.user.id ?? interaction.member.id;
   if(ui_holder_map.hasOwnProperty(user_id))
   {
@@ -85,7 +85,7 @@ const createQuizToolUIHolder = (interaction) =>
 
 //관리자 전용 패널 (호출부인 bot.js의 quiz_manager_panel_handler에서 이미 어드민 여부를
 //확인하지만, 여기서도 한 번 더 확인한다 - 방어적 이중 체크)
-const createAdminPanelUIHolder = (interaction) =>
+const createAdminPanelUIHolder = (interaction: any): any =>
 {
   const user_id = interaction.user.id ?? interaction.member.id;
   if(user_id !== PRIVATE_CONFIG?.ADMIN_ID)
@@ -107,7 +107,7 @@ const createAdminPanelUIHolder = (interaction) =>
   return uiHolder;
 };
 
-const getUIHolder = (holder_id) =>
+const getUIHolder = (holder_id: string): any =>
 {
   if(ui_holder_map.hasOwnProperty(holder_id) === false)
   {
@@ -117,7 +117,7 @@ const getUIHolder = (holder_id) =>
   return ui_holder_map[holder_id];
 };
 
-const relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀티플레이 신호 전달
+const relayMultiplayerSignal = (multiplayer_signal: any): boolean => //관련 세션에 멀티플레이 신호 전달
 {
   let handled = false; //한 곳이라도 handle 했으면 한거임
 
@@ -131,7 +131,7 @@ const relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀티
       {
         handled = ui_holder.on(CUSTOM_EVENT_TYPE.receivedMultiplayerSignal, multiplayer_signal);
       }
-      catch(err)
+      catch(err: any)
       {
         logger.error(`Quiz ui Relaying multiplayer Signal error occurred! ${err.stack}`);
       }
@@ -141,15 +141,15 @@ const relayMultiplayerSignal = (multiplayer_signal) => //관련 세션에 멀티
   return handled;
 };
 
-const setGlobalLobbyCount = (lobby_count) =>
+const setGlobalLobbyCount = (lobby_count: number): void =>
 {
   MainUI.MULTIPLAYER_LOBBY_COUNT = lobby_count;
 };
 
-const eraseUIHolder = (guild) => 
+const eraseUIHolder = (guild: any): void =>
 {
   logger.info(`${guild.id} called erase ui holder`);
-  
+
   const guild_id = guild.id;
   const ui_holder = ui_holder_map[guild_id];
   if(ui_holder !== undefined)
@@ -159,7 +159,7 @@ const eraseUIHolder = (guild) =>
   }
 };
 
-const startUIHolderAgingManager = () => 
+const startUIHolderAgingManager = () =>
 {
   return uiHolderAgingManager();
 };
@@ -181,7 +181,7 @@ const uiHolderAgingManager = () =>
 
     logger.info(`Aginging UI Holder... targets: ${keys.length} ,criteria: ${criteria_value}`);
 
-    keys.forEach((key) => 
+    keys.forEach((key) =>
     {
       const value = ui_holder_map[key];
       if(value.last_update_time < criteria_value)
@@ -210,10 +210,15 @@ const UI_HOLDER_TYPE =
 };
 
 // UI들 표시해주는 홀더
-class UIHolder 
+class UIHolder
 {
+  //free()에서 base_interaction/guild/ui/prev_ui_stack을 undefined로 되돌리는 등
+  //생성자에서 지정한 타입과 다른 값(undefined)으로 재대입되는 필드가 여럿이라
+  //(예: holder_id도 최초엔 undefined였다가 나중에 외부에서 string으로 대입됨)
+  //common-ui.ts의 QuizbotUI와 같은 이유로 인덱스 시그니처를 둔다.
+  [key: string]: any;
 
-  constructor(interaction, ui, ui_holder_type)
+  constructor(interaction: any, ui: any, ui_holder_type: string)
   {
     this.base_interaction = interaction; //Public 용 interaction, Public은 명령어에 의해 생성되기 때문에 있음
     this.base_message = undefined; //Private 용 Message, 얘는 개인 메시지로 보내야해서 interaction이 없다
@@ -284,7 +289,7 @@ class UIHolder
   }
 
   //이벤트 처리
-  on(event_name, event_object)
+  on(event_name: string, event_object: any)
   {
     if(this.ui === undefined)
     {
@@ -293,7 +298,7 @@ class UIHolder
 
     if(event_name === CUSTOM_EVENT_TYPE.interactionCreate)
     {
-      let interaction = event_object;
+      const interaction = event_object;
       if(interaction.isButton() && interaction.customId === 'back')  //뒤로가기 버튼 처리
       {
         this.goToBack();
@@ -322,7 +327,7 @@ class UIHolder
     this.updateUI();
   }
 
-  appendNewUI(new_ui) 
+  appendNewUI(new_ui: any)
   {
     this.prev_ui_stack.push(this.ui);
     this.ui = new_ui;
@@ -331,7 +336,7 @@ class UIHolder
     new_ui.onReady(); //ui 등록 완료됐을 때 이벤트
   }
 
-  onUIReceived(new_ui)
+  onUIReceived(new_ui: any)
   {
     if(new_ui === undefined)
     {
@@ -365,7 +370,7 @@ class UIHolder
     }
   }
 
-  handleUpdatePublicUIError(err, is_retry)
+  handleUpdatePublicUIError(err: any, is_retry: boolean)
   {
     if(err.code === RESTJSONErrorCodes.UnknownMessage || err.code === RESTJSONErrorCodes.UnknownInteraction) //삭제된 메시지에 update 시도한거라 별도로 핸들링 하지 않는다.
     {
@@ -401,11 +406,11 @@ class UIHolder
       if(this.public_message_mode)
       {
         this.channel.send( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
-          .then((message) =>
+          .then((message: any) =>
           {
             this.base_message = message;
           })
-          .catch((err) => 
+          .catch((err: any) =>
           {
             this.handleUpdatePublicUIError(err, is_retry);
           });
@@ -415,11 +420,11 @@ class UIHolder
         this.base_interaction.explicit_replied = true;
         this.base_interaction.reply( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
           .then(() => this.base_interaction.fetchReply())
-          .then((message) =>
+          .then((message: any) =>
           {
             this.base_message = message;
           })
-          .catch((err) => 
+          .catch((err: any) =>
           {
             this.handleUpdatePublicUIError(err, is_retry);
           });
@@ -433,22 +438,22 @@ class UIHolder
     if(this.public_message_mode)
     {
       this.base_message.edit( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
-        .catch((err) => 
+        .catch((err: any) =>
         {
-          this.handleUpdatePublicUIError(err);
+          this.handleUpdatePublicUIError(err, false);
         });
     }
     else
     {
       this.base_interaction.editReply( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
-        .catch((err) => 
+        .catch((err: any) =>
         {
-          this.handleUpdatePublicUIError(err);
+          this.handleUpdatePublicUIError(err, false);
         });
     }
   }
 
-  handleUpdatePrivateUIError(err, is_retry)
+  handleUpdatePrivateUIError(err: any, is_retry: boolean)
   {
     if(err.code === RESTJSONErrorCodes.UnknownMessage || err.code === RESTJSONErrorCodes.UnknownInteraction) //삭제된 메시지에 update 시도한거라 별도로 핸들링 하지 않는다.
     {
@@ -482,11 +487,11 @@ class UIHolder
       this.initialized = true;
 
       this.user.send( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
-        .then((message) => 
+        .then((message: any) =>
         {
           this.base_message = message;
         })
-        .catch((err) => 
+        .catch((err: any) =>
         {
           this.handleUpdatePrivateUIError(err, is_retry);
         });
@@ -497,30 +502,30 @@ class UIHolder
     }
 
     this.base_message.edit( {embeds: [this.getUIEmbed()], components: this.getUIComponents()} )
-      .catch((err) => 
+      .catch((err: any) =>
       {
         this.handleUpdatePrivateUIError(err, is_retry);
       });
   }
 
-  sendDelayedUI(ui, do_resend) //interaction 이벤트 떄만이 아니라 아무 때나 ui update
+  sendDelayedUI(ui: any, do_resend: boolean) //interaction 이벤트 떄만이 아니라 아무 때나 ui update
   {
     if(do_resend && ui !== undefined)
     {
       if(this.base_message !== undefined)
       {
         this.base_message.delete()
-          .catch(err => 
+          .catch((err: any) =>
           {
             return;
           });
         this.base_message = undefined;
       }
-      
+
       if(this.base_interaction !== undefined)
       {
         this.base_interaction.deleteReply()
-          .catch(err => 
+          .catch((err: any) =>
           {
             return;
           });
@@ -557,7 +562,7 @@ class UIHolder
     return this.ui instanceof MultiplayerQuizLobbyUI;
   }
 
-  sendMessageReply(message) //사실 상 base message 강조를 목적으로 하는 답장 보내기
+  sendMessageReply(message: any) //사실 상 base message 강조를 목적으로 하는 답장 보내기
   {
     if(this.base_message === undefined)
     {
