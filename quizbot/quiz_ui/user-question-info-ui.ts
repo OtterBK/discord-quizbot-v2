@@ -3,13 +3,14 @@
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
 const ytdl = require('discord-ytdl-core');
-const { MessageFlags, ButtonStyle } = require('discord.js');
+const { MessageFlags, ButtonStyle, AttachmentBuilder } = require('discord.js');
 //#endregion
 
 //#region 로컬 modules
 const { SYSTEM_CONFIG, ANSWER_TYPE } = require('../../config/system_setting.js');
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
+const audio_cache_manager = require('../managers/audio_cache_manager');
 
 const { UserQuestionInfo } = require('../managers/user_quiz_info_manager');
 
@@ -19,6 +20,7 @@ const {
   modal_question_info_edit,
   modal_question_answering_info,
   question_edit_comp,
+  question_preview_comp,
   question_edit_comp2,
   question_answer_type_select_menu,
   question_control_btn_component,
@@ -76,7 +78,7 @@ class UserQuestionInfoUI extends QuizbotUI
 
     this.question_answer_type_select_menu = question_answer_type_select_menu;
     this.question_edit_comp2 = cloneDeep(question_edit_comp2); //'현재 문제 삭제' 버튼 라벨을 확인 단계에서 바꿔치기해야 해서 인스턴스별로 참조를 들고 있음
-    this.components = [question_edit_comp, this.question_answer_type_select_menu, this.question_edit_comp2, question_control_btn_component]; //문제 관련 comp
+    this.components = [question_edit_comp, question_preview_comp, this.question_edit_comp2, question_control_btn_component, this.question_answer_type_select_menu]; //문제 관련 comp (B-2: 미리듣기 행 추가 + 문제 유형 선택을 맨 아래로 이동)
   }
 
   /** '현재 문제 삭제' 버튼을 처음 상태(삭제 확인 대기 아님)로 되돌림 */
@@ -197,6 +199,18 @@ class UserQuestionInfoUI extends QuizbotUI
     {
       this.displayQuestionInfo(this.current_question_index);
       return this;
+    }
+
+    if(interaction.customId === 'question_preview')
+    {
+      this.sendAudioPreview(interaction, question_info.data.question_audio_url, question_info.data.audio_start, question_info.data.audio_end, SYSTEM_CONFIG.MAX_QUESTION_AUDIO_PLAY_TIME, '문제용_오디오');
+      return;
+    }
+
+    if(interaction.customId === 'answer_preview')
+    {
+      this.sendAudioPreview(interaction, question_info.data.answer_audio_url, question_info.data.answer_audio_start, question_info.data.answer_audio_end, SYSTEM_CONFIG.MAX_ANSWER_AUDIO_PLAY_TIME, '정답용_오디오');
+      return;
     }
 
     if(interaction.customId === 'request_modal_question_add')
@@ -441,6 +455,73 @@ class UserQuestionInfoUI extends QuizbotUI
     }
 
     return audio_range_string;
+  }
+
+  /** 오디오 미리듣기 (B-2): 실제 게임 재생과 동일한 캐시 파일에서 [audio_start, min(audio_start+max_play_time, audio_end)] 구간만 잘라
+   * 에페메럴 응답에 첨부(B-2-1: 새 메시지를 만들지 않는 방침의 명시적 예외 — 유저가 요청한 즉시 소비할 콘텐츠라 다르게 취급) */
+  async sendAudioPreview(interaction: any, audio_url: any, custom_audio_start: any, custom_audio_end: any, max_play_time: number, file_label: string)
+  {
+    interaction.explicit_replied = true;
+
+    if(!audio_url || audio_url.length === 0)
+    {
+      interaction.reply({content: `\`\`\`미리듣기할 오디오 URL이 설정돼있지 않습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+      return;
+    }
+
+    const video_id = utility.extractYoutubeVideoID(audio_url);
+    if(video_id === undefined)
+    {
+      interaction.reply({content: `\`\`\`오디오 URL(${audio_url})에서 video_id를 추출할 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+      return;
+    }
+
+    const cache_file_path = audio_cache_manager.getAudioCache(video_id);
+    if(cache_file_path === undefined) //캐시가 아직 없으면 다운로드만 걸어두고 안내(B-2-1: 새 메시지 대신 에페메럴 응답 하나로 통일)
+    {
+      interaction.reply({content: `\`\`\`🔸 현재 오디오에 대한 캐시가 없어 다운로드 중입니다. 시간이 좀 걸릴 수 있습니다... ㅜㅜ 😥\n잠시 후 미리듣기 버튼을 다시 눌러주세요.\`\`\``, flags: MessageFlags.Ephemeral});
+
+      const ip_info = {
+        ipv4: utility.getIPv4Address()[0],
+        ipv6: SYSTEM_CONFIG.YTDL_IPV6_USE ? utility.getIPv6Address()[0] : undefined,
+      };
+      audio_cache_manager.downloadAudioCache(audio_url, video_id, ip_info);
+      return;
+    }
+
+    let audio_duration_sec = audio_cache_manager.getAudioCacheInfo(video_id)?.duration;
+    if(audio_duration_sec == undefined) //정보 파일에 길이가 없으면 직접 프로브(prepare.js와 동일 폴백)
+    {
+      const probed_audio_info = await utility.getAudioInfoFromPath(cache_file_path);
+      audio_duration_sec = parseInt(probed_audio_info.format.duration);
+    }
+
+    let audio_start_point = custom_audio_start;
+    let audio_end_point = custom_audio_end;
+    if(audio_start_point == undefined || audio_start_point >= audio_duration_sec) //시작 지점 미지정/범위 초과면 처음부터
+    {
+      audio_start_point = 0;
+      audio_end_point = audio_duration_sec;
+    }
+    else if(audio_end_point == undefined || audio_end_point > audio_duration_sec)
+    {
+      audio_end_point = audio_duration_sec;
+    }
+
+    let audio_length_sec = audio_end_point - audio_start_point;
+    if(audio_length_sec > max_play_time) //최대 재생시간 클램프 (실제 게임 재생과 동일한 상한)
+    {
+      audio_length_sec = max_play_time;
+    }
+
+    const clip_stream = audio_cache_manager.generatePreviewClipStream(cache_file_path, audio_start_point, audio_length_sec);
+    const attachment = new AttachmentBuilder(clip_stream, {name: `${file_label}.webm`});
+
+    interaction.reply({content: `\`\`\`🔸 ${file_label} 미리듣기 (${audio_start_point}초 ~ ${audio_start_point + audio_length_sec}초)\`\`\``, files: [attachment], flags: MessageFlags.Ephemeral})
+      .catch((err: any) =>
+      {
+        logger.error(`sendAudioPreview reply failed. video_id: ${video_id}, err: ${err.stack}`);
+      });
   }
 
   applyQuestionInfo(user_question_info: any, modal_interaction: any)

@@ -407,12 +407,26 @@ const question_edit_comp = new ActionRowBuilder()
       .setCustomId('request_modal_question_answering_info')
       .setLabel('정답 공개 설정')
       .setStyle(ButtonStyle.Primary),
-  )
+  );
+
+const question_preview_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
       .setCustomId('question_refresh')
       .setLabel('이미지 재로드')
       .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('question_preview')
+      .setLabel('문제용 오디오 미리듣기')
+      .setStyle(ButtonStyle.Secondary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('answer_preview')
+      .setLabel('정답용 오디오 미리듣기')
+      .setStyle(ButtonStyle.Secondary),
   );
 
 const question_edit_comp2 = new ActionRowBuilder()
@@ -506,6 +520,7 @@ module.exports = {
   modal_question_answering_info,
   modal_question_info_edit,
   question_edit_comp,
+  question_preview_comp,
   question_edit_comp2,
   question_answer_type_select_menu,
   question_control_btn_component,

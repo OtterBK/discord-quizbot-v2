@@ -8,6 +8,7 @@ const { json } = require('express');
 const utility = require('../../utility/utility.js');
 const ffmpeg_path = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
+const { PassThrough } = require('stream');
 
 ffmpeg.setFfmpegPath(ffmpeg_path);
 
@@ -541,6 +542,28 @@ const convertToWebm = (video_id: string): Promise<void> | undefined =>
   });
 };
 
+/** 캐시 파일에서 [audio_start_point, audio_start_point+audio_length_sec] 구간만 재인코딩 없이(-c copy) 잘라 스트림으로 반환 (B-2, 문제 미리듣기용) */
+const generatePreviewClipStream = (cache_file_path: string, audio_start_point: number, audio_length_sec: number): NodeJS.ReadableStream =>
+{
+  const output_stream = new PassThrough();
+
+  const command = ffmpeg(cache_file_path)
+    .setStartTime(audio_start_point)
+    .setDuration(audio_length_sec)
+    .outputOptions('-c', 'copy')
+    .format('webm');
+
+  command.on('error', (err: any) =>
+  {
+    logger.error(`generatePreviewClipStream error. cache_file_path: ${cache_file_path}, audio_start_point: ${audio_start_point}, audio_length_sec: ${audio_length_sec}, err: ${err.message}`);
+    output_stream.destroy(err);
+  });
+
+  command.pipe(output_stream, { end: true });
+
+  return output_stream;
+};
+
 const forceCaching = async (audio_url_list_path: string, thread_index = 0): Promise<number> =>
 {
   if(fs.existsSync(audio_url_list_path) == false)
@@ -634,6 +657,7 @@ module.exports = {
   downloadAudioCache,
   reWriteCacheInfo,
   forceCaching,
+  generatePreviewClipStream,
   //아래 4개는 유닛테스트를 위해 추가로 export함 (REFACTOR_PLAN.md Phase 5/TS 전환 전 점검).
   //monitoring_manager.js에서 calculateAverageCpuUsage를 export한 것과 동일한 패턴.
   getHashedPath,
