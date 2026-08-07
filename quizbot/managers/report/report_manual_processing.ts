@@ -189,6 +189,8 @@ const processReportLog = async (interaction: any): Promise<void> =>
     report_processing_core.sendProcessedBanResult(interaction.user, processed_ban_history, chat_id, chat_content);
 
     report_processing_core.notifyProcessedReportLog(processed_report_log_list);
+
+    report_processing_core.notifyBannedUser(processed_ban_history.user_id, chat_content, processed_ban_history, '정지');
   }
 
   interaction.message.delete();
@@ -259,6 +261,12 @@ const processFollowUpAction = async (interaction: any): Promise<void> =>
     const result_message = `제재 ${ban_type_string}\nCHAT_ID:${chat_id}\nUSER_ID: ${ban_history.user_id}\nBAN_COUNT: ${ban_history.ban_count}\n밴 만료일자: ${expiration_date}\n`;
 
     interaction.reply({content: `\`\`\`${result_message}\`\`\``, flags: MessageFlags.Ephemeral});
+
+    const chat_info_result = await db_manager.selectChatInfoById(chat_id);
+    const chat_content = chat_info_result?.rows?.[0]?.content ?? '(내용 없음)';
+    const notify_action_label = (ban_type_string === '취소') ? '취소' : '추가처벌';
+
+    report_processing_core.notifyBannedUser(ban_history.user_id, chat_content, ban_history, notify_action_label);
   }
   else if(followup_processed_type === report_chat_info.FOLLOWUP_PROCESSED_RESULT_TYPE.GUILD_BANNED)
   {

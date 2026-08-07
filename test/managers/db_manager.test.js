@@ -14,8 +14,10 @@ const db_quiz = require('../../quizbot/managers/db/db_quiz');
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 32개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 33개 이름으로 재수출한다', () =>
 {
+  // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
+  // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -27,7 +29,7 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 32개 이름으�
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 32);
+  assert.equal(actual_names.length, 33);
   assert.deepEqual(actual_names, expected_names);
 });
 

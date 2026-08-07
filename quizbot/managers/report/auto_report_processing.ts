@@ -66,6 +66,8 @@ const autoProcessReportLog = async (): Promise<void> =>
       report_processing_core.sendProcessedBanResult(admin_user, processed_ban_history, reported_chat_info.chat_id, content);
 
       report_processing_core.notifyProcessedReportLog(processed_report_log_list);
+
+      report_processing_core.notifyBannedUser(processed_ban_history.user_id, content, processed_ban_history, '정지');
     }
   }
 

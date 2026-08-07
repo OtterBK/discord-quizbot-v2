@@ -55,6 +55,17 @@ exports.selectReportChatInfo = async (limit: number): Promise<any> =>
   return db_core.sendQuery(query_string, [limit]);
 };
 
+exports.selectChatInfoById = async (chat_id: string): Promise<any> =>
+{
+
+  let query_string =
+    `select *
+      from tb_chat_info
+      where chat_id = $1`;
+
+  return db_core.sendQuery(query_string, [chat_id]);
+};
+
 exports.selectReportLog = async (chat_id: string): Promise<any> =>
 {
 

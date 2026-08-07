@@ -99,6 +99,44 @@ const sendProcessedBanResult = async (executor_user: any, ban_history: any, chat
   executor_user.send({content: `\`\`\`${result_message}\`\`\``, components: [follow_up_comp]});
 };
 
+/** 밴 당사자에게 처리 결과(정지/추가처벌/취소)를 알림 (B-4) */
+const notifyBannedUser = async (user_id: string, chat_content: string, ban_history: any, action_label: string): Promise<void> =>
+{
+  const user = await report_state.getClient().users.fetch(user_id).catch(() =>
+  {
+    return null;
+  });
+
+  if(!user)
+  {
+    logger.error(`cannot fetch user ${user_id} to notify ban result`);
+    return;
+  }
+
+  if(chat_content)
+  {
+    chat_content = chat_content.replace(/`/g, "");
+  }
+
+  let detail = '';
+  if(action_label === '취소')
+  {
+    detail = `정지가 취소되었습니다.`;
+  }
+  else
+  {
+    const expiration_date = new Date(ban_history.ban_expiration_timestamp).toLocaleString();
+    detail = `현재 총 정지 횟수: ${ban_history.ban_count}회\n정지 만료일자: ${expiration_date}`;
+  }
+
+  const result_message = `채팅 정지 안내 (${action_label})\n\n정지 사유(원문):\n${chat_content ?? '(내용 없음)'}\n\n${detail}`;
+
+  user.send({content: `\`\`\`${result_message}\`\`\``}).catch((err: any) =>
+  {
+    logger.error(`failed to send ban notification to user ${user_id}. err: ${err.stack}`);
+  });
+};
+
 const notifyProcessedReportLog = async (report_log_list: any): Promise<void> =>
 {
   if(report_log_list === undefined || report_log_list.rowCount === 0)
@@ -126,4 +164,4 @@ const notifyProcessedReportLog = async (report_log_list: any): Promise<void> =>
   }
 }
 
-module.exports = { processReportCore, applyBan, sendProcessedBanResult, notifyProcessedReportLog };
+module.exports = { processReportCore, applyBan, sendProcessedBanResult, notifyProcessedReportLog, notifyBannedUser };
