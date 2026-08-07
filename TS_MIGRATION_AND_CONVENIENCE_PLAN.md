@@ -99,15 +99,17 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
 - C: 단순 lifecycle 7개 — `hold`/`finish`/`explain`/`time_over`/`clearing`/`correct_answer`/`ending`
 - D: question 하위 클래스 8개 — `question_unknown`/`song`/`intro`/`text`/`image`/`ox`/`custom`/`omakase`
 - E 일부: `initialize.ts`(880줄, Initialize+4개 하위클래스) 완료
+- F: `prepare.ts`(711줄, **A-5 최고난도** — YouTube/커스텀 오디오 파이프라인) 완료. `generateAudioResourceFromWeb`
+  호출부가 원본부터 함수가 안 받는 5번째 인자(ip 정보)를 넘기고 있던 것 발견 — 동작 안 바꾸고 미사용 파라미터로
+  선언만 추가해 TS 인자개수 체크 통과시킴(진짜 버그인지는 불명, 수정 안 하고 그대로 둠).
 
-**다음 할 일 (git 커밋 `71ecb7e`가 마지막, working tree 클린)**:
-1. `prepare.js`(711줄, **A-5 최고난도** — YouTube/커스텀 오디오 파이프라인, `audio_cache_manager` 호출,
-   `SeekStream` 사용) 읽고 `.ts`로 전환 — 아직 시작 전(파일 읽기만 하고 중단됨).
-2. `session/quiz_session.js`(458줄) — `QuizSession`/`NormalQuizSession`/`DummyQuizSession`. **주의**:
+**다음 할 일 (git 커밋 `c7e3473`가 마지막, working tree는 이 전환 관련 파일만 커밋됨 —
+`TEST_CHECKLIST.md`/`config/private_config.json`은 이 세션과 무관한 이전 변경사항이라 손대지 않고 남겨둠)**:
+1. `session/quiz_session.js`(458줄) — `QuizSession`/`NormalQuizSession`/`DummyQuizSession`. **주의**:
    `sendMultiplayerSignal()`이 순환참조 방지 위해 함수 본문 안에서 지연 `require('.../ipc_manager')` 하는
    패턴이 있음 — 모듈 상단으로 옮기지 말 것(quiz_system/CLAUDE.md에 경고 있음).
-3. `quiz_system.js`(217줄, facade) + `quiz_play_ui.js`(244줄, `QuizPlayUI`) — A-5 마지막.
-4. 그 다음 A-3 표의 6단계(`multiplayer_*` 전체)는 **착수하지 말 것** — 실전 대결 테스트 끝나기 전까지 보류가
+2. `quiz_system.js`(217줄, facade) + `quiz_play_ui.js`(244줄, `QuizPlayUI`) — A-5 마지막.
+3. 그 다음 A-3 표의 6단계(`multiplayer_*` 전체)는 **착수하지 말 것** — 실전 대결 테스트 끝나기 전까지 보류가
    확정된 방침.
 
 **전환 중 반복적으로 튀어나온 패턴들 (다음 파일에서도 또 나올 가능성 높음)**:
@@ -141,7 +143,7 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
   스모크테스트 → ⑩ 커밋(한국어, 발견한 이슈/버그 있으면 본문에 기록) → ⑪ 이 문서의 표/체크포인트 갱신.
 
 **새 대화 시작 시 이어가는 방법**: 새 세션에서 "TS_MIGRATION_AND_CONVENIENCE_PLAN.md 읽고 A-5 이어서
-진행해줘 (prepare.js부터)"라고 지시하면 이 체크포인트 섹션을 보고 바로 이어갈 수 있음.
+진행해줘 (quiz_session.js부터)"라고 지시하면 이 체크포인트 섹션을 보고 바로 이어갈 수 있음.
 
 ---
 
