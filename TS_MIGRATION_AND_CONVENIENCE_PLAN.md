@@ -79,7 +79,7 @@ TS 7.1까지는 호환 보장이 안 됨(WebSearch로 확인) → **`typescript@
 | 1 | `utility/util/*.js` (순수 함수 위주) — ✅ **완료** | 외부 의존 적고 기존 유닛테스트 있음(`test/utility/`) |
 | 2 | `quizbot/managers/multiplayer_mmr.js`, `db/*.js` — ✅ **완료** | 순수 함수/쿼리 빌더 위주, 부수효과 적고 테스트 있음. 전부 원본에 이미 'use strict' 있어서 strict 전환 리스크 없었음 |
 | 3 | `quizbot/managers/*.js` (멀티플레이 제외) — ✅ **완료** | ban_manager, command_manager, ipc_manager, feedback_manager, monitoring_manager, tagged_dev_quiz_manager, report_manager+report/* 8개, user_quiz_info_manager, audio_cache_manager 총 15개 파일 |
-| 4 | `quizbot/quiz_ui/*.js` (멀티플레이 제외) | 화면 클래스 대부분 — 양이 제일 많음 |
+| 4 | `quizbot/quiz_ui/*.js` (멀티플레이 제외) — ✅ **완료** | 화면 클래스 대부분 — 양이 제일 많음. components/*(4개)+facade, common-ui(프레임워크 코어, 소비자보다 먼저 전환), leaf UI 5개, 중간 복잡도 7개, QuizInfoUI 계열+유저 퀴즈 관리 6개, ui-system-core(라우팅 코어, 마지막) 총 24개 파일 |
 | 5 | `quizbot/quiz_system/**` (멀티플레이 세션 제외) | State 패턴 엔진 본체 |
 | 6 | **`multiplayer_*` 전체** (managers/multiplayer_*, quiz_ui/multiplayer-*, quiz_system/session/multiplayer_session.js, IPC 시그널 레이어) | 실전 대결 테스트 완료 후 착수 |
 
