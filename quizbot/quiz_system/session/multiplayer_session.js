@@ -24,7 +24,7 @@ const {
 
 const { QuizSession, DummyQuizSession } = require('./quiz_session.js');
 const Question = require('../lifecycle/question/question'); //instanceof 체크용
-const Prepare = require('../lifecycle/prepare.js'); //Prepare.fillAudioResource 정적 호출용
+const Prepare = require('../lifecycle/prepare'); //Prepare.fillAudioResource 정적 호출용
 
 const MULTIPLAYER_STATE =
 {

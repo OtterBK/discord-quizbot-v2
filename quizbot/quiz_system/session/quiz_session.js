@@ -15,7 +15,7 @@ const logger = require('../../../utility/logger.js')('QuizSystem');
 
 const { InitializeDevQuiz, InitializeCustomQuiz, InitializeOmakaseQuiz, InitializeUnknownQuiz } = require('../lifecycle/initialize');
 const Explain = require('../lifecycle/explain');
-const Prepare = require('../lifecycle/prepare.js');
+const Prepare = require('../lifecycle/prepare');
 const QuestionSong = require('../lifecycle/question/question_song');
 const QuestionImage = require('../lifecycle/question/question_image');
 const QuestionIntro = require('../lifecycle/question/question_intro');

@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const Prepare = require('../../../quizbot/quiz_system/lifecycle/prepare.js');
+const Prepare = require('../../../quizbot/quiz_system/lifecycle/prepare');
 const { QUIZ_TYPE } = require('../../../config/system_setting.js');
 const utility = require('../../../utility/utility.js');
 
