@@ -14,7 +14,7 @@ const utility = require('../../../utility/utility.js');
 class CorrectAnswer extends QuizLifeCycleWithUtility
 {
   static cycle_type = CYCLE_TYPE.CORRECTANSWER;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.CLEARING;
@@ -35,7 +35,7 @@ class CorrectAnswer extends QuizLifeCycleWithUtility
     }
 
     const scoreboard = this.quiz_session.scoreboard;
-    answer_members.forEach(answerer_id => 
+    answer_members.forEach((answerer_id: any) =>
     {
       const answerer_info = scoreboard.get(answerer_id);
       if(answerer_info === undefined)
@@ -46,7 +46,7 @@ class CorrectAnswer extends QuizLifeCycleWithUtility
       answer_members_nickname +=  `[ ${answerer_info.name} ]\n`;
     });
 
-    let quiz_ui = this.quiz_session.quiz_ui;
+    const quiz_ui = this.quiz_session.quiz_ui;
 
     quiz_ui.embed.color = 0x54B435;
 
@@ -54,14 +54,14 @@ class CorrectAnswer extends QuizLifeCycleWithUtility
 
     let answer_list_message = '';
     const answers = processing_question['answers'] ?? [];
-    answers.forEach((answer) => 
+    answers.forEach((answer: any) =>
     {
       answer_list_message += answer + "\n";
     });
 
     let author_list_message = '';
     const author_list = processing_question['author'] ?? [];
-    author_list.forEach((author) => 
+    author_list.forEach((author: any) =>
     {
       if(author != undefined)
       {

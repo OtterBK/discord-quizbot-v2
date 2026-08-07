@@ -11,7 +11,7 @@ const { CYCLE_TYPE } = require('../constants');
 class HOLD extends QuizLifeCycle
 {
   static cycle_type = CYCLE_TYPE.HOLD;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }

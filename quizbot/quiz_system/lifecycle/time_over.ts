@@ -14,7 +14,7 @@ const utility = require('../../../utility/utility.js');
 class TimeOver extends QuizLifeCycleWithUtility
 {
   static cycle_type = CYCLE_TYPE.TIMEOVER;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.CLEARING;
@@ -28,7 +28,7 @@ class TimeOver extends QuizLifeCycleWithUtility
     const game_data = this.quiz_session.game_data;
     const processing_question = game_data['processing_question'];
 
-    let quiz_ui = this.quiz_session.quiz_ui;
+    const quiz_ui = this.quiz_session.quiz_ui;
 
     quiz_ui.embed.color = 0X850000;
 
@@ -38,7 +38,7 @@ class TimeOver extends QuizLifeCycleWithUtility
     const answers = processing_question['answers'] ?? [];
     if(answers.length > 0)
     {
-      answers.forEach((answer) => 
+      answers.forEach((answer: any) =>
       {
         answer_list_message += answer + "\n";
       });
@@ -48,7 +48,7 @@ class TimeOver extends QuizLifeCycleWithUtility
     const author_list = processing_question['author'] ?? [];
     if(author_list.length > 0)
     {
-      author_list.forEach((author) => 
+      author_list.forEach((author: any) =>
       {
         if(author != undefined)
         {

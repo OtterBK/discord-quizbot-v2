@@ -12,7 +12,7 @@ const session_registry = require('../session_registry');
 class Finish extends QuizLifeCycle
 {
   static cycle_type = CYCLE_TYPE.FINISH;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.UNDEFINED;
@@ -48,7 +48,7 @@ class Finish extends QuizLifeCycle
   async exit()
   {
     const guild_id = this.quiz_session.guild_id;
-        
+
     this.quiz_session.free();
 
     delete session_registry.quiz_session_map[guild_id];

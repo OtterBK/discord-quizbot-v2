@@ -14,7 +14,7 @@ const utility = require('../../../utility/utility.js');
 class Explain extends QuizLifeCycle
 {
   static cycle_type = CYCLE_TYPE.EXPLAIN;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.QUESTIONING;
@@ -24,7 +24,7 @@ class Explain extends QuizLifeCycle
   {
     const quiz_data = this.quiz_session.quiz_data;
     const quiz_type = ['quiz_type'];
-    let quiz_ui = this.quiz_session.quiz_ui;
+    const quiz_ui = this.quiz_session.quiz_ui;
 
     quiz_ui.embed.color = 0xFED049,
 
@@ -43,7 +43,7 @@ class Explain extends QuizLifeCycle
     {
       explain_type = EXPLAIN_TYPE.MULTIPLAYER_ANSWER_TYPE;
     }
-        
+
     const explain_list = text_contents.quiz_explain[explain_type];
     for(let i = 0; i < explain_list.length; ++i)
     {

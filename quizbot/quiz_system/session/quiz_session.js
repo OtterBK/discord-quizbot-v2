@@ -14,7 +14,7 @@ const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
 
 const { InitializeDevQuiz, InitializeCustomQuiz, InitializeOmakaseQuiz, InitializeUnknownQuiz } = require('../lifecycle/initialize.js');
-const Explain = require('../lifecycle/explain.js');
+const Explain = require('../lifecycle/explain');
 const Prepare = require('../lifecycle/prepare.js');
 const QuestionSong = require('../lifecycle/question/question_song.js');
 const QuestionImage = require('../lifecycle/question/question_image.js');
@@ -24,12 +24,12 @@ const QuestionOX = require('../lifecycle/question/question_ox.js');
 const QuestionCustom = require('../lifecycle/question/question_custom.js');
 const QuestionOmakase = require('../lifecycle/question/question_omakase.js');
 const QuestionUnknown = require('../lifecycle/question/question_unknown.js');
-const CorrectAnswer = require('../lifecycle/correct_answer.js');
-const TimeOver = require('../lifecycle/time_over.js');
-const Clearing = require('../lifecycle/clearing.js');
-const Ending = require('../lifecycle/ending.js');
-const Finish = require('../lifecycle/finish.js');
-const HOLD = require('../lifecycle/hold.js');
+const CorrectAnswer = require('../lifecycle/correct_answer');
+const TimeOver = require('../lifecycle/time_over');
+const Clearing = require('../lifecycle/clearing');
+const Ending = require('../lifecycle/ending');
+const Finish = require('../lifecycle/finish');
+const HOLD = require('../lifecycle/hold');
 
 class QuizSession
 {

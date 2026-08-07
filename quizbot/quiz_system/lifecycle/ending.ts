@@ -16,7 +16,7 @@ const feedback_manager = require('../../managers/feedback_manager');
 class Ending extends QuizLifeCycleWithUtility
 {
   static cycle_type = CYCLE_TYPE.ENDING;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.FINISH;
@@ -25,19 +25,19 @@ class Ending extends QuizLifeCycleWithUtility
   async act()
   {
     const quiz_data = this.quiz_session.quiz_data;
-    let quiz_ui = this.quiz_session.quiz_ui;
+    const quiz_ui = this.quiz_session.quiz_ui;
     const channel = this.quiz_session.channel;
 
     if(this.quiz_session.already_liked == false)
     {
       const channel = this.quiz_session.channel;
       channel.send({
-        embeds: 
-            [{ 
-              color: 0x05f1f1, 
+        embeds:
+            [{
+              color: 0x05f1f1,
               title: `**${quiz_data['title']}**`,
               description:  "퀴즈를 재밌게 플레이하셨나요? 😀\n방금 플레이하신 퀴즈가 마음에 드셨다면 **[추천하기]**를 눌러주세요!\n\n`일정 수 이상의 추천을 받은 퀴즈는 [오마카세/멀티플레이] 퀴즈에서 사용됩니다.`"
-            }], 
+            }],
         components: [ feedback_manager.quiz_feedback_comp ]});
     }
 
@@ -60,7 +60,7 @@ class Ending extends QuizLifeCycleWithUtility
 
     await quiz_ui.send(false);
 
-    
+
     await utility.sleep(SYSTEM_CONFIG.ENDING_WAIT);
     let scoreboard = this.quiz_session.scoreboard;
     if(scoreboard.size == 0) //정답자가 없다면
@@ -68,13 +68,13 @@ class Ending extends QuizLifeCycleWithUtility
       quiz_ui.embed.description += text_contents.ending_ui.nobody_answer;
       this.sendBGM(BGM_TYPE.FAIL);
       quiz_ui.update();
-      await utility.sleep(SYSTEM_CONFIG.ENDING_WAIT); 
+      await utility.sleep(SYSTEM_CONFIG.ENDING_WAIT);
     }
     else
     {
       scoreboard = utility.sortMapByProperty(scoreboard, 'score'); //정렬 해주고
-      let iter = scoreboard.entries();
-            
+      const iter = scoreboard.entries();
+
       let winner_name = undefined;
       for(let i = 0; i < scoreboard.size; ++i)
       {
@@ -85,7 +85,7 @@ class Ending extends QuizLifeCycleWithUtility
         {
         case 0: {
           winner_name = answerer_info.name;
-          medal = text_contents.icon.ICON_MEDAL_GOLD; 
+          medal = text_contents.icon.ICON_MEDAL_GOLD;
           break;
         }
         case 1: medal = text_contents.icon.ICON_MEDAL_SILVER; break;
@@ -138,7 +138,7 @@ class Ending extends QuizLifeCycleWithUtility
           logger.warn(`The mvp info is undefined on Multiplayer Ending cycle`);
         }
       }
-      else 
+      else
       {
         top_score_description_message = text_contents.ending_ui.winner_user_message;
         top_score_description_message = top_score_description_message.replace('${winner_nickname}', quiz_data['winner_nickname']);
@@ -147,14 +147,14 @@ class Ending extends QuizLifeCycleWithUtility
       quiz_ui.embed.description += top_score_description_message;
 
     }
-        
+
     this.sendBGM(BGM_TYPE.ENDING);
     quiz_ui.update();
-    await utility.sleep(SYSTEM_CONFIG.ENDING_WAIT); 
+    await utility.sleep(SYSTEM_CONFIG.ENDING_WAIT);
 
     if(this.quiz_session.isMultiplayerSession()) //멀티면 3초 더 기다린다. 여운? 을 위해 ㅎ...
     {
-      await utility.sleep(3000); 
+      await utility.sleep(3000);
     }
 
     logger.info(`End Quiz Session, guild_id:${this.quiz_session.guild_id}`);

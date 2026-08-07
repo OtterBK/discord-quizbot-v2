@@ -13,7 +13,7 @@ const logger = require('../../../utility/logger.js')('QuizSystem');
 class Clearing extends QuizLifeCycleWithUtility
 {
   static cycle_type = CYCLE_TYPE.CLEARING;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.QUESTIONING;
@@ -22,7 +22,7 @@ class Clearing extends QuizLifeCycleWithUtility
 
   async enter()
   {
-        
+
   }
 
   async act()
@@ -41,7 +41,7 @@ class Clearing extends QuizLifeCycleWithUtility
       if(audio_stream_for_close != undefined && audio_stream_for_close.length != 0)
       {
         const used_stream = audio_stream_for_close.shift();
-        used_stream.forEach((audio_stream) => 
+        used_stream.forEach((audio_stream: any) =>
         {
           if(audio_stream == undefined) return;
 
@@ -53,7 +53,7 @@ class Clearing extends QuizLifeCycleWithUtility
       }
     }
 
-    let quiz_ui = this.quiz_session.quiz_ui;
+    const quiz_ui = this.quiz_session.quiz_ui;
     quiz_ui.delete();
 
     //이전 퀴즈 resource 해제
@@ -87,7 +87,7 @@ class Clearing extends QuizLifeCycleWithUtility
       {
         this.quiz_session.sendFinishUp(); //호스트는 서버에 게임 마무리한다고 알림
       }
-      
+
       return; //더 이상 진행할 게 없다.
     }
 
@@ -102,7 +102,7 @@ class Clearing extends QuizLifeCycleWithUtility
       this.next_cycle = CYCLE_TYPE.HOLD;
       this.quiz_session.waitForSyncDone();
     }
-    
+
   }
 }
 

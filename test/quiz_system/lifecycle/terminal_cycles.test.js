@@ -9,13 +9,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const HOLD = require('../../../quizbot/quiz_system/lifecycle/hold.js');
-const Finish = require('../../../quizbot/quiz_system/lifecycle/finish.js');
-const Clearing = require('../../../quizbot/quiz_system/lifecycle/clearing.js');
-const TimeOver = require('../../../quizbot/quiz_system/lifecycle/time_over.js');
-const CorrectAnswer = require('../../../quizbot/quiz_system/lifecycle/correct_answer.js');
-const Explain = require('../../../quizbot/quiz_system/lifecycle/explain.js');
-const Ending = require('../../../quizbot/quiz_system/lifecycle/ending.js');
+const HOLD = require('../../../quizbot/quiz_system/lifecycle/hold');
+const Finish = require('../../../quizbot/quiz_system/lifecycle/finish');
+const Clearing = require('../../../quizbot/quiz_system/lifecycle/clearing');
+const TimeOver = require('../../../quizbot/quiz_system/lifecycle/time_over');
+const CorrectAnswer = require('../../../quizbot/quiz_system/lifecycle/correct_answer');
+const Explain = require('../../../quizbot/quiz_system/lifecycle/explain');
+const Ending = require('../../../quizbot/quiz_system/lifecycle/ending');
 
 const { CYCLE_TYPE } = require('../../../quizbot/quiz_system/constants');
 const session_registry = require('../../../quizbot/quiz_system/session_registry');
