@@ -1,6 +1,6 @@
 # discord-quizbot-v2
 
-한국어 Discord 퀴즈봇. 수년째 혼자 개발/운영 중인 프로덕션 봇으로, 최근 무중단 안정 운영 중. 2026-08에 대규모 구조 리팩터(REFACTOR_PLAN.md)를 거쳤다.
+한국어 Discord 퀴즈봇. 수년째 혼자 개발/운영 중인 프로덕션 봇으로, 최근 무중단 안정 운영 중. 2026-08에 대규모 구조 리팩터(`docs/REFACTOR_PLAN.md`)를 거쳤다.
 
 ## 기술 스택
 
@@ -50,7 +50,7 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 - 응답은 전부 DM으로만 (`UI_HOLDER_TYPE.PRIVATE`) — 다른 유저 인터랙션이 애초에 그 홀더로 라우팅될 수 없음(Discord DM은 1:1).
 - 밴 목록(`resources/banned_user.txt`)은 길드ID(멀티플레이 밴)와 유저ID(퀴즈 생성 영구밴)를 **같은 파일/캐시**로 관리 (`ban_manager.js`, 의도된 동작).
 
-**IPC / 멀티 클러스터**: `discord-hybrid-sharding` 기반. `multiplayer_signal.js`의 `CLIENT_SIGNAL`/`SERVER_SIGNAL` 비트 태그(서버 시그널은 최상위 비트 set, `0x80` 이상)로 방향 구분. 이 영역은 배포 중 롤링 재시작 시 신·구 버전이 잠시 공존할 수 있어 특히 조심스럽게 다뤄야 함 — `BUGS_FOUND.md`에 이 영역의 알려진(수정 안 한) 이슈가 기록돼 있음.
+**IPC / 멀티 클러스터**: `discord-hybrid-sharding` 기반. `multiplayer_signal.js`의 `CLIENT_SIGNAL`/`SERVER_SIGNAL` 비트 태그(서버 시그널은 최상위 비트 set, `0x80` 이상)로 방향 구분. 이 영역은 배포 중 롤링 재시작 시 신·구 버전이 잠시 공존할 수 있어 특히 조심스럽게 다뤄야 함 — `docs/BUGS_FOUND.md`에 이 영역의 알려진(수정 안 한) 이슈가 기록돼 있음.
 
 **이름 충돌 주의**: `quizbot/managers/multiplayer_session.js`(cross-서버 대결의 `MultiplayerSession` 클래스, IPC로 동기화되는 길드 단위 대결 세션)와 `quizbot/quiz_system/session/multiplayer_session.js`(같은 길드 안에서 진행되는 State 패턴 퀴즈 세션의 `MultiplayerLobbySession`/`MultiplayerQuizSession`)는 **이름은 비슷해도 완전히 다른 클래스**. 헷갈리기 쉬우니 import 경로를 항상 확인할 것.
 
@@ -58,7 +58,7 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 
 - 세미콜론 사용, 함수 선언부 다음 줄에 여는 중괄호(`function foo()\n{`)
 - `snake_case` 변수/함수명 혼용, 클래스는 `PascalCase`
-- 개발자가 직접 쓴 주석은 **삭제 금지** — 코드가 이동하면 주석도 같이 이동, 코드 자체가 없어지면 `RELOCATED_COMMENTS.md`/`DEPRECATED_CODE_REMOVED.md`에 원문 보존
+- 개발자가 직접 쓴 주석은 **삭제 금지** — 코드가 이동하면 주석도 같이 이동, 코드 자체가 없어지면 `docs/RELOCATED_COMMENTS.md`/`docs/DEPRECATED_CODE_REMOVED.md`에 원문 보존
 - 새 기능을 짤 때도 이 스타일 그대로 따를 것 (TypeScript 전환 등 큰 방향 전환 전까지)
 
 ## 테스트 원칙
@@ -67,14 +67,29 @@ resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_use
 - UI 클래스(`quiz_ui/*.js`)는 관례상 유닛테스트 대상이 아님 (Discord 인터랙션 의존이 커서) — 대신 `managers/`의 순수 로직/DB 래퍼가 테스트 대상. UI를 손댔으면 `node -e`로 require 스모크테스트만 해도 충분한 경우가 많음.
 - `npm test` / `npm run lint` (0 error 기준, warning은 기존 관행 수준 유지)
 
-## 알아두면 좋은 문서 (전부 리포 루트)
+## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동)
 
-- `REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)
-- `CONTRIBUTING_REFACTOR.md` — 브랜치/커밋 컨벤션 (`refactor:`/`fix:`/`feat:`/`test:`/`docs:` prefix 분리 원칙)
-- `BUGS_FOUND.md` — 리팩터 중 발견한 버그 로그 (수정 완료/보류 상태 포함, 보류 항목은 왜 지금 안 고쳤는지 이유도 적혀있음)
-- `PERFORMANCE_NOTES.md` — 성능 관찰 로그
-- `DEPRECATED_CODE_REMOVED.md` — 삭제된 죽은 코드 원문 보존
-- `DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
+> 문서 수가 많아지고 있어서(현재 13개) 완료/보류/설계전용 상태별로 통합 정리하는 걸 검토 중 —
+> 진행되면 이 목록도 갱신할 것. 그 전까지는 아래 개별 문서가 각자 최신 상태의 원본임.
+
+**진행 기록/컨벤션**
+- `docs/REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)
+- `docs/CONTRIBUTING_REFACTOR.md` — 브랜치/커밋 컨벤션 (`refactor:`/`fix:`/`feat:`/`test:`/`docs:` prefix 분리 원칙)
+- `docs/BUGS_FOUND.md` — 리팩터 중 발견한 버그 로그 (수정 완료/보류 상태 포함, 보류 항목은 왜 지금 안 고쳤는지 이유도 적혀있음)
+- `docs/PERFORMANCE_NOTES.md` — 성능 관찰 로그
+- `docs/DEPRECATED_CODE_REMOVED.md` — 삭제된 죽은 코드 원문 보존
+- `docs/RELOCATED_COMMENTS.md` — 코드 이동 중 자리를 못 찾은 주석 원문 보존
+- `docs/DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
+
+**TS 전환 + 편의 기능 (진행 중)**
+- `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함 — 새 세션에서 이어갈 때 가장 먼저 읽을 문서.
+- `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
+- `docs/TEST_CHECKLIST.md` — 수동 테스트 체크리스트. 기능 추가/수정 시 관련 항목을 갱신(추가 또는 `[ ]`로 되돌리기)할 것.
+
+**UI/UX 개선 (별도 라운드, 상태 제각각)**
+- `docs/UI_IMPROVEMENT_PROPOSAL.md` — 1라운드(퀴즈만들기 중심), 대부분 완료.
+- `docs/UI_IMPROVEMENT_PLAN_ROUND2.md` — 2라운드(봇 전역), 실제 버그 파트 완료·UX 개선 후보 파트 일부 진행 중.
+- `docs/I18N_ARCHITECTURE_PLAN.md` — 다국어 지원 아키텍처 조사/설계 문서. **코드 미수정, 사용자가 명시적으로 지시하기 전까지 착수 금지.**
 
 ## 브랜치 상태 (참고용, 시점에 따라 달라질 수 있음)
 
