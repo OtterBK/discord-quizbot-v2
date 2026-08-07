@@ -22,7 +22,7 @@ const { loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountBy
 class Initialize extends QuizLifeCycle
 {
   static cycle_type = CYCLE_TYPE.INITIALIZING;
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.EXPLAIN;
@@ -35,7 +35,7 @@ class Initialize extends QuizLifeCycle
     {
       await this.basicInitialize();
     }
-    catch(err)
+    catch(err: any)
     {
       this.initialize_success = false;
       logger.error(`Failed to basic initialize of quiz session, guild_id:${this.quiz_session.guild_id}, cycle_info:${this.cycle_info}, quiz_info: ${JSON.stringify(this.quiz_session.quiz_info)}, err: ${err.stack}`);
@@ -74,8 +74,8 @@ class Initialize extends QuizLifeCycle
 
     //보이스 커넥션
     this.quiz_session.createVoiceConnection();
-        
-    if(this.quiz_session.isMultiplayerSession()) 
+
+    if(this.quiz_session.isMultiplayerSession())
     {
       //멀티는 공용 옵션
       this.quiz_session.option_data = MULTIPLAYER_COMMON_OPTION;
@@ -83,21 +83,21 @@ class Initialize extends QuizLifeCycle
     else
     {
       //옵션 로드
-      this.loadOptionData().then((option_data) => 
+      this.loadOptionData().then((option_data: any) =>
       {
         this.quiz_session.option_data = option_data;
       });
     }
 
     //UI생성
-    let quiz_ui = new QuizPlayUI(this.quiz_session.channel);
+    const quiz_ui = new QuizPlayUI(this.quiz_session.channel);
     await quiz_ui.send(true); //처음에는 기다려줘야한다. 안그러면 explain 단계에서 update할 ui가 없어서 안됨
     this.quiz_session.quiz_ui = quiz_ui;
 
     //우선 quiz_info 에서 필요한 내용만 좀 뽑아보자
     const quiz_info = this.quiz_session.quiz_info;
 
-    let quiz_data = {};
+    const quiz_data: any = {};
     quiz_data['title'] = quiz_info['title'];
     quiz_data['icon'] = quiz_info['icon'];
     quiz_data['quiz_maker_type'] = quiz_info['quiz_maker_type'];
@@ -130,18 +130,18 @@ class Initialize extends QuizLifeCycle
   }
 
   //정답 인정 목록 뽑아내기
-  generateAnswers(answers_row)
+  generateAnswers(answers_row: any)
   {
     if(answers_row == undefined)
     {
       return [];
     }
 
-    const option_data = this.quiz_session.option_data;        
+    const option_data = this.quiz_session.option_data;
 
-    let answers = [];
-    let similar_answers = []; //유사 정답은 마지막에 넣어주자
-    answers_row.forEach((answer_row) => 
+    const answers: string[] = [];
+    const similar_answers: string[] = []; //유사 정답은 마지막에 넣어주자
+    answers_row.forEach((answer_row: string) =>
     {
 
       answer_row = answer_row.trim();
@@ -151,7 +151,7 @@ class Initialize extends QuizLifeCycle
       const words = answer_row.split(" ");
       if(words.length > 1)
       {
-        words.forEach((split_answer) => 
+        words.forEach((split_answer) =>
         {
           if(split_answer.length == 0 || split_answer == ' ')
             return;
@@ -166,7 +166,7 @@ class Initialize extends QuizLifeCycle
         if(answers.includes(similar_answer) == false && similar_answers.includes(similar_answer) == false)
           similar_answers.push(similar_answer);
       }
-            
+
       const answer = answer_row.replace(/ /g,"").toLowerCase(); // /문자/gi 로 replace하면 replaceAll 로 동작, g = 전역검색 i = 대소문자 미구분
       if(answers.includes(answer) == false)
         answers.push(answer);
@@ -174,7 +174,7 @@ class Initialize extends QuizLifeCycle
 
     if(option_data.quiz.use_similar_answer == OPTION_TYPE.ENABLED) //유사 정답 사용 시
     {
-      similar_answers.forEach((similar_answer) => 
+      similar_answers.forEach((similar_answer) =>
       { //유사 정답도 넣어주자
         answers.push(similar_answer);
       });
@@ -189,11 +189,11 @@ class Initialize extends QuizLifeCycle
   }
 
   //힌트 뽑아내기
-  generateHint(base_answer)
+  generateHint(base_answer: string)
   {
     base_answer = base_answer.trim();
 
-    let hint = undefined;
+    let hint: string | undefined = undefined;
     const letter_len = base_answer.replace(/ /g, "").length;
 
     if(letter_len == 1) //? 정답이 1글자?
@@ -202,12 +202,12 @@ class Initialize extends QuizLifeCycle
     }
 
     const hintLen = Math.ceil(letter_len / SYSTEM_CONFIG.HINT_PERCENTAGE); //표시할 힌트 글자 수
-    let hint_index = [];
+    const hint_index: number[] = [];
     let success_count = 0;
     for(let i = 0; i < SYSTEM_CONFIG.HINT_MAX_TRY; ++i)
     {
       const rd_index = utility.getRandom(0, base_answer.length - 1); //자 랜덤 index를 가져와보자
-      if(hint_index.includes(rd_index) == true || base_answer.indexOf(rd_index) === ' ') //원래 단어의 맨 앞글자는 hint에서 제외하려 했는데 그냥 해도 될 것 같다.
+      if(hint_index.includes(rd_index) == true || (base_answer.indexOf(String(rd_index)) as any) === ' ') //원래 단어의 맨 앞글자는 hint에서 제외하려 했는데 그냥 해도 될 것 같다.
       {
         continue;
       }
@@ -236,7 +236,7 @@ class Initialize extends QuizLifeCycle
     return hint;
   }
 
-  parseFromQuizTXT(txt_path)
+  parseFromQuizTXT(txt_path: string)
   {
     const quiz_info = this.quiz_session.quiz_info;
     const quiz_data = this.quiz_session.quiz_data;
@@ -245,10 +245,10 @@ class Initialize extends QuizLifeCycle
     const info_txt_path = `${txt_path}`;
     const info_data = fs.readFileSync(info_txt_path, 'utf8');
 
-    let question_list = [];
-    let parsed_question = {};
+    const question_list: any[] = [];
+    let parsed_question: any = {};
 
-    info_data.split('\n').forEach((line) => 
+    info_data.split('\n').forEach((line: string) =>
     {
       if(line.trim() == '')  //공백 line 만나면 다음 퀴즈다.
       {
@@ -258,7 +258,7 @@ class Initialize extends QuizLifeCycle
           parsed_question = {}; //파싱 퀴즈 초기화 ㄱㄱ
         }
         return;
-      } 
+      }
 
       if(line.startsWith('quiz_answer:')) //이게 정답이다
       {
@@ -272,7 +272,7 @@ class Initialize extends QuizLifeCycle
         return;
       }
 
-      if(parsed_question['question'] == undefined) 
+      if(parsed_question['question'] == undefined)
       {
         parsed_question['question'] = line + "\n";
         return;
@@ -282,7 +282,7 @@ class Initialize extends QuizLifeCycle
     }); //한 줄씩 일어오자
 
     //이제 파싱한 퀴즈에 추가 설정을 진행한다.
-    question_list.forEach((question) => 
+    question_list.forEach((question) =>
     {
       const quiz_type = quiz_data['quiz_type'];
       question['type'] = quiz_type;
@@ -292,8 +292,8 @@ class Initialize extends QuizLifeCycle
       question['play_bgm_on_question_finish'] = true; //Question cycle 종료 후 bgm 플레이 여부, 텍스트 기반 퀴즈는 true다.
 
       //정답 키워드 파싱
-      let answer_string = question['answer_string'] ?? '';
-      let answers_row = answer_string.split("&#"); //정답은 &#으로 끊었다.
+      const answer_string = question['answer_string'] ?? '';
+      const answers_row = answer_string.split("&#"); //정답은 &#으로 끊었다.
       const answers = this.generateAnswers(answers_row);
       question['answers'] = answers;
 
@@ -307,21 +307,21 @@ class Initialize extends QuizLifeCycle
         }
         question['hint'] = hint;
       }
-            
+
     });
 
     return question_list;
   }
 
-  buildCustomQuestion(question_row)
+  buildCustomQuestion(question_row: any)
   {
-    let question = {};
+    const question: any = {};
     question['type']  = QUIZ_TYPE.CUSTOM;
     question['hint_used'] = false;
     question['skip_used'] = false;
     question['play_bgm_on_question_finish'] = false; //custom 퀴즈에서는 상황에 따라 다르다
 
-    Object.keys(question_row).forEach((key) => 
+    Object.keys(question_row).forEach((key) =>
     {
       const value = question_row[key];
       question[key] = value;
@@ -390,15 +390,15 @@ class Initialize extends QuizLifeCycle
     return question;
   }
 
-  buildDevQuestion(quiz_path, question_folder_name)
+  buildDevQuestion(quiz_path: string, question_folder_name: string)
   {
     const quiz_data = this.quiz_session.quiz_data;
 
     const question_folder_path = quiz_path + "/" + question_folder_name;
     const question_type = quiz_data['quiz_type'];
-        
+
     //우선 퀴즈 1개 생성
-    let question = {};
+    const question: any = {};
     question['type'] = question_type;
     question['hint_used'] = false;
     question['skip_used'] = false;
@@ -406,14 +406,14 @@ class Initialize extends QuizLifeCycle
 
     //작곡가 파싱
     let author_string = undefined;
-    let try_parse_author =  question_folder_name.split("&^"); //가수는 &^로 끊었다.
+    const try_parse_author =  question_folder_name.split("&^"); //가수는 &^로 끊었다.
 
     if(try_parse_author.length > 1) //가수 데이터가 있다면 넣어주기
     {
       author_string = try_parse_author[1];
 
-      let authors = [];
-      author_string.split("&^").forEach((author_row) => 
+      const authors: string[] = [];
+      author_string.split("&^").forEach((author_row: string) =>
       {
         const author = author_row.trim();
         authors.push(author);
@@ -425,7 +425,7 @@ class Initialize extends QuizLifeCycle
     //정답 키워드 파싱
     let answer_string = try_parse_author[0];
     answer_string = question_folder_name.split("&^")[0];
-    let answers_row = answer_string.split("&#"); //정답은 &#으로 끊었다.
+    const answers_row = answer_string.split("&#"); //정답은 &#으로 끊었다.
     const answers = this.generateAnswers(answers_row);
     question['answers'] = answers;
 
@@ -439,19 +439,19 @@ class Initialize extends QuizLifeCycle
     question['hint'] = hint;
 
     //실제 문제로 낼 퀴즈 파일
-    
+
     const question_file_list = fs.readdirSync(question_folder_path);
-    question_file_list.forEach(question_folder_filename => 
-    { 
+    question_file_list.forEach((question_folder_filename: string) =>
+    {
       const file_path = question_folder_path + "/" + question_folder_filename;
-            
+
       // const stat = fs.lstatSync(file_path); //이것도 성능 잡아먹는다. 어차피 개발자 퀴즈니깐 할 필요 없음
       // if(stat.isDirectory()) return; //폴더는 건너뛰고
 
       if(question_type == QUIZ_TYPE.SONG || question_type == QUIZ_TYPE.IMAGE || question_type == QUIZ_TYPE.SCRIPT || question_type == QUIZ_TYPE.IMAGE_LONG || question_type == QUIZ_TYPE.OMAKASE)
       {
         question['question'] = file_path; //SONG, IMAGE 타입은 그냥 손에 잡히는게 question 이다.
-      } 
+      }
       else if(question_type == QUIZ_TYPE.INTRO) //인트로 타입의 경우
       {
         if(utility.isImageFile(question_folder_filename)) //이미지 파일이면
@@ -467,17 +467,17 @@ class Initialize extends QuizLifeCycle
         }
         else if(question_folder_filename.startsWith('a')) //이게 answer_audio이다.
         {
-          question['answer_audio'] = file_path; 
+          question['answer_audio'] = file_path;
           question['answer_audio_play_time'] = undefined;  //TODO 이거 지정 가능
         }
-      } 
-            
+      }
+
     });
 
     return question;
   }
 
-  extractIpAddresses(quiz_session)
+  extractIpAddresses(quiz_session: any)
   {
     //Set Ipv4 info
     const ipv4 = utility.getIPv4Address()[0];
@@ -510,7 +510,7 @@ class Initialize extends QuizLifeCycle
 
 class InitializeDevQuiz extends Initialize
 {
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }
@@ -521,7 +521,7 @@ class InitializeDevQuiz extends Initialize
     {
       await this.devQuizInitialize();
     }
-    catch(err)
+    catch(err: any)
     {
       this.initialize_success = false;
       logger.error(`Failed to dev quiz initialize of quiz session, guild_id:${this.quiz_session.guild_id}, cycle_info:${this.cycle_info}, quiz_data: ${JSON.stringify(this.quiz_session.quiz_data)}, err: ${err.stack}`);
@@ -536,12 +536,12 @@ class InitializeDevQuiz extends Initialize
     const quiz_data = this.quiz_session.quiz_data;
     const quiz_path = quiz_info['quiz_path'];
     //실제 퀴즈들 로드
-    let question_list = [];
-        
-    const quiz_folder_list = fs.readdirSync(quiz_path); 
-                    
+    let question_list: any[] = [];
+
+    const quiz_folder_list = fs.readdirSync(quiz_path);
+
     const question_type = quiz_data['quiz_type'];
-    quiz_folder_list.forEach(question_folder_name => 
+    quiz_folder_list.forEach((question_folder_name: string) =>
     {
 
       if(question_folder_name.includes("info.txt")) return;
@@ -552,7 +552,7 @@ class InitializeDevQuiz extends Initialize
         {
           return; //그럼 그냥 return
         }
-    
+
         const question_folder_path = quiz_path + "/" + question_folder_name;
         question_list = this.parseFromQuizTXT(question_folder_path); //quiz.txt 에서 파싱하는 걸로...
         return;
@@ -561,7 +561,7 @@ class InitializeDevQuiz extends Initialize
       const question = this.buildDevQuestion(quiz_path, question_folder_name);
 
       //question_list에 넣어주기
-      if(question != undefined) 
+      if(question != undefined)
       {
         question_list.push(question);
       }
@@ -569,7 +569,7 @@ class InitializeDevQuiz extends Initialize
 
     if(question_list?.length != 0 && (question_type == QUIZ_TYPE.OX || question_type == QUIZ_TYPE.OX_LONG))
     {
-      question_list.forEach((question) => 
+      question_list.forEach((question) =>
       {
         question['answer_type'] = ANSWER_TYPE.OX;
       });
@@ -590,18 +590,18 @@ class InitializeDevQuiz extends Initialize
 
 class InitializeCustomQuiz extends Initialize
 {
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }
-    
+
   async act() //dev 퀴즈 파싱
   {
     try
     {
       await this.CustomQuizInitialize();
     }
-    catch(err)
+    catch(err: any)
     {
       this.initialize_success = false;
       logger.error(`Failed to custom quiz initialize of quiz session, guild_id:${this.quiz_session.guild_id}, cycle_info:${this.cycle_info}, quiz_data: ${JSON.stringify(this.quiz_session.quiz_data)}, err: ${err.stack ?? err}`);
@@ -617,20 +617,20 @@ class InitializeCustomQuiz extends Initialize
     const quiz_info = this.quiz_session.quiz_info;
     const quiz_data = this.quiz_session.quiz_data;
     //실제 퀴즈들 로드
-    let question_list = [];
+    const question_list: any[] = [];
 
     const quiz_id = quiz_info['quiz_id']; //커스텀 퀴즈는 quiz_id가 있다.
     const question_row_list = quiz_info.question_list;
 
-    if(question_row_list == undefined || question_row_list.length == 0) 
+    if(question_row_list == undefined || question_row_list.length == 0)
     {
       throw 'question row list is empty, quiz_id: ' + quiz_id;
     }
-        
-    question_row_list.forEach((question_row) => 
+
+    question_row_list.forEach((question_row: any) =>
     {
 
-      let question = this.buildCustomQuestion(question_row);
+      const question = this.buildCustomQuestion(question_row);
 
       /**완성했으면 넣자 */
       question_list.push(question);
@@ -652,13 +652,13 @@ class InitializeCustomQuiz extends Initialize
 
     // 서버별이 아닌 유저별로 변경되면서 필요 없어짐. 무조건 추천하기 띄움
     // feedback_manager.checkAlreadyLike(quiz_id, guild_id)
-    // .then((result) => 
+    // .then((result) =>
     // {
     //     if(this.quiz_session == undefined)
     //     {
     //         return;
     //     }
-            
+
     //     this.quiz_session.already_liked = result;
 
     //     logger.info(`this guild's already liked value = ${this.quiz_session.already_liked}, guild_id:${this.quiz_session.guild_id}`);
@@ -670,33 +670,33 @@ class InitializeCustomQuiz extends Initialize
 
 class InitializeOmakaseQuiz extends Initialize
 {
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
   }
-    
+
   async act() //dev 퀴즈 파싱
   {
     try
     {
       const is_multiplayer = this.quiz_session.isMultiplayerSession();
 
-      if (is_multiplayer) 
+      if (is_multiplayer)
       {
         this.quiz_session.waitForQuestionList();
-      
+
         if(this.quiz_session.isHostSession()) // 멀티플레이어일 때만 호스트 확인
-        { 
+        {
           await this.OmakaseQuizInitialize();
           this.quiz_session.sendQuestionListInfo();
         }
       }
-      else 
+      else
       {
         await this.OmakaseQuizInitialize(); // 멀티플레이어가 아닐 때 초기화
       }
     }
-    catch(err)
+    catch(err: any)
     {
       this.initialize_success = false;
       logger.error(`Failed to omakase quiz initialize of quiz session, guild_id:${this.quiz_session.guild_id}, cycle_info:${this.cycle_info}, quiz_data: ${JSON.stringify(this.quiz_session.quiz_data)}, err: ${err.stack}`);
@@ -712,18 +712,18 @@ class InitializeOmakaseQuiz extends Initialize
     const quiz_info = this.quiz_session.quiz_info;
     const quiz_data = this.quiz_session.quiz_data;
     //실제 퀴즈들 로드
-    let question_list = [];
+    const question_list: any[] = [];
 
     //오마카세 퀴즈 설정 값
     const use_basket_mode = quiz_info['basket_mode'] ?? true;
-    
-    //인증된 퀴즈에서만 뽑을지 필터
-    const certified_filter = quiz_info['certified_filter'] ?? true; 
 
-    let total_dev_question_count = undefined;
-    let dev_question_list = undefined;
-    let total_custom_question_count = undefined;
-    let custom_question_list = undefined;
+    //인증된 퀴즈에서만 뽑을지 필터
+    const certified_filter = quiz_info['certified_filter'] ?? true;
+
+    let total_dev_question_count: any = undefined;
+    let dev_question_list: any = undefined;
+    let total_custom_question_count: any = undefined;
+    let custom_question_list: any = undefined;
     let selected_question_count = quiz_info['selected_question_count']; //최대 문제 개수도 있다.
     const limit = selected_question_count * 2; //question prepare 에서 오류 발생 시, failover 용으로 넉넉하게 2배 잡는다.
 
@@ -735,7 +735,7 @@ class InitializeOmakaseQuiz extends Initialize
       const dev_quiz_tags = quiz_info['dev_quiz_tags']; //오마카세 퀴즈는 quiz_tags 가 있다.
       const custom_quiz_type_tags = quiz_info['custom_quiz_type_tags']; //오마카세 퀴즈는 quiz_type_tags 가 있다.
       const custom_quiz_tags = quiz_info['custom_quiz_tags']; //오마카세 퀴즈는 quiz_tags 도 있다.
-  
+
       //무작위로 question들 뽑아내자. 각각 넉넉하게 limit 만큼 뽑는다.
       [total_dev_question_count, dev_question_list] = tagged_dev_quiz_manager.getQuestionListByTags(dev_quiz_tags, limit);
       [total_custom_question_count, custom_question_list] = await loadQuestionListFromDBByTags(custom_quiz_type_tags, custom_quiz_tags, limit, certified_filter);
@@ -752,12 +752,12 @@ class InitializeOmakaseQuiz extends Initialize
 
       const basket_items = quiz_info['basket_items'];
 
-      const basket_items_value = Object.values(basket_items);
+      const basket_items_value: any[] = Object.values(basket_items);
       if(basket_items_value.length > 0)
       {
         const basket_condition_query = '(' + basket_items_value
-          .map(basket_item => basket_item.quiz_id)
-          .join(',') + ')';  
+          .map((basket_item: any) => basket_item.quiz_id)
+          .join(',') + ')';
 
         [total_custom_question_count, custom_question_list] = await loadQuestionListByBasket(basket_condition_query, limit);
       }
@@ -779,22 +779,22 @@ class InitializeOmakaseQuiz extends Initialize
     }
 
     logger.info(`Omakase Question count of this session. use_basket_mode=${use_basket_mode}, certified_filter=${certified_filter}, dev=${dev_quiz_count}, custom=${custom_quiz_count}, limit=${limit}`);
-    
 
-    //build dev questions 
-    dev_question_list.slice(0, dev_quiz_count).forEach(question_row => 
+
+    //build dev questions
+    dev_question_list.slice(0, dev_quiz_count).forEach((question_row: any) =>
     {
       const quiz_path = question_row['quiz_path'];
       const question_path = question_row['path'];
       const question = this.buildDevQuestion(quiz_path, question_path);
 
       //question_list에 넣어주기
-      if(question != undefined) 
+      if(question != undefined)
       {
         question['question_title'] = question_row['title'];
 
         let additional_text = '```';
-            
+
         const tags_string = "🔹 퀴즈 태그: " + question_row['tag'] + '\n';
         additional_text += tags_string;
 
@@ -810,19 +810,19 @@ class InitializeOmakaseQuiz extends Initialize
     });
 
     //build custom questions
-    custom_question_list.slice(0, custom_quiz_count).forEach((question_row) => 
+    custom_question_list.slice(0, custom_quiz_count).forEach((question_row: any) =>
     {
 
-      let question = this.buildCustomQuestion(question_row);
+      const question = this.buildCustomQuestion(question_row);
 
       question['question_title'] = question.data['quiz_title'];
 
       let additional_text = '```';
-            
+
       const tags_value = question.data['tags_value'];
       const tags_string = "🔹 퀴즈 태그: " + utility.convertTagsValueToString(tags_value) + '\n';
       additional_text += tags_string;
-            
+
       const creator_name = question.data['creator_name'] ?? '';
       if(creator_name != undefined)
       {
@@ -843,7 +843,7 @@ class InitializeOmakaseQuiz extends Initialize
       question_list.push(question);
 
     });
-        
+
     this.extractIpAddresses(quiz_session); //IP는 언제나 준비
 
     question_list.sort(() => Math.random() - 0.5); //퀴즈 목록 무작위로 섞기
@@ -860,12 +860,12 @@ class InitializeOmakaseQuiz extends Initialize
 
 class InitializeUnknownQuiz extends Initialize
 {
-  constructor(quiz_session)
+  constructor(quiz_session: any)
   {
     super(quiz_session);
     this.next_cycle = CYCLE_TYPE.FINISH;
   }
-    
+
   async enter() //에러
   {
     const channel = this.quiz_session.channel;

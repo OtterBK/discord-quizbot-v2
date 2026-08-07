@@ -7,7 +7,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { Initialize, InitializeUnknownQuiz } = require('../../../quizbot/quiz_system/lifecycle/initialize.js');
+const { Initialize, InitializeUnknownQuiz } = require('../../../quizbot/quiz_system/lifecycle/initialize');
 const option_system = require('../../../quizbot/quiz_option/quiz_option.js');
 const OPTION_TYPE = option_system.OPTION_TYPE;
 const utility = require('../../../utility/utility.js');

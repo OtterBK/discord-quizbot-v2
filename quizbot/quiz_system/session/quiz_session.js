@@ -13,7 +13,7 @@ const { SYSTEM_CONFIG, QUIZ_TYPE, QUIZ_MAKER_TYPE } = require('../../../config/s
 const utility = require('../../../utility/utility.js');
 const logger = require('../../../utility/logger.js')('QuizSystem');
 
-const { InitializeDevQuiz, InitializeCustomQuiz, InitializeOmakaseQuiz, InitializeUnknownQuiz } = require('../lifecycle/initialize.js');
+const { InitializeDevQuiz, InitializeCustomQuiz, InitializeOmakaseQuiz, InitializeUnknownQuiz } = require('../lifecycle/initialize');
 const Explain = require('../lifecycle/explain');
 const Prepare = require('../lifecycle/prepare.js');
 const QuestionSong = require('../lifecycle/question/question_song');
