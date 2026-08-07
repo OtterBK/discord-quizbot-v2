@@ -83,7 +83,7 @@ class UserQuestionInfoUI extends QuizbotUI
   resetQuestionDeleteConfirm()
   {
     this.pending_question_delete_confirm = false;
-    this.question_edit_comp2.components[1]
+    this.question_edit_comp2.components[2]
       .setLabel('현재 문제 삭제')
       .setStyle(ButtonStyle.Danger);
   }
@@ -211,7 +211,7 @@ class UserQuestionInfoUI extends QuizbotUI
       if(this.pending_question_delete_confirm !== true) //확인 절차 없이 원클릭으로 바로 삭제되던 것을 2클릭 확인 방식으로 변경
       {
         this.pending_question_delete_confirm = true;
-        this.question_edit_comp2.components[1]
+        this.question_edit_comp2.components[2]
           .setLabel('⚠️ 정말 삭제하려면 한 번 더 눌러주세요');
         return this;
       }
@@ -243,6 +243,12 @@ class UserQuestionInfoUI extends QuizbotUI
         this.current_question_index = (this.current_question_index + 1) > this.question_list.length ? this.question_list.length : this.current_question_index + 1;
         return this.goToPrevQuestion();
       }
+    }
+
+    if(interaction.customId === 'question_duplicate')
+    {
+      this.duplicateQuestion(interaction);
+      return;
     }
 
     if(interaction.customId === 'prev_question')
@@ -395,6 +401,7 @@ class UserQuestionInfoUI extends QuizbotUI
     if(question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
     {
       this.components[2].components[0].setDisabled(true); //이게 새로운 문제 만들기 버튼임
+      this.components[2].components[1].setDisabled(true); //현재 문제 복제 버튼도 새 문제를 추가하는 것이므로 동일하게 제한
     }
 
     const answer_type = question_info.data.answer_type ?? ANSWER_TYPE.SHORT_ANSWER;
@@ -609,6 +616,52 @@ class UserQuestionInfoUI extends QuizbotUI
     this.sendDelayedUI(this, true); //24.05.07 embed 이미지 버그에 따라 새로운 문제면 resend
 
     logger.info(`Created New Question... question_id: ${user_question_info.question_id}/${question_id}, user_id: ${modal_interaction.user.id}}, quiz_title: ${this.quiz_info.data.quiz_title}`);
+  }
+
+  /** 현재 보고 있는 문제를 그대로 복제해 바로 다음 위치에 삽입 */
+  async duplicateQuestion(interaction: any)
+  {
+    if(this.question_list !== undefined && this.question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    const source_question_info = this.current_question_info;
+    if(source_question_info === undefined)
+    {
+      interaction.explicit_replied = true;
+      interaction.deferUpdate();
+      return;
+    }
+
+    const user_question_info = new UserQuestionInfo();
+    user_question_info.data = cloneDeep(source_question_info.data);
+
+    const question_id = await user_question_info.saveDataToDB();
+
+    if(question_id === undefined)
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({ content: `\`\`\`${this.quiz_info.quiz_id} / ${interaction.user.id}에서 문제를 복제하는데 실패했습니다...😓.\n해당 문제가 지속될 경우 otter6975@gmail.com 이나 디스코드 DM으로 문의 바랍니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    this.quiz_info.updateModifiedTime();
+
+    interaction.explicit_replied = true;
+    interaction.deferUpdate();
+
+    const insert_index = this.question_list.indexOf(source_question_info) + 1;
+    this.question_list.splice(insert_index, 0, user_question_info); //복제 원본 바로 다음 위치에 삽입
+
+    this.current_question_index = insert_index;
+    this.displayQuestionInfo(this.current_question_index);
+
+    this.sendDelayedUI(this, true); //24.05.07 embed 이미지 버그에 따라 새로운 문제면 resend
+
+    logger.info(`Duplicated Question... source_question_id: ${source_question_info.question_id}, new_question_id: ${user_question_info.question_id}/${question_id}, user_id: ${interaction.user.id}`);
   }
 
   async editQuestionInfo(user_question_info: any, modal_interaction: any)

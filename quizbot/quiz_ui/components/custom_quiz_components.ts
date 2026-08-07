@@ -424,6 +424,12 @@ const question_edit_comp2 = new ActionRowBuilder()
   )
   .addComponents(
     new ButtonBuilder()
+      .setCustomId('question_duplicate')
+      .setLabel('현재 문제 복제')
+      .setStyle(ButtonStyle.Secondary),
+  )
+  .addComponents(
+    new ButtonBuilder()
       .setCustomId('question_delete')
       .setLabel('현재 문제 삭제')
       .setStyle(ButtonStyle.Danger),
