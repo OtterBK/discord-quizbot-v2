@@ -331,32 +331,9 @@ const start_quiz_handler = async (interaction) =>
     return;
   }
 
-  const uiHolder = quizbot_ui.createMainUIHolder(interaction); //메인 메뉴 전송
-  if(uiHolder != undefined)
-  {
-    //임시로 잠시 해둠 -> 실시간 공지 보내기
-    if (fs.existsSync(SYSTEM_CONFIG.CURRENT_NOTICE_PATH)) 
-    {
-      const current_notice = fs.readFileSync(SYSTEM_CONFIG.CURRENT_NOTICE_PATH, {
-        encoding: 'utf8',
-        flag: 'r',
-      });
-  
-      if(current_notice.length >= 0)
-      {
-        interaction.channel.send({ 
-          content: `\`\`\`${current_notice}\`\`\``,
-          // components: [new ActionRowBuilder()
-          //   .addComponents(
-          //     new ButtonBuilder()
-          //       .setLabel('보드게임봇 테스트 참여하기')
-          //       .setURL('https://koreanbots.dev/bots/952896575145930773')
-          //       .setStyle(ButtonStyle.Link),
-          //   ) ],
-        });
-      }
-    }
-  }
+  //실시간 공지(resources/current_notice.txt)는 예전엔 여기서 별도 메시지로 보냈으나(2026-08-13
+  //변경) - SelectUIModeUI(select-ui-mode-ui.ts)의 embed 필드로 옮김. 상세는 그 파일 상단 주석 참고.
+  quizbot_ui.createMainUIHolder(interaction); //메인 메뉴 전송
 };
 
 const create_quiz_tool_btn_component = new ActionRowBuilder().addComponents(
@@ -461,35 +438,29 @@ const quiz_manager_panel_handler = async (interaction) =>
   });
 };
 
-//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) 하이재킹 방어 - 다른 유저가 ephemeral "권한 가져오기"
-//버튼을 눌렀을 때. uiHolder 소유자가 아니므로 정상적인 uiHolder.on() 라우팅을 거치지 않고 여기서
-//바로 처리하고, 홀더 자체를 새 소유자(interaction.user) 것으로 교체한다(UIHolder는 소유자 재할당을
-//지원하지 않아서 free() 후 재생성).
-const handle_web_handoff_force_take = async (interaction) =>
+//길드 화면 하이재킹 방어 - 다른 유저가 ephemeral "권한 가져오기" 버튼을 눌렀을 때. uiHolder 소유자가
+//아니므로 정상적인 uiHolder.on() 라우팅을 거치지 않고 여기서 바로 처리한다.
+//2026-08-13 - 예전엔 웹 UI(WebHandoffUI) 세팅 중일 때만 이 버튼이 뜰 수 있었고, 대상 웹 세션 토큰을
+//IPC로 미리 새로 발급받은(`force_take` 액션) 뒤 곧장 WebHandoffUI로 진입시켰음. 지금은 디스코드
+//UI(MainUI 등) 사용 중에도 같은 버튼이 뜨므로 "웹 세션"이라는 특정 개념에 묶이지 않게 단순화 —
+//그냥 이전 홀더를 free()하면(웹 세션이 있었다면 free()가 알아서 release IPC까지 보냄, UIHolder.free()
+//참고) `createMainUIHolder`가 일반 `/퀴즈` 진입과 완전히 동일하게 새 SelectUIModeUI를 이 버튼
+//인터랙션으로 띄워준다(디스코드 UI/웹 UI 투트랙 선택 — 새 소유자가 원치 않는 트랙으로 강제되지 않음).
+const handle_ui_force_take = (interaction) =>
 {
   const guild_id = interaction.guild?.id;
   const prev_holder = guild_id === undefined ? undefined : quizbot_ui.getUIHolder(guild_id);
 
-  if(prev_holder === undefined || prev_holder.isDisplayingWebHandoff() === false)
+  if(prev_holder === undefined)
   {
     interaction.explicit_replied = true;
     interaction.reply({ content: `\`\`\`⚠️ 이미 상황이 바뀌었어요. [/퀴즈]를 다시 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
     return;
   }
 
-  const mode = prev_holder.ui.mode;
+  prev_holder.free();
 
-  interaction.explicit_replied = true;
-  await interaction.deferUpdate();
-
-  const reply = await ipc_manager.sendWebSessionRequest({ action: 'force_take', guild_id, owner_id: interaction.user.id, mode });
-  if(reply?.success !== true)
-  {
-    interaction.followUp({ content: `\`\`\`⚠️ 권한을 가져오지 못했어요. 잠시 후 다시 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
-    return;
-  }
-
-  quizbot_ui.createWebHandoffUIHolder(interaction, mode, { token: reply.token, expires_at: reply.expires_at }, true); //true: interaction이 이미 deferUpdate로 소비됨 -> channel.send로 새 메시지 발행
+  quizbot_ui.createMainUIHolder(interaction); //이 버튼 인터랙션 자체로 새 공개 메시지를 띄움(interaction.reply)
 };
 
 //2026-08-12(UI 개선 2라운드 B-1 [P3]) - 확인 절차 없이 즉시 서버 전체 세션을 지우던 것을 확인/취소
@@ -620,9 +591,9 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
     return;
   }
 
-  if(interaction.isButton() && interaction.customId === 'web_handoff_force_take') //웹 세팅 하이재킹 방어 - 소유자가 아닌 유저의 요청이라 uiHolder 소유자 체크(아래)를 거치기 전에 별도 처리
+  if(interaction.isButton() && interaction.customId === 'ui_force_take') //길드 화면 하이재킹 방어 - 소유자가 아닌 유저의 요청이라 uiHolder 소유자 체크(아래)를 거치기 전에 별도 처리
   {
-    await handle_web_handoff_force_take(interaction);
+    handle_ui_force_take(interaction);
     return;
   }
 
@@ -660,17 +631,27 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   if (
     (interaction.isButton() || interaction.isStringSelectMenu()) &&
     (!interaction.replied && !interaction.deferred && !interaction.explicit_replied)
-  ) 
+  )
   {
-    //quiz_session, ui_holder 거쳤는데도 reply 되지 않았다면 - 대부분 화면이 만료돼서(UIHolder GC,
-    //봇 재시작 등) 이 버튼/메뉴를 처리해줄 곳이 없는 경우다.
-    //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 원래 여기서 deferUpdate()만 하고 끝(성공하든 실패하든
-    //화면에 아무 변화도 안내도 없었음) - "이 버튼은 만료됐어요" 안내를 추가.
+    //quiz_session, ui_holder 거쳤는데도 reply 되지 않은 경우 - 대부분은 uiHolder/quiz_session이
+    //editReply(base_interaction)나 message.edit(base_message)로 화면을 갱신하는 정상 처리 경로라
+    //(새 UI로 전환되는 거의 모든 버튼 클릭이 이 패턴), 정작 지금 이 인터랙션 자체는 한 번도 reply되지
+    //않는다 - 화면은 멀쩡히 갱신됐으니 이 경우는 deferUpdate로 조용히 ack만 해야 한다.
+    //진짜 "화면이 만료됨"은 uiHolder/quiz_session 둘 다 못 찾은 경우(UIHolder GC, 봇 재시작 등)뿐이다.
+    //2026-08-12(UI 개선 2라운드 B-1 [P2])에서 "이 버튼은 만료됐어요" 안내를 추가했었는데, uiHolder가
+    //있어도(=정상 처리된 경우에도) 무조건 뜨는 버그였음(2026-08-13 재수정) - uiHolder/quiz_session이
+    //하나라도 있었으면 정상 처리로 보고 안내를 생략한다.
+    const nothing_handled_this_interaction = quiz_session === undefined && uiHolder === undefined;
+
     try
     {
       interaction.explicit_replied = true;
       await interaction.deferUpdate();//ㅇㅋ deffer로 보내
-      await interaction.followUp({ content: `\`\`\`⚠️ 이 버튼은 만료됐어요. 메뉴를 다시 열어주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+
+      if(nothing_handled_this_interaction)
+      {
+        await interaction.followUp({ content: `\`\`\`⚠️ 이 버튼은 만료됐어요. 메뉴를 다시 열어주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+      }
     }
     catch (err)
     {

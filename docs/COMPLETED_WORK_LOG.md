@@ -932,3 +932,142 @@ Fisher-Yates `shuffleArray` 헬퍼를 추가해 3곳 전부 교체.
 `guildCreate` 환영 메시지(새 서버 초대해야 트리거됨 — 로컬 테스트 어려움), 만료된 버튼 클릭 시 안내,
 `/퀴즈정리` 확인 플로우, 서버 설정 화면의 "기본값으로 초기화" 버튼, 스코어보드 제목 표시. 다음 세션
 `docs/TEST_CHECKLIST.md` AB 섹션 참고.
+
+## 2026-08-12 — `auto_script/` 운영 스크립트 조사 완료 (인수인계용, 코드 미수정)
+
+같은 세션 마지막에 사용자가 "다음 세션에서 봇 자동 설치/실행/중지 스크립트를 개선할 것"이라고
+예고, 코드 수정 없이 현재 상태만 조사해서 `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`로 정리해둠.
+`auto_script/` 전체 파일 지도, cron 등록 스케줄(봇이 하루 2번 9시/21시에 의도적으로 재시작되는
+운영 방식), 발견한 문제 8건(가장 심각한 건 `install_quizbot3.sh`가 클론하는 저장소 주소
+`OtterBK/Quizbot3`가 이 저장소의 실제 origin `OtterBK/discord-quizbot-v2`와 다르다는 것 — 새 서버
+설치 시 오래된 코드를 받아올 가능성), 착수 전 사용자에게 물어봐야 할 질문 5개(실제 운영 서버가 이
+스크립트 그대로 도는지 vs 수동 pm2/systemd/`dist/` 빌드 운영인지가 가장 중요)까지 정리 완료.
+
+## 2026-08-12 — `auto_script/` 운영 스크립트 개선 구현 완료 (같은 날 후속 세션)
+
+위 조사 문서의 질문 5개를 순서대로 확인받은 뒤(가장 심각했던 저장소 주소 문제부터) 착수. 확인 과정에서
+**더 심각한 사실 발견**: 지금 운영 중인 서버는 TS 마이그레이션 이전(88개 파일이 아직 `.js`였던 시절) 구코드가
+배포된 상태 — 소스 트리의 `index.js`를 그대로(`npm run build` 없이) 실행하면 이미 `.ts`로 전환된 매니저를
+require하는 순간 크래시하기 때문(전환된 파일은 원본 `.js`가 삭제돼 있고, `index.js`/`bot.js` 어디에도
+`ts-node/register` 같은 런타임 트랜스파일 훅이 없음 — 직접 `node -e "require(...)"`로 재현 확인). 곧 GCP에
+새 서버를 만들며 `develop-v3.5`(TS 마이그레이션 반영) 기준으로 재구축할 예정이라는 걸 확인하고 그에 맞춰
+스크립트 전체를 재설계.
+
+**변경 내용**:
+- `install_quizbot3.sh`: 클론 주소를 `OtterBK/Quizbot3`(옛 이름) → `OtterBK/discord-quizbot-v2`로 수정,
+  설치할 브랜치를 고를 수 있는 프롬프트 추가(기본 `master`), `npm install` 뒤 `npm run build` 추가(TS를
+  `dist/`로 컴파일 — 이제 필수 단계), 신규 `auto_script/systemd/quizbot3.service.template`을 설치 경로로
+  채워 `/etc/systemd/system/quizbot3.service`로 설치 + `systemctl enable`(시작은 안 함, 기존처럼
+  `quizbot_start.sh`로 수동 시작).
+- `server_script/quizbot_start.sh`/`quizbot_stop.sh`: 포그라운드 `node index.js` 직접 실행 + `pkill -f`
+  기반 프로세스 종료를 `systemctl start/stop quizbot3`로 교체 — 경로 하드코딩 문제(설치 경로가 기본값이
+  아니면 실행 스크립트가 깨지던 버그) 자체가 사라짐(경로는 유닛 파일에 고정), 로그도 이제 journal로
+  자동 수집됨(`journalctl -u quizbot3 -f`), ffmpeg orphan은 systemd가 기본 동작(`KillMode=control-group`)으로
+  같은 cgroup의 자식 프로세스까지 정지 시 함께 정리해주므로 `pkill -f ".*ffmpeg.*"`(다른 용도의 ffmpeg까지
+  전부 죽이던 과도하게 넓은 패턴)를 제거.
+- `quizbot3.service`(신규): `Restart=on-failure` — cron이 하루 2번(9시/21시) 명시적으로 stop/start를
+  호출하는 기존 방식과 systemd의 자동재시작이 서로 안 부딪히도록(수동 `stop`은 systemd 시맨틱상 애초에
+  auto-restart 대상이 아님, 예기치 않은 크래시만 자동 복구).
+- `server_script/update_yt-dlp.sh`: `curl -LO`(cwd에 받고 `mv`) → `curl -Lo "$TARGET_PATH/yt-dlp"`(바로
+  받기)로 수정 — cron 실행 시 작업 디렉터리에 따라 파일이 엉뚱한 곳에 남을 수 있던 문제 제거.
+- `정석 사용법.txt`: 옛 스크립트 이름(`setup_quizbot3.sh`) 참조를 걷어내고, 구서버 백업 → 신서버에서
+  브랜치 선택 설치(빌드 자동 포함) → config 덮어쓰기 → cron 등록 → `quizbot_start.sh` 실행까지 실제
+  사용 순서 그대로, `systemctl status/journalctl` 확인 명령과 코드 업데이트 시 `git pull` 뒤 `npm run
+  build`를 빼먹으면 안 된다는 안내 추가.
+- 재시작 주기(하루 2번 9/21시)와 원격 백업(rsync) 스크립트 정식화는 사용자 확인 후 **이번 스코프에서
+  제외**(전자는 기존 install 스크립트 값 그대로 유지, 후자는 다음 기회로 보류 — 실주소가 레포에 안
+  들어가게 설계까지는 검토했으나 착수 안 함).
+- 루트 `CLAUDE.md` "빌드/배포" 섹션을 위 발견(운영 봇은 이제 `dist/index.js` 실행이 필수) 기준으로
+  갱신.
+
+검증: 수정한 셸 스크립트 4개(`install_quizbot3.sh`/`quizbot_start.sh`/`quizbot_stop.sh`/
+`update_yt-dlp.sh`) `bash -n` 문법 검사 전부 통과. **미검증** — 실제 GCP 서버에 새로 설치해보는 실사용
+테스트는 아직 안 함(다음 서버 생성 시 최우선 확인 대상), `drop_ffmpeg.sh`/`db_script/` 하위는 이번에
+검토만 하고 로직 변경은 없음.
+
+## 2026-08-13 — "이 버튼은 만료됐어요" 오탐 버그 + 실시간 공지 UI 이동 + 웹 세션 소유자 복귀 불가 수정
+
+사용자가 `/퀴즈`/`/퀴즈만들기`에서 디스코드 UI/웹 UI 둘 중 뭘 눌러도 "이 버튼은 만료됐어요" 안내가
+뜬다고 보고 — 조사 결과 **거의 모든 정상 메뉴 전환에서 발생하는 광범위한 회귀**였음.
+
+- **원인**: `bot.js`의 전역 fallback(위 2026-08-12 "UI 개선 2라운드 B-1 [P2]" 항목에서 신설)이
+  `interaction.replied`/`.deferred`/`.explicit_replied`가 전부 false면 무조건 "만료됐어요"를 띄웠는데,
+  `SelectUIModeUI`/`MainUI` 등 대부분의 "`return new XXXUI()`" 패턴은 새 UI를 `base_interaction.editReply()`
+  (PUBLIC)나 `base_message.edit()`(PRIVATE)로 갱신할 뿐 **정작 지금 클릭된 인터랙션 자체는 한 번도
+  reply되지 않는 게 정상 동작**(예전엔 이 경우 조용히 `deferUpdate()`만 하고 끝났음). uiHolder/quiz_session이
+  실제로 있었는지와 무관하게 안내가 뜨는 게 버그였음 — `quiz_session`/`uiHolder` 둘 다 못 찾은 "진짜 만료"
+  케이스에서만 안내하도록 수정(`quizbot/bot.js`).
+- **곁가지로 발견**: `current_notice.txt`(실시간 공지)가 `/퀴즈` 입력 시 `SelectUIModeUI`와 별개로
+  `interaction.channel.send()`로 매번 새 메시지를 또 보내고 있었음 — 사용자 요청으로 `SelectUIModeUI`
+  (`quizbot/quiz_ui/select-ui-mode-ui.ts`)의 embed 필드로 이동(`bot.js`의 별도 발송 코드 제거). 이 화면은
+  트랙 선택 전에만 보이고 웹 UI 선택 후(`WebHandoffUI`)에는 다시 안 뜨므로, 자연스럽게 "웹 UI에서는
+  실시간 공지 불필요"도 같이 만족됨.
+- **웹 세션 소유자가 디스코드 UI로 못 돌아가는 문제**: `createMainUIHolder`(`ui-system-core.ts`)가
+  길드에 웹 세팅 중인 `WebHandoffUI`가 있으면 **요청자가 그 세션의 소유자 본인이어도** 항상 "권한
+  가져오기" 하이재킹 방어 안내만 띄웠음 — 본인이 다시 `/퀴즈`를 입력해 디스코드 UI로 돌아가려 해도
+  "권한 가져오기"를 눌러봐야 같은 웹 잠금 화면만 재생성돼서 돌아갈 방법이 아예 없었음. 요청자가 소유자
+  본인이면 이 가드를 건너뛰고 기존 홀더를 `free()`한 뒤 `SelectUIModeUI`를 새로 띄우도록 수정 — 다른
+  유저가 하이재킹 시도할 때의 방어는 그대로 유지.
+
+검증: `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(349 pass)/`npm run build`(백엔드) 전부
+통과, `SelectUIModeUI` 인스턴스화해서 공지 필드가 실제로 채워지는지 직접 확인. **미검증** — 세 가지
+모두 실제 Discord로는 아직 안 돌려봄, 특히 "웹 세션 소유자 본인 복귀" 시나리오는 다음 세션에서 우선
+확인 권장.
+
+## 2026-08-13 — 실시간 공지 구분선 추가 + force_take 이후 투트랙 선택권 제공 (같은 날 후속)
+
+위 항목 검토 중 사용자가 준 추가 피드백 2건.
+
+- **실시간 공지 구분선**: "실시간 공지를 UI에 잘 녹여야했는데 그렇지 않다"는 지적 — 설명 문구 바로
+  아래 필드가 붙어있어 시각적으로 구분이 안 됐음. `SelectUIModeUI.buildNoticeFields()`
+  (`quizbot/quiz_ui/select-ui-mode-ui.ts`)에 빈 이름(zero-width space) + 가로줄 문자(`━` 반복) 필드를
+  공지 필드 바로 앞에 추가해 구분선 역할을 하도록 함.
+- **force_take(권한 가져오기) 후 투트랙 선택권 미제공**: 사용자1이 웹 UI로 조작 중일 때 사용자2가
+  `/퀴즈` → "권한 가져오기"를 누르면, 예전엔 곧장 `WebHandoffUI`(웹 잠금 화면)로 강제 진입됐음 —
+  사용자2가 디스코드 UI로 하고 싶어도 선택권이 없었음. `bot.js`의
+  `handle_web_handoff_force_take`가 부르던 `ui-system-core.ts`의 `createWebHandoffUIHolder`를
+  `createForceTakeUIHolder`로 교체(기존엔 이 함수가 force_take 전용으로만 쓰이고 있어서 이름과
+  동작을 아예 이 용도에 맞게 바꿈) — 이제 곧장 `WebHandoffUI`가 아니라 `SelectUIModeUI`(디스코드
+  UI/웹 UI 선택 화면)를 새로 띄운다. `SelectUIModeUI`가 `mode`/`pending_web_session`(force_take로
+  이미 발급받은 토큰) 생성자 인자를 받도록 확장 — 웹 UI를 고르면 이 토큰을 그대로 `WebHandoffUI`에
+  넘겨 재사용(추가 세션 발급 없음), 디스코드 UI를 고르면 `ipc_manager.sendWebSessionRequest({action:
+  'release', ...})`로 안 쓰는 토큰을 조용히 반납한 뒤 `MainUI`로 진입. 이 화면엔 "🔓 권한을
+  가져왔어요" 안내 필드도 추가해 왜 이 화면이 떴는지 맥락을 줌.
+
+검증: `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(349 pass)/`npm run build` 전부 통과,
+`SelectUIModeUI`를 인자 없이/`pending_web_session`과 함께 각각 인스턴스화해서 구분선+안내 필드가
+의도대로 나오는지 직접 확인. **미검증** — 실제 Discord에서 두 유저로 force_take 시나리오를 아직
+안 돌려봄, 다음 세션에서 우선 확인 권장.
+
+## 2026-08-13 — 하이재킹 방어가 디스코드 UI 트랙엔 아예 없던 근본 버그 발견 + force_take 전면 재설계 (같은 날 후속)
+
+위 항목의 "미검증" 권고대로 사용자가 직접 시나리오를 재현해보고 "권한 가져오기 기능이 망가졌다"고
+보고 — 재현해보니 위 수정은 증상(웹 UI 강제 진입)만 없앴을 뿐, **하이재킹 가드 자체가 여전히
+`WebHandoffUI`(웹 UI 트랙)에만 걸려있었다는 더 근본적인 기존 버그**가 드러남. 사용자1이 "디스코드
+UI"를 골라 `MainUI`를 쓰는 중엔 `isDisplayingWebHandoff()`가 애초에 false라서, 사용자2가 `/퀴즈`를
+입력하면 확인 절차 없이 곧장 화면을 가로챌 수 있었음(사용자1의 진행 상황은 조용히 증발). 이건
+2026-08-08 웹 연동 도입 당시부터 있던 설계 공백으로 보임 — 웹 세션만 "하이재킹해도 되는 자원"으로
+보호하고 디스코드 UI는 애초에 보호 대상이 아니었음.
+
+**수정**: `createMainUIHolder`(`ui-system-core.ts`)의 가드 조건을 `isDisplayingWebHandoff() &&
+소유자 아님`에서 **`소유자 아님`만으로 일반화** — 디스코드 UI든 웹 UI든 다른 유저가 쓰는 중이면
+동일하게 "🔒 OOO 님이 (웹에서 퀴즈를 세팅하는/퀴즈 화면을 사용하는) 중입니다" + "🔓 권한 가져오기"
+안내가 뜬다(문구는 `isDisplayingWebHandoff()`로 여전히 분기).
+
+**force_take 흐름도 함께 단순화**: 사용자가 "그냥 토큰을 재사용하지 말고 새로 발급하면 안 되나?"라고
+질문 — 맞는 지적이라 판단해 위 항목에서 만든 `createForceTakeUIHolder`/`SelectUIModeUI`의
+`mode`/`pending_web_session` 생성자 확장을 전부 되돌림. 이제 `bot.js`의 `handle_ui_force_take`(이전
+이름 `handle_web_handoff_force_take`)는 IPC `force_take` 액션으로 토큰을 미리 발급받지 않고, 그냥
+이전 홀더를 `free()`(웹 세션이 있었다면 `UIHolder.free()`가 알아서 release IPC를 보냄)한 뒤
+`createMainUIHolder`를 **그대로 재사용**해서 이 버튼 인터랙션으로 새 `SelectUIModeUI`를 띄운다 — 웹
+UI를 다시 고르면 `WebHandoffUI`가 평소처럼 `'create'` 액션으로 새 토큰을 발급받을 뿐이라, 특별한
+재사용 로직 자체가 필요 없어짐(비용도 토큰 생성 1회뿐이라 무시할 수준). 컴포넌트/customId도
+`web_handoff_force_take_comp`/`'web_handoff_force_take'`(웹 전용 이름)에서 `force_take_comp`/
+`'ui_force_take'`(트랙 무관 일반 이름)로 리네임.
+
+검증: `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(349 pass)/`npm run build` 전부 통과.
+빌드 산출물(`dist/`)에 `ipc_manager`/`ui-system-core` 목(mock) 스크립트로 시나리오 전체를 직접
+재현: 사용자1이 디스코드 UI 선택 → 사용자2의 `/퀴즈`가 하이재킹 가드에 막힘(`undefined` 반환 +
+안내 메시지) → "권한 가져오기" 시뮬레이션(`free()` + `createMainUIHolder` 재호출) → 사용자2가 정확히
+`SelectUIModeUI`(두 트랙 선택 화면)에 도달하는 것까지 확인. **미검증** — 실제 Discord 클라이언트로는
+아직 안 돌려봄(특히 버튼 인터랙션의 `reply()`가 새 공개 메시지로 정상 발행되는지), 다음 세션 최우선.

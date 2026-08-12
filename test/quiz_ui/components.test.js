@@ -26,7 +26,7 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
   // multiplayer_leave_confirm_comp/multiplayer_kick_confirm_comp는 파괴적 동작 확인 절차 추가로 신설됨
   // admin_ban_unban_confirm_comp는 밴 해제 확인 절차 추가로 신설됨
   // question_preview_comp는 B-2(문제 미리듣기) 구현으로 신설됨(이미지 재로드 버튼도 question_edit_comp에서 이쪽으로 이동)
-  // web_handoff_force_take_comp는 퀴즈 선택 웹 연동 하이재킹 방어(Phase 1)로 신설됨
+  // force_take_comp(2026-08-13 이전 이름: web_handoff_force_take_comp)는 하이재킹 방어(Phase 1)로 신설됨
   // select_ui_mode_btn_component는 퀴즈 선택 웹 연동 투트랙 진입(SelectUIModeUI) 신설로 추가됨
   const expected_names = [
     ...Object.keys(base_components),

@@ -1,18 +1,19 @@
-//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) 하이재킹 방어용 컴포넌트.
-//WebHandoffUI가 잠긴 동안 다른 유저가 /퀴즈를 눌렀을 때 보여주는 ephemeral 안내 전용 - 소유자가
-//아닌 유저의 인터랙션이라 ui_holder_map을 거치지 않고 bot.js에서 직접 처리한다(web-handoff-ui.ts 참고).
-//WebHandoffUI 자체의 컴포넌트(잠금 화면)는 Link 버튼 하나뿐이라 여기 둘 필요 없이 web-handoff-ui.ts에서
-//직접 만든다 - Link 버튼은 인터랙션을 발생시키지 않아(디스코드 클라이언트가 바로 브라우저를 여는 방식)
-//소유자 전용 체크와 무관하게 항상 안전하다.
+//길드 화면 하이재킹 방어용 컴포넌트. 다른 유저가 이미 이 서버의 화면(디스코드 UI든 웹 UI든)을
+//쓰고 있는 상태에서 누군가 /퀴즈를 입력하면 보여주는 ephemeral 안내 전용 - 소유자가 아닌 유저의
+//인터랙션이라 ui_holder_map을 거치지 않고 bot.js에서 직접 처리한다(ui-system-core.ts의
+//createMainUIHolder/bot.js의 handle_ui_force_take 참고).
+//2026-08-13 - 원래 웹 UI 세팅 중(WebHandoffUI)일 때만 쓰이던 컴포넌트였는데, 디스코드 UI 사용
+//중에도 동일한 방어가 필요해져서 이름/문구를 일반화함(퀴즈 선택 웹 연동 하이재킹 방어, Phase 1에서
+//처음 신설됨).
 
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-const web_handoff_force_take_comp = new ActionRowBuilder()
+const force_take_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
-      .setCustomId('web_handoff_force_take')
+      .setCustomId('ui_force_take')
       .setLabel('🔓 권한 가져오기')
       .setStyle(ButtonStyle.Danger),
   );
 
-module.exports = { web_handoff_force_take_comp };
+module.exports = { force_take_comp };

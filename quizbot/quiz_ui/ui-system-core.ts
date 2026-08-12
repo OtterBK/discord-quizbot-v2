@@ -18,7 +18,7 @@ const { WebHandoffUI } = require('./web-handoff-ui');
 const { QuizEditSelectUIModeUI } = require('./quiz-edit-select-ui-mode-ui');
 const { QuizEditWebHandoffUI } = require('./quiz-edit-web-handoff-ui');
 const { SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
-const { web_handoff_force_take_comp } = require('./components');
+const { force_take_comp } = require('./components');
 const ipc_manager = require('../managers/ipc_manager');
 
 //#endregion
@@ -59,10 +59,18 @@ const createMainUIHolder = (interaction: any): any =>
       return undefined;
     }
 
-    if(prev_uiHolder.isDisplayingWebHandoff()) //다른 유저가 웹에서 세팅 중이면 하이재킹 방어 안내만 (WEB_INTEGRATION_PLAN.md 5번)
+    //다른 유저가 이미 이 서버의 화면을 사용 중이면(디스코드 UI든 웹 UI든) 하이재킹 방어 안내만 -
+    //본인이 다시 /퀴즈를 입력한 경우는 하이재킹이 아니라 이어서 진행하려는 정상 요청이므로 가드를
+    //건너뛰고 아래 free()+SelectUIModeUI 재생성으로 진행한다.
+    //2026-08-13 수정: 원래 이 가드는 `isDisplayingWebHandoff()`(웹 UI 세팅 중)일 때만 걸렸음 -
+    //디스코드 UI(MainUI 등)를 쓰는 중엔 다른 유저가 /퀴즈를 입력하면 확인 절차 없이 곧장 화면을
+    //가로챌 수 있었던 게 실사용 리포트로 발견됨. 두 트랙 다 동일하게 보호하도록 일반화.
+    if(interaction.user.id !== prev_uiHolder.getOwnerId())
     {
+      const activity_desc = prev_uiHolder.isDisplayingWebHandoff() ? '웹에서 퀴즈를 세팅하는' : '퀴즈 화면을 사용하는';
+
       interaction.explicit_replied = true;
-      interaction.reply( { content:`\`\`\`🔒 ${prev_uiHolder.getOwnerName()} 님이 웹에서 퀴즈를 세팅하는 중입니다.\n권한을 가져오면 상대방의 웹 세션은 즉시 종료됩니다.\`\`\``, components: [web_handoff_force_take_comp], flags: MessageFlags.Ephemeral });
+      interaction.reply( { content:`\`\`\`🔒 ${prev_uiHolder.getOwnerName()} 님이 ${activity_desc} 중입니다.\n권한을 가져오면 상대방의 화면은 즉시 종료됩니다.\`\`\``, components: [force_take_comp], flags: MessageFlags.Ephemeral });
       return undefined;
     }
 
@@ -123,34 +131,10 @@ const createAdminPanelUIHolder = (interaction: any): any =>
   return uiHolder;
 };
 
-//퀴즈 선택 웹 연동 - '/퀴즈' 명령어에서 웹 세팅 화면으로 바로 진입할 때(select-quiz-type-ui.ts),
-//force_take로 이미 발급된 세션을 이어받아 진입할 때(bot.js의 force_take 핸들러) 둘 다 여기로 옴.
-//existing_session이 있으면 WebHandoffUI가 내부적으로 새 'create' 요청을 보내지 않고 바로 잠금 화면을 그린다.
-//use_public_message_mode: force_take처럼 넘겨받은 interaction이 이미 deferUpdate()로 소비된 경우
-//true로 넘겨야 함 - UIHolder.updatePublicUI()가 interaction.reply() 대신 channel.send()로 새 메시지를
-//보내도록 전환(sendDelayedUI가 뒤로가기 등에서 쓰는 것과 동일한 public_message_mode 스위치).
-const createWebHandoffUIHolder = (interaction: any, mode: string, existing_session: any = undefined, use_public_message_mode: boolean = false): any =>
-{
-  const guild_id = interaction.guild.id;
-  if(ui_holder_map.hasOwnProperty(guild_id))
-  {
-    const prev_uiHolder = ui_holder_map[guild_id];
-    prev_uiHolder.free();
-  }
-
-  const uiHolder = new UIHolder(interaction, new WebHandoffUI(mode, interaction, existing_session), UI_HOLDER_TYPE.PUBLIC);
-  uiHolder.holder_id = guild_id;
-  uiHolder.public_message_mode = use_public_message_mode;
-  ui_holder_map[guild_id] = uiHolder;
-
-  uiHolder.updateUI();
-
-  return uiHolder;
-};
-
-//퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 1 - createWebHandoffUIHolder와 거의 동일한
-//패턴이되 PRIVATE(DM)로 생성하고 하이재킹 방어가 없다(DM은 봇-유저 1:1이라 애초에 다른 유저가 이
-//홀더를 볼 방법이 없음 - force_take/use_public_message_mode 개념 자체가 불필요).
+//퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 1 - `QuizEditWebHandoffUI`(잠금 화면)를
+//PRIVATE(DM) 홀더로 곧장 띄운다. DM은 봇-유저 1:1이라 다른 유저가 이 홀더를 볼 방법이 없어
+//하이재킹 방어(force_take 등) 자체가 불필요 - `createMainUIHolder`처럼 먼저 투트랙 선택 화면을
+//거치지 않고 existing_session을 그대로 받아 곧장 웹 잠금 화면으로 진입한다.
 const createQuizEditWebHandoffUIHolder = (interaction: any, existing_session: any = undefined): any =>
 {
   const user_id = interaction.user.id ?? interaction.member.id;
@@ -686,4 +670,4 @@ class UIHolder
 
 //#endregion
 
-module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, createAdminPanelUIHolder, createWebHandoffUIHolder, createQuizEditWebHandoffUIHolder, getUIHolder, relayMultiplayerSignal, relayWebSessionSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };
+module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, createAdminPanelUIHolder, createQuizEditWebHandoffUIHolder, getUIHolder, relayMultiplayerSignal, relayWebSessionSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };
