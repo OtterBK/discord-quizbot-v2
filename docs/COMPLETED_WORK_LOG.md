@@ -1072,44 +1072,29 @@ UI를 다시 고르면 `WebHandoffUI`가 평소처럼 `'create'` 액션으로 �
 `SelectUIModeUI`(두 트랙 선택 화면)에 도달하는 것까지 확인. **미검증** — 실제 Discord 클라이언트로는
 아직 안 돌려봄(특히 버튼 인터랙션의 `reply()`가 새 공개 메시지로 정상 발행되는지), 다음 세션 최우선.
 
-## 2026-08-12 — `auto_script/` 운영 스크립트 개선 구현 완료 (같은 날 후속 세션)
+## 2026-08-13 — 브랜치 전략 재편(develop-claude/develop/master) + docs/ 재정리 + quizbot_update.sh 신설
 
-위 조사 문서의 질문 5개를 순서대로 확인받은 뒤(가장 심각했던 저장소 주소 문제부터) 착수. 확인 과정에서
-**더 심각한 사실 발견**: 지금 운영 중인 서버는 TS 마이그레이션 이전(88개 파일이 아직 `.js`였던 시절) 구코드가
-배포된 상태 — 소스 트리의 `index.js`를 그대로(`npm run build` 없이) 실행하면 이미 `.ts`로 전환된 매니저를
-require하는 순간 크래시하기 때문(전환된 파일은 원본 `.js`가 삭제돼 있고, `index.js`/`bot.js` 어디에도
-`ts-node/register` 같은 런타임 트랜스파일 훅이 없음 — 직접 `node -e "require(...)"`로 재현 확인). 곧 GCP에
-새 서버를 만들며 `develop-v3.5`(TS 마이그레이션 반영) 기준으로 재구축할 예정이라는 걸 확인하고 그에 맞춰
-스크립트 전체를 재설계.
+사용자가 앞으로 브랜치 용도를 `develop-claude`(Claude와의 바이브코딩용) → `develop`(실서버 설치해
+전수 테스트하는 용도) → `master`(전수 테스트 통과 후 장기 운영) 3단계로 나누기로 결정. 이에 맞춰 여러
+작업을 한 세션에 처리:
 
-**변경 내용**:
-- `install_quizbot3.sh`: 클론 주소를 `OtterBK/Quizbot3`(옛 이름) → `OtterBK/discord-quizbot-v2`로 수정,
-  설치할 브랜치를 고를 수 있는 프롬프트 추가(기본 `master`), `npm install` 뒤 `npm run build` 추가(TS를
-  `dist/`로 컴파일 — 이제 필수 단계), 신규 `auto_script/systemd/quizbot3.service.template`을 설치 경로로
-  채워 `/etc/systemd/system/quizbot3.service`로 설치 + `systemctl enable`(시작은 안 함, 기존처럼
-  `quizbot_start.sh`로 수동 시작).
-- `server_script/quizbot_start.sh`/`quizbot_stop.sh`: 포그라운드 `node index.js` 직접 실행 + `pkill -f`
-  기반 프로세스 종료를 `systemctl start/stop quizbot3`로 교체 — 경로 하드코딩 문제(설치 경로가 기본값이
-  아니면 실행 스크립트가 깨지던 버그) 자체가 사라짐(경로는 유닛 파일에 고정), 로그도 이제 journal로
-  자동 수집됨(`journalctl -u quizbot3 -f`), ffmpeg orphan은 systemd가 기본 동작(`KillMode=control-group`)으로
-  같은 cgroup의 자식 프로세스까지 정지 시 함께 정리해주므로 `pkill -f ".*ffmpeg.*"`(다른 용도의 ffmpeg까지
-  전부 죽이던 과도하게 넓은 패턴)를 제거.
-- `quizbot3.service`(신규): `Restart=on-failure` — cron이 하루 2번(9시/21시) 명시적으로 stop/start를
-  호출하는 기존 방식과 systemd의 자동재시작이 서로 안 부딪히도록(수동 `stop`은 systemd 시맨틱상 애초에
-  auto-restart 대상이 아님, 예기치 않은 크래시만 자동 복구).
-- `server_script/update_yt-dlp.sh`: `curl -LO`(cwd에 받고 `mv`) → `curl -Lo "$TARGET_PATH/yt-dlp"`(바로
-  받기)로 수정 — cron 실행 시 작업 디렉터리에 따라 파일이 엉뚱한 곳에 남을 수 있던 문제 제거.
-- `정석 사용법.txt`: 옛 스크립트 이름(`setup_quizbot3.sh`) 참조를 걷어내고, 구서버 백업 → 신서버에서
-  브랜치 선택 설치(빌드 자동 포함) → config 덮어쓰기 → cron 등록 → `quizbot_start.sh` 실행까지 실제
-  사용 순서 그대로, `systemctl status/journalctl` 확인 명령과 코드 업데이트 시 `git pull` 뒤 `npm run
-  build`를 빼먹으면 안 된다는 안내 추가.
-- 재시작 주기(하루 2번 9/21시)와 원격 백업(rsync) 스크립트 정식화는 사용자 확인 후 **이번 스코프에서
-  제외**(전자는 기존 install 스크립트 값 그대로 유지, 후자는 다음 기회로 보류 — 실주소가 레포에 안
-  들어가게 설계까지는 검토했으나 착수 안 함).
-- 루트 `CLAUDE.md` "빌드/배포" 섹션을 위 발견(운영 봇은 이제 `dist/index.js` 실행이 필수) 기준으로
-  갱신.
+- **브랜치 rename**: 기존 작업 브랜치 `develop-v3.5`를 `develop-claude`로 rename(`git branch -m`,
+  origin에는 아직 `develop-v3.5`만 있고 `push`는 안 함 — 로컬 전용 변경).
+- **`docs/` 재정리**: `ACTIVE_PLAN.md`/`COMPLETED_WORK_LOG.md`/`TEST_CHECKLIST.md` 3개만 루트에
+  남기고 나머지 22개를 `docs/plans/`(작업계획서 15개)/`docs/archive/`(로그성 보존 문서 5개)/
+  `docs/mockups/`(정적 HTML 목업 2개)로 분류. 이동한 파일을 참조하던 모든 `CLAUDE.md`(루트+하위 6개)와
+  `docs/*.md` 내부 상호 참조 경로를 스크립트로 일괄 치환 후 잔존 참조 없는지 grep으로 재검증.
+- **`auto_script/server_script/quizbot_update.sh` 신설**: 운영 서버(`develop`/`master` 브랜치 전용,
+  다른 브랜치면 실행 거부)에 최신 커밋을 반영하는 업데이트 스크립트 —
+  `systemctl stop` → `git fetch` + `reset --hard origin/<브랜치>`(private_config.json 등 gitignore
+  대상은 안 건드림) → `npm install` → `custom_node_modules` 패치 재적용(install 스크립트와 동일
+  이유 — npm install이 패치 대상 패키지를 재설치하면 패치가 날아감) → `npm run build`(TS 빌드 실패
+  시 서비스를 시작하지 않고 중단, 이전 `dist/`는 그대로 보존돼 안전) → `systemctl start`. `정석
+  사용법.txt`/`CLAUDE.md` 갱신.
+- **`develop-claude` → `develop` 병합**: 로컬 `develop`이 origin/master의 오래된 조상(unique 커밋
+  0개, `git merge-base --is-ancestor`로 확인)이라 순수 fast-forward. 병합 후 `develop` 브랜치에서는
+  `CLAUDE.md`(전부)와 `docs/`(대부분) 등 Claude 세션 전용 문서를 제거 — 상세는 `develop` 브랜치의
+  커밋 로그 참고(이 로그 자체는 develop-claude 전용 문서라 develop에는 없음).
 
-검증: 수정한 셸 스크립트 4개(`install_quizbot3.sh`/`quizbot_start.sh`/`quizbot_stop.sh`/
-`update_yt-dlp.sh`) `bash -n` 문법 검사 전부 통과. **미검증** — 실제 GCP 서버에 새로 설치해보는 실사용
-테스트는 아직 안 함(다음 서버 생성 시 최우선 확인 대상), `drop_ffmpeg.sh`/`db_script/` 하위는 이번에
-검토만 하고 로직 변경은 없음.
+검증: 수정한 셸 스크립트(`quizbot_update.sh`) `bash -n` 통과. **미검증** — 실제 서버에서
+`quizbot_update.sh` 실행은 안 해봄, 다음 서버 배포 시 최우선 확인 대상.
