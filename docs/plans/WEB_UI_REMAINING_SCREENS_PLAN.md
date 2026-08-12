@@ -7,7 +7,7 @@
 
 ## 배경
 
-"퀴즈 만들기 웹 UI"(`docs/plans/WEB_QUIZ_CREATION_PLAN.md`)와 "퀴즈 선택 웹 연동"(`docs/
+"퀴즈 만들기 웹 UI"(`docs/plans/WEB_QUIZ_CREATION_PLAN.md`)와 "퀴즈 선택 웹 연동"(`docs/plans/
 WEB_INTEGRATION_PLAN.md`)이 전부 끝난 뒤, 사용자가 이어서 요청한 3가지 중 남은 1가지 — "기존
 디스코드 UI에서 지원하는 나머지 기능들도 웹 UI로 포팅" (퀴즈만들기 안내 페이지 / 서버 설정 / 공지사항).
 나머지 2가지(투트랙 선택 버튼 라벨 개선, "권한 가져오기" 신규 토큰 발급 레이스 버그)는 같은 세션에서

@@ -661,7 +661,7 @@ hideBasic />`)에서도 `hideBasic` 제거. 검증: `npm run build`(프론트엔
 막고 있어 동작 변화 없음). 프론트엔드 전용 수정, 백엔드 무변경. `npm run build`(프론트엔드) 통과 후
 사용자가 재검증까지 완료(더 이상 raw 에러 문자열이 안 뜸).
 
-`docs/TEST_CHECKLIST.md` U/V 섹션 전체를 `[x]`로 갱신, `docs/ACTIVE_PLAN.md` B-5/`docs/
+`docs/TEST_CHECKLIST.md` U/V 섹션 전체를 `[x]`로 갱신, `docs/ACTIVE_PLAN.md` B-5/`docs/plans/
 WEB_QUIZ_CREATION_PLAN.md` Phase 4 하단에 검증 완료 기록 반영. **다음 세션은 Phase 5(폴리시 + 통합
 검증)부터** — 착수 전 플랜모드로 범위 정리 후 사용자 확인 필요.
 
@@ -704,7 +704,7 @@ WEB_QUIZ_CREATION_PLAN.md` Phase 4 하단에 검증 완료 기록 반영. **다�
    고치지 않고 다음 세션으로 이월 — 아래 신규 계획 문서 참고.
 
 **"퀴즈 만들기 웹 UI"(Phase 0~5) 전체 완료.** `docs/ACTIVE_PLAN.md` B-5 항목을 완료 처리하고 B-6(잔여
-3건 - 서버 설정 권한 검증 + 나머지 화면 웹 포팅)을 신설, 상세 계획은 `docs/
+3건 - 서버 설정 권한 검증 + 나머지 화면 웹 포팅)을 신설, 상세 계획은 `docs/plans/
 WEB_UI_REMAINING_SCREENS_PLAN.md`(신규)에 분리.
 
 ## 2026-08-12 — 나머지 디스코드 전용 화면(안내/공지사항/서버 설정) 웹 포팅 완료 (B-6, 같은 세션)

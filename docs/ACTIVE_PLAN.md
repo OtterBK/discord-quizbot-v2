@@ -25,7 +25,7 @@
 > 6. **[결정 필요] B-1. 문제 일괄 등록** — 아래 B-1 항목, `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md`의
 >    3가지 결정부터. (2026-08-12 사용자가 마지막 순서로 재조정)
 >
-> 6번은 "사용자와 먼저 논의/결정"이 선행돼야 함 — 시작 전 반드시 확인할 것. 종합 배경은 `docs/
+> 6번은 "사용자와 먼저 논의/결정"이 선행돼야 함 — 시작 전 반드시 확인할 것. 종합 배경은 `docs/plans/
 > DEVELOP_V3_5_CHANGES_REVIEW.md`(develop-v3.5 전체 변경사항 리뷰 문서, 참고용).
 
 > **✅ 2026-08-12 `auto_script/` 운영 스크립트 개선 완료 (같은 날 후속 세션).** 저장소 주소 수정(옛
@@ -372,7 +372,7 @@ Phase 5 마무리 중 사용자가 준 추가 요청 3건 — 위 두 건(투트
 
 사용자가 다음 세션에서 진행하기로 한 작업 2건 — (1) 문제 편집 미리보기(`questionDisplay.jsx`)에
 `QuizDetailCard.jsx`/`GuidePanel.jsx`와 동일한 `react-markdown` 패턴 적용, (2) 퀴즈 만들기 웹 API의
-IDOR/SQL 인젝션/백엔드 검증/rate limiting 점검. 인수인계 문서(`docs/
+IDOR/SQL 인젝션/백엔드 검증/rate limiting 점검. 인수인계 문서(`docs/plans/
 QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`)의 조사 결과를 재조사 없이 바로 착수해 **체크리스트
 5개 항목(rate limiting → IDOR 라이브 검증 → 백엔드 검증 구멍 2개 → SQL 하드닝) 전부 완료**. 마크다운
 미리보기도 함께 완료.

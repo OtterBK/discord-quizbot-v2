@@ -43,7 +43,7 @@
 - `quiz_system.js`는 State 패턴 엔진이라 클래스 경계 = 파일 경계로 승격(Initialize/Prepare/Explain/
   Question(+8개 하위클래스)/TimeOver/CorrectAnswer/Clearing/Ending/Finish/HOLD, `QuizSession`/
   `MultiplayerSession` 계열).
-- 리팩터 원칙: **"리팩토링(이동/분리) 커밋과 버그 수정 커밋은 절대 섞지 않는다"**(`docs/
+- 리팩터 원칙: **"리팩토링(이동/분리) 커밋과 버그 수정 커밋은 절대 섞지 않는다"**(`docs/plans/
   CONTRIBUTING_REFACTOR.md`) — 이동 중 버그를 발견해도 즉시 고치지 않고 `docs/archive/BUGS_FOUND.md`에
   기록만 하고 넘어감(위험도가 낮다고 판단된 것들). 개발자가 직접 쓴 주석은 삭제 금지 —
   코드가 옮겨지면 주석도 같이 옮기고, 코드 자체가 없어지면 `docs/archive/DEPRECATED_CODE_REMOVED.md`/
@@ -125,7 +125,7 @@ DM으로만(다른 유저 인터랙션이 그 홀더로 라우팅될 수 없음)
 포함)에서 나온 피드백 12건 중 10건도 이 시기에 수정+검증 완료.
 
 **리스크/확인 포인트**: 남은 UI/UX 개선 후보(P1 2건, P2/P3 다수)는 전부 우선순위가 낮게 매겨진
-콘텐츠성/편의성 개선이라 리뷰 시 급하게 볼 필요는 없어 보입니다 — 전체 목록은 `docs/
+콘텐츠성/편의성 개선이라 리뷰 시 급하게 볼 필요는 없어 보입니다 — 전체 목록은 `docs/plans/
 UI_IMPROVEMENT_PLAN_ROUND2.md`.
 
 ---

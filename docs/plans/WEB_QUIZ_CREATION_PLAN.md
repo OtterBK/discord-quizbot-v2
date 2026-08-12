@@ -291,7 +291,7 @@ OX/객관식 정답 유형에서 값을 선택하지 않고 저장하면 주관�
      `handleStartQuiz` 등 토큰을 모르는 호출부는 그대로 무조건 파기(하위호환). 레이스를 재현하는
      회귀 테스트 2건 추가(`test/managers/web/web_session_manager.test.js`).
 - **"퀴즈 만들기 웹 UI"(Phase 0~5) 전체 완료.** 이후 추가 요청 3건(투트랙 버튼 라벨/force_take 레이스는
-  위에서 이미 처리, 잔여 — 서버 설정 권한 검증 + 나머지 화면 웹 포팅)은 `docs/
+  위에서 이미 처리, 잔여 — 서버 설정 권한 검증 + 나머지 화면 웹 포팅)은 `docs/plans/
   WEB_UI_REMAINING_SCREENS_PLAN.md`(신규)로 분리.
 
 ## Critical Files 요약
