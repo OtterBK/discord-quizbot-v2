@@ -98,7 +98,7 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     const content = this.cur_contents[index];
     if(content['is_quiz'] === true) //퀴즈 content 를 선택했을 경우
     {
-      const dev_quiz_info = this.generateDevQuizInfo(content);
+      const dev_quiz_info = DevQuizSelectUI.generateDevQuizInfo(content);
 
       return new DevQuizInfoUI(dev_quiz_info);
     }
@@ -109,7 +109,33 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     }
   }
 
-  generateDevQuizInfo(content: any)
+  //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) - content_path로 트리에서 leaf 노드를 찾음.
+  //WebHandoffUI가 웹에서 확정된 content_path만 받아서 이 트리(static, 클러스터 시작 시 1회 로드)에서
+  //원본 content 객체를 재조회하는 용도. this를 쓰지 않으므로 static.
+  static findContentByPath(content_path: string, contents: any[] = DevQuizSelectUI.quiz_contents_sorted_by_name): any
+  {
+    for(const content of contents)
+    {
+      if(content['content_path'] === content_path)
+      {
+        return content;
+      }
+
+      if(content['sub_contents'] !== undefined)
+      {
+        const found = DevQuizSelectUI.findContentByPath(content_path, content['sub_contents']);
+        if(found !== undefined)
+        {
+          return found;
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  //this를 쓰지 않아 static으로 승격(웹 연동에서 UI 인스턴스 생성 없이 재사용하기 위함, 2026-08-08)
+  static generateDevQuizInfo(content: any)
   {
     //어차피 여기서 만드는 quiz info 는 내가 하드코딩해도 되네
     const dev_quiz_info: any = {};
@@ -131,6 +157,28 @@ class DevQuizSelectUI extends QuizBotControlComponentUI
     dev_quiz_info['quiz_maker_type'] = QUIZ_MAKER_TYPE.BY_DEVELOPER;
 
     dev_quiz_info['quiz_id'] = undefined; //dev quiz는 quiz_id가 없다
+
+    return dev_quiz_info;
+  }
+
+  //퀴즈 선택 웹 연동 - WEB_SESSION_SIGNAL{event:'applied'} payload({content_path, selected_question_count})를
+  //바로 재생 가능한 quiz_info로 조립. WebHandoffUI(최초 적용)와 DevQuizInfoUI(확정 후 재적용, 2026-08-08)가
+  //공유해서 쓴다. content_path를 못 찾으면 undefined 반환(호출부에서 로그 남기고 무시하도록).
+  static buildDevQuizInfoFromWebPayload(payload: any): any
+  {
+    const content = DevQuizSelectUI.findContentByPath(payload?.content_path);
+    if(content === undefined)
+    {
+      return undefined;
+    }
+
+    const dev_quiz_info = DevQuizSelectUI.generateDevQuizInfo(content);
+
+    const requested_count = parseInt(payload.selected_question_count);
+    const quiz_size = dev_quiz_info['quiz_size'];
+    dev_quiz_info['selected_question_count'] = isNaN(requested_count)
+      ? 1
+      : Math.max(1, Math.min(quiz_size, requested_count));
 
     return dev_quiz_info;
   }

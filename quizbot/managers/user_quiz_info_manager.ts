@@ -269,6 +269,56 @@ const loadUserQuizListFromDB = async (creator_id?: string): Promise<UserQuizInfo
   return user_quiz_list;
 };
 
+//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) Phase 2 - quiz_id 단건 조회. 웹에서 선택한 quiz_id로
+//UserQuizInfo를 재조립할 때 씀(question_list는 아직 안 채움 - 기존 관행대로 UserQuizInfoUI.onReady()에서
+//loadQuestionListFromDB()로 나중에 채움).
+const loadUserQuizInfoById = async (quiz_id: any): Promise<UserQuizInfo | undefined> =>
+{
+  const result = await db_manager.selectQuizInfoById(quiz_id);
+
+  if(result == undefined || result.rows.length === 0)
+  {
+    return undefined;
+  }
+
+  const result_row = result.rows[0];
+  const user_quiz_info = new UserQuizInfo();
+
+  user_quiz_info.quiz_id = result_row.quiz_id;
+
+  for(const column of QuizInfoColumn)
+  {
+    user_quiz_info.data[column] = (result_row[column] === '' ? undefined : result_row[column]);
+  }
+
+  return user_quiz_info;
+};
+
+//퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 3 - loadUserQuizInfoById와 동일 패턴이되
+//소유권 검증이 DB 레벨에서 강제된 selectOwnedQuizInfoById를 쓴다(is_private 필터 없음 - 본인 비공개
+//퀴즈도 편집할 수 있어야 함). question_list는 기존 관행대로 비워둠(호출부가 필요할 때 별도로 채움).
+const loadOwnedUserQuizInfoById = async (quiz_id: any, creator_id: string): Promise<UserQuizInfo | undefined> =>
+{
+  const result = await db_manager.selectOwnedQuizInfoById(quiz_id, creator_id);
+
+  if(result == undefined || result.rows.length === 0)
+  {
+    return undefined;
+  }
+
+  const result_row = result.rows[0];
+  const user_quiz_info = new UserQuizInfo();
+
+  user_quiz_info.quiz_id = result_row.quiz_id;
+
+  for(const column of QuizInfoColumn)
+  {
+    user_quiz_info.data[column] = (result_row[column] === '' ? undefined : result_row[column]);
+  }
+
+  return user_quiz_info;
+};
+
 const loadQuestionListFromDBByTags = async (quiz_type_tags_value: number, tag_value: number, limit: number, certified_filter = true): Promise<[number, UserQuestionInfo[]]> =>
 { //tag로 문제 목록 가져오기. 이야 이거 비용 좀 비쌀듯
 
@@ -380,4 +430,4 @@ const addPlayedCountByQuiz = (quiz_id: string): void =>
   db_manager.addQuizInfoPlayedCount(quiz_id);
 }
 
-module.exports = { UserQuizInfo, UserQuestionInfo, loadUserQuizListFromDB, QuizInfoColumn, loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz };
+module.exports = { UserQuizInfo, UserQuestionInfo, loadUserQuizListFromDB, loadUserQuizInfoById, loadOwnedUserQuizInfoById, QuizInfoColumn, loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz };

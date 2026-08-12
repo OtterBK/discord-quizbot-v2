@@ -20,6 +20,9 @@ const { SYSTEM_CONFIG } = require('./config/system_setting.js');
 const { IPC_MESSAGE_TYPE } = require('./quizbot/managers/ipc_manager');
 // const web_manager = require('./web/web_manager.js'); //고정 html 표시로 바꿔서 웹서버 열 필요 없음
 const multiplayer_manager = require('./quizbot/managers/multiplayer_manager.js');
+const ban_manager = require('./quizbot/managers/ban_manager');
+const web_session_manager = require('./quizbot/managers/web/web_session_manager');
+const web_express_app = require('./quizbot/managers/web/web_express_app');
 
 const manager = new ClusterManager(`${__dirname}/quizbot/bot.js`, {
   totalShards: 'auto', // or 'auto'
@@ -34,6 +37,10 @@ const manager = new ClusterManager(`${__dirname}/quizbot/bot.js`, {
 });
 
 multiplayer_manager.initialize(manager);
+ban_manager.initialize(); //멀티플레이 웹 연동(Phase 4) - /api/session/confirm mode:multiplayer가 로비 생성/참가 전 밴 체크를 마스터에서 바로 하기 위함(파일 기반 싱글턴이라 클러스터와 별개로 필요)
+
+web_session_manager.initialize(manager);
+web_express_app.start();
 
 manager.extend( 
   //신호가 최대 miss에 달하면 알아서 재시작함
@@ -62,6 +69,12 @@ manager.on('clusterCreate', cluster =>
       {
         message.reply(reply_signal);
       }
+    }
+
+    if(message.ipc_message_type === IPC_MESSAGE_TYPE.WEB_SESSION_REQUEST) //클러스터로부터 웹 세션 요청 수신
+    {
+      const reply = web_session_manager.handleRequest(message.request);
+      message.reply(reply);
     }
   });
 

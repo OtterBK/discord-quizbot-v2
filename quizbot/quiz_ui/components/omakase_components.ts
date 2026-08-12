@@ -32,11 +32,11 @@ const request_basket_reopen_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
       .setCustomId('use_basket_mode')
-      .setLabel('장바구니에 퀴즈 더 담기')
+      .setLabel('퀴즈함에 퀴즈 더 담기')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('load_basket_items')
-      .setLabel('최근 장바구니로 덮어쓰기')
+      .setLabel('최근 퀴즈함으로 덮어쓰기')
       .setStyle(ButtonStyle.Primary),
   );
 
@@ -57,7 +57,7 @@ const omakase_quiz_info_tag_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('use_basket_mode')
-      .setLabel('장바구니 모드')
+      .setLabel('퀴즈함 모드')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('back')
@@ -93,7 +93,7 @@ const omakase_quiz_info_basket_comp = new ActionRowBuilder()
 //오마카세 퀴즈용 퀴즈 설정 modal
 const modal_omakase_quiz_setting = new ModalBuilder()
   .setCustomId('modal_quiz_setting')
-  .setTitle('오마카세 퀴즈 설정')
+  .setTitle('랜덤 퀴즈 설정')
   .addComponents(
     new ActionRowBuilder()
       .addComponents(
@@ -185,20 +185,20 @@ const omakase_custom_quiz_tags_select_menu =  new ActionRowBuilder()
 
 const omakase_basket_readonly_select_menu = new StringSelectMenuBuilder().
   setCustomId('basket_readonly_select_menu').
-  setPlaceholder('장바구니에 담긴 퀴즈 확인하기');
+  setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기');
 
 const omakase_basket_select_menu = new StringSelectMenuBuilder().
   setCustomId('basket_select_menu').
-  setPlaceholder('선택하여 장바구니에서 제거하기');
+  setPlaceholder('선택하여 퀴즈함에서 제거하기');
 
 const omakase_basket_select_row = new ActionRowBuilder()
   .addComponents(
     new StringSelectMenuBuilder().
       setCustomId('basket_select_row').
-      setPlaceholder('장바구니에 담긴 퀴즈 확인하기')
+      setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기')
       .addOptions(
         new StringSelectMenuOptionBuilder()
-          .setLabel('장바구니가 비어있습니다.')
+          .setLabel('퀴즈함이 비어있습니다.')
           .setValue('basket_select_temp'),
       )
   );

@@ -1,7 +1,6 @@
 'use strict';
 
 //#region 필요한 외부 모듈
-const fs = require('fs');
 //#endregion
 
 //#region 로컬 modules
@@ -16,6 +15,7 @@ const {
 } = require("./common-ui");
 
 const { NoteUI } = require("./note-ui");
+const { loadNoticeList } = require("../managers/notice_manager");
 
 //#endregion
 
@@ -50,7 +50,7 @@ class NotesSelectUI extends QuizBotControlComponentUI
   {
     this.main_description = text_contents.notes_select_ui.description;
 
-    this.loadNoteContents(SYSTEM_CONFIG.NOTICES_PATH)
+    loadNoticeList(SYSTEM_CONFIG.NOTICES_PATH)
       .then((content_list: any) =>
       {
         this.notice_contents = content_list;
@@ -67,35 +67,6 @@ class NotesSelectUI extends QuizBotControlComponentUI
       'notice': this.handleNoticeSelect.bind(this),
       'patch_note': this.handlePatchNoteSelect.bind(this),
     };
-  }
-
-  async loadNoteContents(notes_folder_path: string)
-  {
-    // //파일 생성일로 정렬
-    // const content_list_sorted_by_mtime = fs.readdirSync(notes_folder_path)
-    //     .map(function(v) {
-    //         return { name:v.replace('.txt', ""),
-    //                 mtime:fs.statSync(`${notes_folder_path}/${v}`).mtime,
-    //                 note_path: `${notes_folder_path}/${v}`
-    //               };
-    //     })
-    //     .sort(function(a, b) { return b.mtime - a.mtime; });
-
-    //파일명으로 정렬
-    const content_list_sorted_by_name = fs.readdirSync(notes_folder_path)
-      .sort((a: string, b: string) =>
-      {
-        return b.localeCompare(a, 'ko');
-      })
-      .map(function(v: string)
-      {
-        return { name:v.replace('.txt', ""),
-          mtime:fs.statSync(`${notes_folder_path}/${v}`).mtime,
-          note_path: `${notes_folder_path}/${v}`
-        };
-      });
-
-    return content_list_sorted_by_name;
   }
 
   onInteractionCreate(interaction: any)

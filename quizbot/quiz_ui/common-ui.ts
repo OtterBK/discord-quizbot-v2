@@ -53,6 +53,9 @@ class QuizbotUI
     case CUSTOM_EVENT_TYPE.receivedMultiplayerSignal:
       return this.onReceivedMultiplayerSignal(event_object);
 
+    case CUSTOM_EVENT_TYPE.receivedWebSessionSignal:
+      return this.onReceivedWebSessionSignal(event_object);
+
     default: return undefined;
     }
   }
@@ -68,6 +71,11 @@ class QuizbotUI
   }
 
   onReceivedMultiplayerSignal(event_object: any): any //더미용 이벤트 콜백
+  {
+
+  }
+
+  onReceivedWebSessionSignal(event_object: any): any //더미용 이벤트 콜백
   {
 
   }

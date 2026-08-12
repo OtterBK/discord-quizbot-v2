@@ -40,6 +40,22 @@ const select_btn_component = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
   );
 
+//select-ui-mode-ui.js 전용 (디스코드 UI/웹 UI 2버튼, WEB_INTEGRATION_PLAN.md 참고)
+//customId는 기존 그대로 '1'/'2' 유지(onInteractionCreate 분기 로직과 무관하게 라벨만 바꿔도 안전) -
+//라벨을 의미가 드러나는 텍스트로 바꿔서, description의 안내문을 먼저 읽고 숫자에 매핑해야 했던 문제를
+//해결(2026-08-12 피드백)
+const select_ui_mode_btn_component = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('1')
+      .setLabel('디스코드 UI')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('2')
+      .setLabel('웹 UI')
+      .setStyle(ButtonStyle.Primary),
+  );
+
 //select-quiz-type-ui.js 전용 (옵션이 3개뿐인데 select_btn_component(1~5)를 그대로 쓰면
 //4,5번 버튼이 눌러도 아무 반응 없는 채로 남아있어서 이 화면만을 위한 3버튼짜리를 따로 둠
 const select_quiz_type_btn_component = new ActionRowBuilder()
@@ -312,6 +328,7 @@ const sort_by_select_menu = new ActionRowBuilder()
 module.exports = {
   select_btn_component,
   select_btn_component2,
+  select_ui_mode_btn_component,
   select_quiz_type_btn_component,
   modal_page_jump,
   modal_complex_page_jump,

@@ -110,6 +110,7 @@ client.on('ready', () =>
   logger.info(`Starting IPC Manager`);
   ipc_manager.initialize(client);
   ipc_manager.adaptRelayHandler(relayMultiplayerSignal);
+  ipc_manager.adaptWebSessionRelayHandler(relayWebSessionSignal);
 
   logger.info(`Starting UI Holder Aging Manager`);
   quizbot_ui.startUIHolderAgingManager();
@@ -406,6 +407,37 @@ const quiz_manager_panel_handler = async (interaction) =>
   });
 };
 
+//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) 하이재킹 방어 - 다른 유저가 ephemeral "권한 가져오기"
+//버튼을 눌렀을 때. uiHolder 소유자가 아니므로 정상적인 uiHolder.on() 라우팅을 거치지 않고 여기서
+//바로 처리하고, 홀더 자체를 새 소유자(interaction.user) 것으로 교체한다(UIHolder는 소유자 재할당을
+//지원하지 않아서 free() 후 재생성).
+const handle_web_handoff_force_take = async (interaction) =>
+{
+  const guild_id = interaction.guild?.id;
+  const prev_holder = guild_id === undefined ? undefined : quizbot_ui.getUIHolder(guild_id);
+
+  if(prev_holder === undefined || prev_holder.isDisplayingWebHandoff() === false)
+  {
+    interaction.explicit_replied = true;
+    interaction.reply({ content: `\`\`\`🔸 이미 상황이 바뀌었어요. [/퀴즈]를 다시 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  const mode = prev_holder.ui.mode;
+
+  interaction.explicit_replied = true;
+  await interaction.deferUpdate();
+
+  const reply = await ipc_manager.sendWebSessionRequest({ action: 'force_take', guild_id, owner_id: interaction.user.id, mode });
+  if(reply?.success !== true)
+  {
+    interaction.followUp({ content: `\`\`\`🔸 권한을 가져오지 못했어요. 잠시 후 다시 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  quizbot_ui.createWebHandoffUIHolder(interaction, mode, { token: reply.token, expires_at: reply.expires_at }, true); //true: interaction이 이미 deferUpdate로 소비됨 -> channel.send로 새 메시지 발행
+};
+
 const clear_quiz_handler = (interaction) =>
 {
   interaction.explicit_replied = true; 
@@ -481,6 +513,12 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
 
   if(report_manager.checkReportEvent(interaction)) ////신고 관련 체크
   {
+    return;
+  }
+
+  if(interaction.isButton() && interaction.customId === 'web_handoff_force_take') //웹 세팅 하이재킹 방어 - 소유자가 아닌 유저의 요청이라 uiHolder 소유자 체크(아래)를 거치기 전에 별도 처리
+  {
+    await handle_web_handoff_force_take(interaction);
     return;
   }
 
@@ -641,6 +679,12 @@ const relayMultiplayerSignal = (signal) =>
   // {
   //   logger.warn(`Double handled ${signal.signal_type}`);
   // }
+};
+
+//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) - Phase 1부터 WebHandoffUI로 실제 라우팅.
+const relayWebSessionSignal = (signal) =>
+{
+  quizbot_ui.relayWebSessionSignal(signal);
 };
 
 /** 메인 **/

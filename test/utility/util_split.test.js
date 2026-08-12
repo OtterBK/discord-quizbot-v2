@@ -14,19 +14,21 @@ const quiz_content_loader = require('../../utility/util/quiz_content_loader');
 const audio_utility = require('../../utility/util/audio_utility');
 const network_utility = require('../../utility/util/network_utility');
 const misc_utility = require('../../utility/util/misc_utility');
+const web_token_utility = require('../../utility/util/web_token_utility');
 
-test('utility.js: 4개 도메인 파일의 export를 빠짐없이 재수출한다 (총 25개)', () =>
+test('utility.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 26개)', () =>
 {
   const expected_names = [
     ...Object.keys(quiz_content_loader),
     ...Object.keys(audio_utility),
     ...Object.keys(network_utility),
     ...Object.keys(misc_utility),
+    ...Object.keys(web_token_utility),
   ].sort();
 
   const actual_names = Object.keys(utility).sort();
 
-  assert.equal(actual_names.length, 25);
+  assert.equal(actual_names.length, 26);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -37,6 +39,7 @@ test('utility.js: 도메인 파일 사이에 이름이 겹치지 않는다', () 
     ...Object.keys(audio_utility),
     ...Object.keys(network_utility),
     ...Object.keys(misc_utility),
+    ...Object.keys(web_token_utility),
   ];
 
   assert.equal(new Set(all_names).size, all_names.length);

@@ -14,6 +14,7 @@ const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const feedback_manager = require('../managers/feedback_manager');
 const ban_manager = require('../managers/ban_manager');
+const quiz_editor_validation = require('../managers/quiz_editor_validation');
 const {
   quiz_info_comp,
   quiz_edit_comp,
@@ -96,6 +97,49 @@ class UserQuizInfoUI extends QuizInfoUI
 
     this.fillInfoAsDevQuizInfo();
 
+    this.update();
+  }
+
+  //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md, Phase 2) - 확정(applied) 이후에도 웹 세션 토큰은
+  //살아있어서(dev-quiz-info-ui.ts와 동일한 이유), 웹에서 다른 퀴즈를 다시 확정하거나 문제 수를
+  //재조정하면 이 화면에 그대로 반영해야 한다. dev 모드와 달리 DB 조회가 필요해 동기로 처리할 수
+  //없다 - fire-and-forget으로 갱신하고, 완료되면 직접 refreshUI()+update()를 호출한다. 새 UI
+  //인스턴스로 바꾸지 않는 이유도 dev-quiz-info-ui.ts와 동일(뒤로가기 스택 누적 방지).
+  onReceivedWebSessionSignal(signal: any): any
+  {
+    if(signal.event !== 'applied')
+    {
+      return undefined;
+    }
+
+    this.reapplyFromWebPayload(signal.payload);
+
+    return undefined;
+  }
+
+  async reapplyFromWebPayload(payload: any): Promise<void>
+  {
+    const { loadUserQuizInfoById } = require('../managers/user_quiz_info_manager');
+    const user_quiz_info = await loadUserQuizInfoById(payload.quiz_id);
+
+    if(this.holder === undefined) //그 사이 화면이 이미 다른 곳으로 넘어갔으면(뒤로가기 등) 무시
+    {
+      return;
+    }
+
+    if(user_quiz_info === undefined)
+    {
+      logger.error(`Web-selected user quiz not found on reapply. quiz_id:${payload.quiz_id}`);
+      return;
+    }
+
+    await user_quiz_info.loadQuestionListFromDB();
+
+    this.user_quiz_info = user_quiz_info;
+    this.quiz_info['selected_question_count'] = payload.selected_question_count; //fillInfoAsDevQuizInfo가 이 값을 덮어쓰지 않도록 미리 채워둠(재선택 전 값이 남아있지 않게)
+
+    this.refreshUI();
+    this.fillInfoAsDevQuizInfo();
     this.update();
   }
 
@@ -316,7 +360,7 @@ class UserQuizInfoUI extends QuizInfoUI
     if(interaction.customId === 'quiz_toggle_public') //퀴즈 공개/비공개 버튼
     {
       //비공개에서 공개로 전환할 경우
-      if(user_quiz_info.data.is_private == true && (!user_quiz_info.data.tags_value || user_quiz_info.data.tags_value === 0))
+      if(user_quiz_info.data.is_private == true && !quiz_editor_validation.canGoPublic(user_quiz_info.data.tags_value))
       {
         interaction.explicit_replied = true;
         interaction.reply({ content: `\`\`\`🔸 태그를 1개 이상 선택해주세요.\n🔸 최대한 올바른 태그를 입력해주세요! 😥\`\`\``, flags: MessageFlags.Ephemeral });

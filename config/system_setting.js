@@ -102,12 +102,24 @@ exports.SYSTEM_CONFIG = {
   MONITORING_CHECK_INTERVAL: 30000, // 리소스 모니터링 주기
   MONITORING_AVERAGE_DURATION: 300000, // 리소스 평균값 계산 시, 사용할 duration
   MONITORING_CPU_USAGE_THRESHOLD: 90, // 경고 로그 남길 기준 percentage
+
+  //퀴즈 선택 웹 연동 (docs/WEB_INTEGRATION_PLAN.md)
+  WEB_SERVER_PORT: 4321, //로컬 개발용 임의 포트, Cloudflare Tunnel 연동 전까지 사용
+  WEB_BASE_URL: 'http://localhost:4321', //디스코드 임베드에 넣을 링크의 기준 URL
+  WEB_SESSION_EXPIRE_SEC: 900, //임시 토큰 만료 시간(s), 15분
+  WEB_SESSION_GC_INTERVAL_SEC: 60, //만료된 세션 정리 주기(s)
+  WEB_FRONTEND_DIST_PATH: `${PROJECT_ROOT}/web-frontend/dist`, //React+Vite 빌드 산출물 (BGM_PATH 등과 동일하게 PROJECT_ROOT 기준 - dist/ 빌드 후에도 항상 실제 저장소 루트를 가리켜야 함)
+
+  //퀴즈 만들기 웹 연동 (docs/WEB_QUIZ_CREATION_PLAN.md) - user-question-info-ui.ts에 매직넘버 50으로
+  //3곳 하드코딩돼 있던 걸 여기로 승격(Phase 2에서 실제 교체)
+  MAX_QUESTIONS_PER_QUIZ: 50,
 };
 
 exports.CUSTOM_EVENT_TYPE = {
   interactionCreate: "interactionCreate",
   messageCreate: "messageCreate",
-  receivedMultiplayerSignal: "receivedMultiplayerSignal"
+  receivedMultiplayerSignal: "receivedMultiplayerSignal",
+  receivedWebSessionSignal: "receivedWebSessionSignal"
 };
 
 exports.QUIZ_TYPE = {
@@ -126,7 +138,7 @@ exports.QUIZ_TYPE = {
   MULTIPLAY: "멀티플레이",
   IMAGE_LONG: "타이머 긴 그림 퀴즈",
   CUSTOM: "커스텀 퀴즈",
-  OMAKASE: "오마카세 퀴즈",
+  OMAKASE: "랜덤 퀴즈",
 };
 
 exports.EXPLAIN_TYPE = {
@@ -156,7 +168,7 @@ exports.BGM_TYPE = {
 exports.QUIZ_MAKER_TYPE = {
   BY_DEVELOPER: '개발자 제작 퀴즈',
   CUSTOM: '유저 제작 퀴즈',
-  OMAKASE: '오마카세 퀴즈',
+  OMAKASE: '랜덤 퀴즈',
   UNKNOWN: '알 수 없음',
 };
 

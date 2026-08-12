@@ -10,6 +10,7 @@ const custom_quiz_components = require('./components/custom_quiz_components');
 const omakase_components = require('./components/omakase_components');
 const multiplayer_components = require('./components/multiplayer_components.js');
 const report_components = require('./components/report_components');
+const web_handoff_components = require('./components/web_handoff_components');
 
 module.exports = {
   ...base_components,
@@ -17,4 +18,5 @@ module.exports = {
   ...omakase_components,
   ...multiplayer_components,
   ...report_components,
+  ...web_handoff_components,
 };

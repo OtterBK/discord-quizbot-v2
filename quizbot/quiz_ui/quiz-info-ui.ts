@@ -9,6 +9,7 @@ const { SYSTEM_CONFIG, DEV_QUIZ_TAG, QUIZ_TAG } = require('../../config/system_s
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const utility = require('../../utility/utility.js');
 const quiz_system = require('../quiz_system/quiz_system'); //퀴즈봇 메인 시스템
+const ipc_manager = require('../managers/ipc_manager');
 const {
   quiz_info_comp,
   modal_quiz_setting,
@@ -135,7 +136,7 @@ class QuizInfoUI extends QuizbotUI
     }
     else
     {
-      tag_info_text += `🔸 \`장바구니 모드 사용 중\`\n\n`;
+      tag_info_text += `🔸 \`퀴즈함 모드 사용 중\`\n\n`;
     }
 
     return tag_info_text;
@@ -221,6 +222,11 @@ class QuizInfoUI extends QuizbotUI
     }
 
     quiz_system.startQuiz(guild, owner, channel, quiz_info); //퀴즈 시작
+
+    //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) - 이 길드에 살아있는 웹 세션이 있다면 파기 요청.
+    //fire-and-forget(응답 기다릴 필요 없음), 세션이 없는 길드(대부분의 경우)에도 안전한 no-op이라
+    //무조건 시도한다.
+    ipc_manager.sendWebSessionRequest({ action: 'release', guild_id: guild.id }).catch(() => {});
 
     return new AlertQuizStartUI(quiz_info, owner.displayName);
   }
@@ -492,7 +498,7 @@ class QuizInfoUI extends QuizbotUI
     const basket_keys = Object.keys(basket_items);
     if(basket_keys.length === 0)
     {
-      const option = { label: `장바구니가 비어있습니다.`, value: `basket_select_temp` };
+      const option = { label: `퀴즈함이 비어있습니다.`, value: `basket_select_temp` };
       basket_select_menu_for_current.addOptions(option);
       this.basket_select_component.components[0] = basket_select_menu_for_current;
       return;
@@ -513,7 +519,7 @@ class QuizInfoUI extends QuizbotUI
       }
       else
       {
-        option = { label: `${quiz_title}`, description: `선택하여 장바구니에서 제거`, value: `${quiz_id}` };
+        option = { label: `${quiz_title}`, description: `선택하여 퀴즈함에서 제거`, value: `${quiz_id}` };
       }
 
       basket_select_menu_for_current.addOptions(option);
@@ -541,7 +547,7 @@ class QuizInfoUI extends QuizbotUI
     }
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 장바구니에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``});
+    interaction.reply({content: `\`\`\`🔸 퀴즈함에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``});
 
     this.refreshUI();
     return this;

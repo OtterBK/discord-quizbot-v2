@@ -36,7 +36,7 @@ class Ending extends QuizLifeCycleWithUtility
             [{
               color: 0x05f1f1,
               title: `**${quiz_data['title']}**`,
-              description:  "퀴즈를 재밌게 플레이하셨나요? 😀\n방금 플레이하신 퀴즈가 마음에 드셨다면 **[추천하기]**를 눌러주세요!\n\n`일정 수 이상의 추천을 받은 퀴즈는 [오마카세/멀티플레이] 퀴즈에서 사용됩니다.`"
+              description:  "퀴즈를 재밌게 플레이하셨나요? 😀\n방금 플레이하신 퀴즈가 마음에 드셨다면 **[추천하기]**를 눌러주세요!\n\n`일정 수 이상의 추천을 받은 퀴즈는 [랜덤/멀티플레이] 퀴즈에서 사용됩니다.`"
             }],
         components: [ feedback_manager.quiz_feedback_comp ]});
     }

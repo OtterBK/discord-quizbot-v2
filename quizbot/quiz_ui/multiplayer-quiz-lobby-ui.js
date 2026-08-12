@@ -38,6 +38,7 @@ const {
 const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
 const { QuizInfoUI } = require('./quiz-info-ui');
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
+const { OmakaseQuizRoomUI } = require("./omakase-quiz-room-ui");
 
 //#endregion
 
@@ -89,6 +90,38 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     return multiplayer_quiz_info;
   };
 
+  //멀티플레이 웹 연동(Phase 4) - quiz_info 필드 shape이 오마카세(랜덤 퀴즈)와 사실상 동일해서
+  //OmakaseQuizRoomUI.applyWebPayloadToQuizInfo(태그/장바구니/문제 수)를 그대로 재사용하고, 방 제목만
+  //추가로 덮어쓴다(오마카세엔 없는 필드 - "새 로비 만들기" 1단계에서 입력받음).
+  static applyWebPayloadToQuizInfo = (quiz_info, payload) =>
+  {
+    OmakaseQuizRoomUI.applyWebPayloadToQuizInfo(quiz_info, payload); //dev_quiz_tags/basket_mode/... + selected_question_count를 [1, quiz_size]로 클램프
+
+    const requested_title = typeof payload['title'] === 'string' ? payload['title'].trim().slice(0, 20) : undefined;
+    if(requested_title)
+    {
+      quiz_info['title'] = requested_title;
+    }
+
+    //멀티는 오마카세와 달리 min_quiz_size(기본 20)가 있다 - 모달 경로(quiz-info-ui.ts의
+    //applySelectedQuestionCount)는 이미 이 하한을 지키는데, 웹 경로는 위 공용 헬퍼가 오마카세 shape만
+    //알아서 하한을 몰라(1로만 클램프) 20 미만 설정이 그대로 통과되던 버그(2026-08-10 실사용 피드백) -
+    //여기서 다시 한 번 min_quiz_size 이상으로 올려 모달 경로와 동일한 규칙을 강제한다.
+    const min_quiz_size = quiz_info['min_quiz_size'] ?? 1;
+    quiz_info['selected_question_count'] = Math.max(min_quiz_size, quiz_info['selected_question_count']);
+
+    return quiz_info;
+  };
+
+  //웹에서 "새 로비 만들기"로 확정했을 때(WebHandoffUI.handleApplied) 기본 quiz_info를 만들고 그 위에
+  //웹 payload를 덮어씌운다 - adapter_interaction은 실제 interaction 없이 호출해야 하는 WebHandoffUI가
+  //{guild, member: {id}} 형태의 최소 어댑터 객체를 넘김(createDefaultMultiplayerQuizInfo가 그 둘만 씀).
+  static buildMultiplayerQuizInfoFromWebPayload = (payload, adapter_interaction) =>
+  {
+    const multiplayer_quiz_info = MultiplayerQuizLobbyUI.createDefaultMultiplayerQuizInfo(adapter_interaction);
+    return MultiplayerQuizLobbyUI.applyWebPayloadToQuizInfo(multiplayer_quiz_info, payload);
+  };
+
   constructor(quiz_info, interaction, is_readonly=true, session_id = undefined)
   {
     super(quiz_info);
@@ -100,6 +133,11 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     this.guild_name = interaction.guild.name;
     this.owner = interaction.member;
     this.channel = interaction.channel;
+
+    //웹 연동(Phase 4) - WebHandoffUI가 실제 interaction 없이 {guild, member, channel, web_mode:true}
+    //어댑터로 생성한 경우. interaction.reply/explicit_replied/모달 필드 읽기가 전부 불가능해서
+    //requestToJoinLobby/requestToCreateLobby/connectToMultiplayerSession에서 분기 처리한다.
+    this.is_web_origin = interaction.web_mode === true;
 
     this.readonly = is_readonly;
 
@@ -157,7 +195,10 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     }
     else
     {
-      this.applyQuizSettings(interaction);
+      if(!this.is_web_origin) //웹 경유는 quiz_info가 이미 buildMultiplayerQuizInfoFromWebPayload로 완성돼 있어, 모달 필드를 읽는 applyQuizSettings를 건너뛴다
+      {
+        this.applyQuizSettings(interaction);
+      }
       this.requestToCreateLobby(interaction);
     }
   }
@@ -171,7 +212,10 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
   requestToJoinLobby(interaction)
   {
     //기존 로비 참가이니
-    interaction.explicit_replied = true;
+    if(!this.is_web_origin)
+    {
+      interaction.explicit_replied = true;
+    }
     ipc_manager.sendMultiplayerSignal(
       {
         signal_type: CLIENT_SIGNAL.JOIN_LOBBY,
@@ -179,17 +223,27 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
         guild_name: interaction.guild.name,
         session_id: this.session_id
       }
-    ).then(result => 
+    ).then(result =>
     {
       if(result.state === true)
       {
-        interaction.reply({ content: `\`\`\`🌐 로비에 참가하였습니다.\`\`\`` , flags: MessageFlags.Ephemeral});
+        if(!this.is_web_origin)
+        {
+          interaction.reply({ content: `\`\`\`🌐 로비에 참가하였습니다.\`\`\`` , flags: MessageFlags.Ephemeral});
+        }
 
         this.handleConnectSucceed(result);
       }
       else
       {
-        interaction.reply({content: `\`\`\`🌐 참가에 실패했습니다.\n원인: ${result.reason}\`\`\``});
+        if(this.is_web_origin) //웹 경유는 대꾸할 interaction이 없음 - 채널 자체가 곧 goToBack으로 원래 화면으로 돌아감
+        {
+          logger.error(`Web-originated join lobby failed. guild_id:${interaction.guild.id}, reason:${result.reason}`);
+        }
+        else
+        {
+          interaction.reply({content: `\`\`\`🌐 참가에 실패했습니다.\n원인: ${result.reason}\`\`\``});
+        }
 
         this.goToBack();
       }
@@ -199,7 +253,10 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
   requestToCreateLobby(interaction)
   {
     //새로운 로비 생성이니
-    interaction.explicit_replied = true;
+    if(!this.is_web_origin)
+    {
+      interaction.explicit_replied = true;
+    }
     ipc_manager.sendMultiplayerSignal(
       {
         signal_type: CLIENT_SIGNAL.CREATE_LOBBY,
@@ -208,17 +265,27 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
         quiz_info: this.quiz_info,
       }
     )
-      .then(result => 
+      .then(result =>
       {
         if(result.state === true)
         {
-          interaction.reply({ content: `\`\`\`🌐 새로운 로비를 생성하였습니다.\`\`\`` , flags: MessageFlags.Ephemeral});
+          if(!this.is_web_origin)
+          {
+            interaction.reply({ content: `\`\`\`🌐 새로운 로비를 생성하였습니다.\`\`\`` , flags: MessageFlags.Ephemeral});
+          }
 
           this.handleConnectSucceed(result);
         }
         else
         {
-          interaction.reply({ content: `\`\`\`🌐 로비 생성에 실패하였습니다.\n원인: ${result.reason}\`\`\``, flags: MessageFlags.Ephemeral });
+          if(this.is_web_origin)
+          {
+            logger.error(`Web-originated create lobby failed. guild_id:${this.guild_id}, reason:${result.reason}`);
+          }
+          else
+          {
+            interaction.reply({ content: `\`\`\`🌐 로비 생성에 실패하였습니다.\n원인: ${result.reason}\`\`\``, flags: MessageFlags.Ephemeral });
+          }
 
           this.goToBack();
         }
@@ -294,7 +361,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     this.quiz_info['basket_mode'] = true;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`장바구니 모드를 사용합니다.\n장바구니 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`퀴즈함 모드를 사용합니다.\n퀴즈함 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, flags: MessageFlags.Ephemeral});
 
     this.sendEditLobbySignal(interaction);
 
@@ -309,14 +376,14 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     if(!cached_basket_items)
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 최근 장바구니 데이터가 없어요...\n🔸 장바구니 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
+      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
     this.quiz_info['basket_items'] = cloneDeep(cached_basket_items);
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 장바구니 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 퀴즈함 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
 
     this.sendEditLobbySignal(interaction);
   }
@@ -817,6 +884,31 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
   onReceivedConfirmReady(signal)
   {
     this.sendMessageReply({ content: `\`\`\`🌐 ${signal.ready_guild_info.guild_name} 서버 준비 완료.\`\`\`` });
+  }
+
+  //멀티플레이 웹 연동(Phase 4) - 호스트가 로비 생성 후에도 웹 페이지에서 계속 설정을 바꿔 재확정하는
+  //경우(OmakaseQuizRoomUI와 동일 패턴). 'applied' 이벤트에만 반응하고, readonly(참가자)는 설정 화면
+  //자체가 없으므로 반응하지 않는다.
+  onReceivedWebSessionSignal(signal)
+  {
+    if(signal.event !== 'applied' || this.readonly)
+    {
+      return undefined;
+    }
+
+    MultiplayerQuizLobbyUI.applyWebPayloadToQuizInfo(this.quiz_info, signal.payload);
+
+    const guild_id = this.holder?.guild_id;
+    if(guild_id !== undefined)
+    {
+      QuizInfoUI.BASKET_CACHE[guild_id] = this.quiz_info['basket_items'];
+    }
+
+    this.refreshUI();
+    this.sendEditLobbySignal(); //다른 참가 길드에 브로드캐스트 - 태그 select 메뉴를 바꿀 때도 이미 일어나는 기존 동작(handleTagSelected)과 동일
+    this.update();
+
+    return this;
   }
 
   sendEditLobbySignal(interaction=undefined)

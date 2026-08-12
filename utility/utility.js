@@ -14,10 +14,12 @@ const quiz_content_loader = require('./util/quiz_content_loader');
 const audio_utility = require('./util/audio_utility');
 const network_utility = require('./util/network_utility');
 const misc_utility = require('./util/misc_utility');
+const web_token_utility = require('./util/web_token_utility');
 
 module.exports = {
   ...quiz_content_loader,
   ...audio_utility,
   ...network_utility,
   ...misc_utility,
+  ...web_token_utility,
 };

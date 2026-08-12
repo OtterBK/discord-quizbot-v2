@@ -120,7 +120,7 @@ const multiplayer_lobby_host_tag_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('use_basket_mode')
-      .setLabel('장바구니 모드')
+      .setLabel('퀴즈함 모드')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('multiplayer_leave_lobby') //다른 서버들도 같이 대기 중인 로비라 확인 절차를 거치도록 customId('back')이 아닌 별도 처리로 변경

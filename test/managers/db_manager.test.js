@@ -14,10 +14,15 @@ const db_quiz = require('../../quizbot/managers/db/db_quiz');
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 33개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 36개 이름으로 재수출한다', () =>
 {
   // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
   // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
+  // selectQuizInfoById는 퀴즈 선택 웹 연동(Phase 2) 구현 중 신설됨 - quiz_id 단건 조회가 기존엔 없었음
+  // selectOwnedQuizInfoById는 퀴즈 만들기 웹 연동(Phase 3) 구현 중 신설됨 - is_private 필터 없이
+  // creator_id로 소유권을 DB 레벨에서 강제하는 단건 조회(비공개 퀴즈도 본인이면 편집 가능해야 함)
+  // updateOptionParameterized는 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) 중 신설됨 -
+  // 서버 설정 웹 API 전용 파라미터화 쿼리(기존 updateOption은 문자열 직접 삽입, 디스코드 경로 그대로 유지)
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -29,7 +34,7 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 33개 이름으�
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 33);
+  assert.equal(actual_names.length, 36);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -58,6 +63,29 @@ test('insertQuizInfo: value_fields 개수만큼 $1,$2... placeholder를 생성�
 
   assert.match(captured.query_string, /values \(\$1,\$2,\$3\)/);
   assert.deepEqual(captured.values, ['user_1', '제목', 5]);
+});
+
+test('selectQuizInfoById: quiz_id를 파라미터로 넘기고 is_private=false 조건을 포함한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectQuizInfoById(42);
+
+  assert.match(captured.query_string, /is_private = false and quiz_id = \$1/);
+  assert.deepEqual(captured.values, [42]);
+});
+
+test('selectOwnedQuizInfoById: quiz_id/creator_id를 파라미터로 넘기고 is_private 필터 없이 creator_id 조건을 포함한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectOwnedQuizInfoById(42, 'user_1');
+
+  assert.match(captured.query_string, /creator_id = \$2 and quiz_id = \$1/);
+  assert.doesNotMatch(captured.query_string, /is_private/); //비공개 퀴즈도 본인이면 조회돼야 함
+  assert.deepEqual(captured.values, [42, 'user_1']);
 });
 
 test('selectRandomQuestionListByBasket: basket_condition_query를 IN 절에 그대로 삽입하고 limit은 파라미터로 넘긴다', async (t) =>

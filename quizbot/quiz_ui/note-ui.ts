@@ -1,7 +1,6 @@
 'use strict';
 
 //#region 필요한 외부 모듈
-const fs = require('fs');
 //#endregion
 
 //#region 로컬 modules
@@ -14,6 +13,8 @@ const {
 const {
   QuizbotUI,
 } = require("./common-ui");
+
+const { readNoticeFile } = require("../managers/notice_manager");
 
 //#endregion
 
@@ -33,7 +34,7 @@ class NoteUI extends QuizbotUI
 
   initializeEmbed()
   {
-    const description = fs.readFileSync(this.note_info['note_path'], {encoding: 'utf8', flag:'r'});
+    const description = readNoticeFile(this.note_info['note_path']).content;
 
     this.embed = {
       color: 0xFED049,

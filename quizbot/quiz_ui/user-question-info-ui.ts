@@ -2,7 +2,6 @@
 
 //#region 필요한 외부 모듈
 const cloneDeep = require("lodash/cloneDeep.js");
-const ytdl = require('discord-ytdl-core');
 const { MessageFlags, ButtonStyle, AttachmentBuilder } = require('discord.js');
 //#endregion
 
@@ -11,6 +10,7 @@ const { SYSTEM_CONFIG, ANSWER_TYPE } = require('../../config/system_setting.js')
 const utility = require('../../utility/utility.js');
 const logger = require('../../utility/logger.js')('QuizUI');
 const audio_cache_manager = require('../managers/audio_cache_manager');
+const quiz_editor_validation = require('../managers/quiz_editor_validation');
 
 const { UserQuestionInfo } = require('../managers/user_quiz_info_manager');
 
@@ -318,13 +318,13 @@ class UserQuestionInfoUI extends QuizbotUI
     this.current_question_info = question_info;
 
     //url valid check, 값 없으면 true로
-    const is_valid_question_audio_url = ((question_info.data.question_audio_url ?? '').length === 0) || ytdl.validateURL(question_info.data.question_audio_url);
-    const is_valid_question_image_url = ((question_info.data.question_image_url ?? '').length === 0) || utility.isValidURL(question_info.data.question_image_url);
+    const is_valid_question_audio_url = quiz_editor_validation.isValidAudioUrl(question_info.data.question_audio_url);
+    const is_valid_question_image_url = quiz_editor_validation.isValidImageUrl(question_info.data.question_image_url);
 
-    const is_valid_hint_image_url = ((question_info.data.hint_image_url ?? '').length === 0) || utility.isValidURL(question_info.data.hint_image_url);
+    const is_valid_hint_image_url = quiz_editor_validation.isValidImageUrl(question_info.data.hint_image_url);
 
-    const is_valid_answer_audio_url = ((question_info.data.answer_audio_url ?? '').length === 0) || ytdl.validateURL(question_info.data.answer_audio_url);
-    const is_valid_answer_image_url = ((question_info.data.answer_image_url ?? '').length === 0) || utility.isValidURL(question_info.data.answer_image_url);
+    const is_valid_answer_audio_url = quiz_editor_validation.isValidAudioUrl(question_info.data.answer_audio_url);
+    const is_valid_answer_image_url = quiz_editor_validation.isValidImageUrl(question_info.data.answer_image_url);
 
     //convert range row to string
     const question_audio_range_string = this.convertAudioRangeToString(question_info.data.audio_start, question_info.data.audio_end, 'question');
@@ -358,7 +358,7 @@ class UserQuestionInfoUI extends QuizbotUI
       // description += `만약 이미지 로딩이 안된다면 다른 URL 사용을 권장합니다.`;
     }
 
-    if(question_info.data.question_image_url?.includes('cdn.discordapp.com')) //디코에 올린거로는 안됨. 시간 지나면 사라짐
+    if(quiz_editor_validation.isDiscordCdnLink(question_info.data.question_image_url)) //디코에 올린거로는 안됨. 시간 지나면 사라짐
     {
       description += '❗ 디스코드에 업로드하신 이미지 URL 같아요.\n이 경우 일정 시간이 지나면 이미지가 삭제돼요.';
     }
@@ -375,7 +375,7 @@ class UserQuestionInfoUI extends QuizbotUI
       description += '❗ 해당 이미지 URL은 사용이 불가능합니다.';
     }
 
-    if(question_info.data.hint_image_url?.includes('cdn.discordapp.com')) //디코에 올린거로는 안됨. 시간 지나면 사라짐
+    if(quiz_editor_validation.isDiscordCdnLink(question_info.data.hint_image_url)) //디코에 올린거로는 안됨. 시간 지나면 사라짐
     {
       description += '❗ 디스코드에 업로드하신 이미지 URL 같아요.\n이 경우 일정 시간이 지나면 이미지가 삭제돼요.';
     }
@@ -400,7 +400,7 @@ class UserQuestionInfoUI extends QuizbotUI
       description += '❗ 해당 이미지 URL은 사용이 불가능합니다.';
     }
 
-    if(question_info.data.answer_image_url?.includes('cdn.discordapp.com')) //디코에 올린거로는 안됨. 시간 지나면 사라짐
+    if(quiz_editor_validation.isDiscordCdnLink(question_info.data.answer_image_url)) //디코에 올린거로는 안됨. 시간 지나면 사라짐
     {
       description += '❗ 디스코드에 업로드하신 이미지 URL 같아요.\n이 경우 일정 시간이 지나면 이미지가 삭제돼요.';
     }
@@ -412,7 +412,7 @@ class UserQuestionInfoUI extends QuizbotUI
 
     this.embed.description = description;
 
-    if(question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
+    if(question_list.length >= SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ) //최대 문제 개수까지만 문제 만들 수 있음
     {
       this.components[2].components[0].setDisabled(true); //이게 새로운 문제 만들기 버튼임
       this.components[2].components[1].setDisabled(true); //현재 문제 복제 버튼도 새 문제를 추가하는 것이므로 동일하게 제한
@@ -550,7 +550,7 @@ class UserQuestionInfoUI extends QuizbotUI
     //   user_question_info.data.audio_range_row += " ~ "; //물결 붙여줌
     // }
 
-    const [audio_start_value, audio_end_value, audio_play_time] = this.parseAudioRangePoints(input_question_audio_range);
+    const [audio_start_value, audio_end_value, audio_play_time] = quiz_editor_validation.parseAudioRangePoints(input_question_audio_range);
 
     user_question_info.data.audio_start = audio_start_value;
     user_question_info.data.audio_end = audio_end_value;
@@ -571,10 +571,10 @@ class UserQuestionInfoUI extends QuizbotUI
 
     user_question_info.data.hint = input_hint ?? "";
     user_question_info.data.hint_image_url = input_hint_image_url ?? "";
-    user_question_info.data.question_audio_repeat = this.redefineRepeatCount(input_question_audio_repeat);
+    user_question_info.data.question_audio_repeat = quiz_editor_validation.redefineRepeatCount(input_question_audio_repeat);
     //예전엔 뭐라도 입력만 하면(스페이스 하나 실수로 입력해도) 사용으로 처리돼서 오입력 위험이 있었음.
     //명확한 긍정 응답을 입력했을 때만 사용으로 처리하도록 변경
-    user_question_info.data.use_answer_timer = ['사용', '네', '예', 'y', 'Y'].includes(input_use_answer_timer.trim());
+    user_question_info.data.use_answer_timer = quiz_editor_validation.parseUseAnswerTimer(input_use_answer_timer);
   }
 
   applyQuestionAnsweringInfo(user_question_info: any, modal_interaction: any)
@@ -592,81 +592,16 @@ class UserQuestionInfoUI extends QuizbotUI
 
     user_question_info.data.answer_audio_range_row = input_answering_audio_range;
 
-    const [audio_start_value, audio_end_value, audio_play_time] = this.parseAudioRangePoints(input_answering_audio_range);
+    const [audio_start_value, audio_end_value, audio_play_time] = quiz_editor_validation.parseAudioRangePoints(input_answering_audio_range);
 
     user_question_info.data.answer_audio_start = audio_start_value;
     user_question_info.data.answer_audio_end = audio_end_value;
     user_question_info.data.answer_audio_play_time = audio_play_time;
   }
 
-  parseAudioRangePoints(audio_range_row: any)
-  {
-    if(audio_range_row.undefined || audio_range_row.length === 0) //생략 시,
-    {
-      return [undefined, undefined, undefined];
-    }
-
-    audio_range_row = audio_range_row.trim();
-    if(audio_range_row.endsWith('~')) //25 ~ 이런식으로 쳤으면 ~ 제거
-    {
-      audio_range_row = audio_range_row.slice(0, audio_range_row.length - 1);
-    }
-
-    if(audio_range_row.length === 0) //정제하니깐 생략 시,
-    {
-      return [undefined, undefined, undefined];
-    }
-
-    const audio_range_split = audio_range_row.split('~');
-
-    const audio_start = audio_range_split[0].trim();
-    const audio_end = (audio_range_split.length >= 2 ? audio_range_split[1].trim() : undefined);
-    let audio_play_time = undefined;
-
-    let audio_start_value = (isNaN(audio_start) || audio_start < 0) ? undefined : Math.floor(audio_start); //소수점과 음수값일 경우 처리
-    let audio_end_value = (isNaN(audio_end) || audio_end < 0) ? undefined : Math.floor(audio_end);
-
-    if(audio_start_value !== undefined
-      && audio_end_value !== undefined)
-    {
-      if(audio_start_value > audio_end_value) //start > end 처리
-      {
-        const temp = audio_start_value;
-        audio_start_value = audio_end_value;
-        audio_end_value = temp;
-      }
-
-      audio_play_time = (audio_end_value - audio_start_value);
-    }
-
-    return [audio_start_value, audio_end_value, audio_play_time];
-  }
-
-  redefineRepeatCount(audio_repeat_count: any)
-  {
-    if(!audio_repeat_count || isNaN(audio_repeat_count)) //생략 시,
-    {
-      return 1; //기본 1회
-    }
-
-    const count = parseInt(audio_repeat_count);
-
-    if(count <= 0)
-    {
-      return 1;
-    }
-
-    if(count > SYSTEM_CONFIG.MAX_QUESTION_AUDIO_REPEAT)
-    {
-      return SYSTEM_CONFIG.MAX_QUESTION_AUDIO_REPEAT;
-    }
-
-    return count;
-  }
-
   async addQuestion(modal_interaction: any)
   {
-    if(this.question_list !== undefined && this.question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
+    if(this.question_list !== undefined && this.question_list.length >= SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ) //최대 문제 개수까지만 문제 만들 수 있음
     {
       modal_interaction.explicit_replied = true;
       modal_interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral });
@@ -707,7 +642,7 @@ class UserQuestionInfoUI extends QuizbotUI
   {
     interaction.explicit_replied = true; //IPC/DB await 대기 중 전역 fallback이 먼저 deferUpdate 하지 않도록 미리 표시
 
-    if(this.question_list !== undefined && this.question_list.length >= 50) //최대 50개까지만 문제 만들 수 있음
+    if(this.question_list !== undefined && this.question_list.length >= SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ) //최대 문제 개수까지만 문제 만들 수 있음
     {
       interaction.reply({ content: `\`\`\`하나의 퀴즈에는 최대 50개의 문제만 만들 수 있습니다.\`\`\``, flags: MessageFlags.Ephemeral });
       return;

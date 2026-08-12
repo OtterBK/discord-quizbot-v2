@@ -36,6 +36,36 @@ exports.selectAllQuizInfo = async (): Promise<any> =>
 
 };
 
+//퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) Phase 2 - quiz_id로 단건 조회. 기존엔 전체/creator별
+//목록 조회만 있었고 단건 조회가 없었음(웹에서 선택한 quiz_id로 상세/재조회할 때 필요).
+exports.selectQuizInfoById = async (quiz_id: number): Promise<any> =>
+{
+
+  let query_string =
+  `select *
+    from tb_quiz_info
+    where is_use = true and is_private = false and quiz_id = $1`;
+
+  return db_core.sendQuery(query_string, [quiz_id]);
+
+};
+
+//퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 3 - quiz_id 단건 조회 + 소유권 검증을
+//DB 레벨에서 강제. selectQuizInfoById(위)와 다른 점: is_private 필터가 없는 대신(비공개 퀴즈도
+//조회 가능해야 편집 가능) creator_id = $2로 소유자 본인만 조회되게 제한한다 - 웹 편집기가
+///quiz/:quizId로 직접 새로고침/딥링크할 때 다른 유저의 비공개 퀴즈가 노출되지 않도록 하는 핵심 방어.
+exports.selectOwnedQuizInfoById = async (quiz_id: number, creator_id: string): Promise<any> =>
+{
+
+  let query_string =
+  `select *
+    from tb_quiz_info
+    where is_use = true and creator_id = $2 and quiz_id = $1`;
+
+  return db_core.sendQuery(query_string, [quiz_id, creator_id]);
+
+};
+
 exports.insertQuizInfo = async (key_fields: string, value_fields: any[]): Promise<any> =>
 {
 

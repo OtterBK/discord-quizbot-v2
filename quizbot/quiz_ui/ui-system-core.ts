@@ -11,10 +11,15 @@ const logger = require('../../utility/logger.js')('QuizUI');
 
 const { QuizbotUI } = require('./common-ui');
 const { MainUI } = require("./main-ui");
-const { UserQuizListUI } = require("./user-quiz-list-ui");
+const { SelectUIModeUI } = require("./select-ui-mode-ui");
 const { AdminPanelUI } = require("./admin-panel-ui");
 const { MultiplayerQuizLobbyUI } = require('./multiplayer-quiz-lobby-ui.js');
+const { WebHandoffUI } = require('./web-handoff-ui');
+const { QuizEditSelectUIModeUI } = require('./quiz-edit-select-ui-mode-ui');
+const { QuizEditWebHandoffUI } = require('./quiz-edit-web-handoff-ui');
 const { SERVER_SIGNAL } = require('../managers/multiplayer_signal.js');
+const { web_handoff_force_take_comp } = require('./components');
+const ipc_manager = require('../managers/ipc_manager');
 
 //#endregion
 
@@ -54,9 +59,16 @@ const createMainUIHolder = (interaction: any): any =>
       return undefined;
     }
 
+    if(prev_uiHolder.isDisplayingWebHandoff()) //다른 유저가 웹에서 세팅 중이면 하이재킹 방어 안내만 (WEB_INTEGRATION_PLAN.md 5번)
+    {
+      interaction.explicit_replied = true;
+      interaction.reply( { content:`\`\`\`🔒 ${prev_uiHolder.getOwnerName()} 님이 웹에서 퀴즈를 세팅하는 중입니다.\n권한을 가져오면 상대방의 웹 세션은 즉시 종료됩니다.\`\`\``, components: [web_handoff_force_take_comp], flags: MessageFlags.Ephemeral });
+      return undefined;
+    }
+
     prev_uiHolder.free();
   }
-  const uiHolder = new UIHolder(interaction, new MainUI(), UI_HOLDER_TYPE.PUBLIC);
+  const uiHolder = new UIHolder(interaction, new SelectUIModeUI(), UI_HOLDER_TYPE.PUBLIC); //디스코드 UI/웹 UI 선택 화면부터 시작(WEB_INTEGRATION_PLAN.md 투트랙 진입)
   uiHolder.holder_id = guild_id;
   ui_holder_map[guild_id] = uiHolder;
 
@@ -65,7 +77,11 @@ const createMainUIHolder = (interaction: any): any =>
   return uiHolder;
 };
 
-//퀴즈 제작 툴
+//퀴즈 제작 툴 - 퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 1: 최초 화면이
+//UserQuizListUI(디스코드 UI 직행)에서 QuizEditSelectUIModeUI(디스코드 UI/웹 UI 투트랙 분기)로 바뀜
+//(createMainUIHolder의 SelectUIModeUI와 동일 패턴). QuizEditSelectUIModeUI는 DB 조회가 없는 동기
+//화면이라(UserQuizListUI와 달리 onReady()가 스스로 update()하지 않음) createMainUIHolder처럼 여기서
+//직접 updateUI()를 호출해야 한다.
 const createQuizToolUIHolder = (interaction: any): any =>
 {
   const user_id = interaction.user.id ?? interaction.member.id;
@@ -74,11 +90,11 @@ const createQuizToolUIHolder = (interaction: any): any =>
     const prev_uiHolder = ui_holder_map[user_id];
     prev_uiHolder.free();
   }
-  const uiHolder = new UIHolder(interaction, new UserQuizListUI(interaction.user), UI_HOLDER_TYPE.PRIVATE);
+  const uiHolder = new UIHolder(interaction, new QuizEditSelectUIModeUI(), UI_HOLDER_TYPE.PRIVATE);
   uiHolder.holder_id = user_id;
   ui_holder_map[user_id] = uiHolder;
 
-  //uiHolder.updateUI(); 얘는 따로
+  uiHolder.updateUI();
 
   return uiHolder;
 };
@@ -99,6 +115,52 @@ const createAdminPanelUIHolder = (interaction: any): any =>
     prev_uiHolder.free();
   }
   const uiHolder = new UIHolder(interaction, new AdminPanelUI(), UI_HOLDER_TYPE.PRIVATE);
+  uiHolder.holder_id = user_id;
+  ui_holder_map[user_id] = uiHolder;
+
+  uiHolder.updateUI();
+
+  return uiHolder;
+};
+
+//퀴즈 선택 웹 연동 - '/퀴즈' 명령어에서 웹 세팅 화면으로 바로 진입할 때(select-quiz-type-ui.ts),
+//force_take로 이미 발급된 세션을 이어받아 진입할 때(bot.js의 force_take 핸들러) 둘 다 여기로 옴.
+//existing_session이 있으면 WebHandoffUI가 내부적으로 새 'create' 요청을 보내지 않고 바로 잠금 화면을 그린다.
+//use_public_message_mode: force_take처럼 넘겨받은 interaction이 이미 deferUpdate()로 소비된 경우
+//true로 넘겨야 함 - UIHolder.updatePublicUI()가 interaction.reply() 대신 channel.send()로 새 메시지를
+//보내도록 전환(sendDelayedUI가 뒤로가기 등에서 쓰는 것과 동일한 public_message_mode 스위치).
+const createWebHandoffUIHolder = (interaction: any, mode: string, existing_session: any = undefined, use_public_message_mode: boolean = false): any =>
+{
+  const guild_id = interaction.guild.id;
+  if(ui_holder_map.hasOwnProperty(guild_id))
+  {
+    const prev_uiHolder = ui_holder_map[guild_id];
+    prev_uiHolder.free();
+  }
+
+  const uiHolder = new UIHolder(interaction, new WebHandoffUI(mode, interaction, existing_session), UI_HOLDER_TYPE.PUBLIC);
+  uiHolder.holder_id = guild_id;
+  uiHolder.public_message_mode = use_public_message_mode;
+  ui_holder_map[guild_id] = uiHolder;
+
+  uiHolder.updateUI();
+
+  return uiHolder;
+};
+
+//퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 1 - createWebHandoffUIHolder와 거의 동일한
+//패턴이되 PRIVATE(DM)로 생성하고 하이재킹 방어가 없다(DM은 봇-유저 1:1이라 애초에 다른 유저가 이
+//홀더를 볼 방법이 없음 - force_take/use_public_message_mode 개념 자체가 불필요).
+const createQuizEditWebHandoffUIHolder = (interaction: any, existing_session: any = undefined): any =>
+{
+  const user_id = interaction.user.id ?? interaction.member.id;
+  if(ui_holder_map.hasOwnProperty(user_id))
+  {
+    const prev_uiHolder = ui_holder_map[user_id];
+    prev_uiHolder.free();
+  }
+
+  const uiHolder = new UIHolder(interaction, new QuizEditWebHandoffUI(interaction, existing_session), UI_HOLDER_TYPE.PRIVATE);
   uiHolder.holder_id = user_id;
   ui_holder_map[user_id] = uiHolder;
 
@@ -139,6 +201,29 @@ const relayMultiplayerSignal = (multiplayer_signal: any): boolean => //관련 �
   }
 
   return handled;
+};
+
+//relayMultiplayerSignal과 동일 패턴(WEB_INTEGRATION_PLAN.md 2번) - 다만 web session signal은
+//scope_id(길드 세션이면 guild_id, 퀴즈 만들기 owner 세션이면 owner_id) 하나만 대상으로 하므로 배열
+//순회가 필요 없다. ui_holder_map은 guild_id/user_id 구분 없는 flat map이라 조회 자체는 그대로다.
+const relayWebSessionSignal = (web_session_signal: any): boolean =>
+{
+  const scope_id = web_session_signal.scope_id;
+  const ui_holder = ui_holder_map[scope_id];
+  if(ui_holder === undefined)
+  {
+    return false;
+  }
+
+  try
+  {
+    return ui_holder.on(CUSTOM_EVENT_TYPE.receivedWebSessionSignal, web_session_signal);
+  }
+  catch(err: any)
+  {
+    logger.error(`Quiz ui Relaying web session Signal error occurred! ${err.stack}`);
+    return false;
+  }
 };
 
 const setGlobalLobbyCount = (lobby_count: number): void =>
@@ -246,6 +331,26 @@ class UIHolder
   free() //자원 정리
   {
     const holder_id = this.guild_id ?? this.user_id;
+
+    //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) - 이 홀더가 (이유 불문) 사라지는 시점에 이 길드의
+    //웹 세션이 살아있다면 조용히 정리한다. 안 하면 확정 후에도 살아있는 웹 세션 토큰이 화면이 이미
+    //다른 걸로 바뀐 뒤에도 guild_token_map을 계속 점유해서, 새로 /퀴즈 → 웹 세션을 열려는 시도가
+    //already_locked로 막히는 고아 토큰 문제가 생김. fire-and-forget, 세션 없는 길드에도 안전한 no-op.
+    //this.ui?.token(WebHandoffUI/DevQuizInfoUI 등이 들고 있는 토큰)을 같이 넘겨서, force_take로 이미
+    //새 소유자에게 넘어간 뒤(guild_token_map이 새 토큰으로 교체된 뒤) 옛 홀더가 free()되는 경우 새
+    //토큰을 잘못 지우지 않게 한다(2026-08-12 발견 - releaseSession의 expected_token 체크와 짝).
+    if(this.guild_id !== undefined)
+    {
+      ipc_manager.sendWebSessionRequest({ action: 'release', guild_id: this.guild_id, token: this.ui?.token }).catch(() => {});
+    }
+
+    //퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 1 - PRIVATE 홀더(퀴즈 만들기는 항상
+    //PRIVATE, guild_id가 애초에 undefined라 위 분기와 겹치지 않음)가 사라지는 시점에 owner 세션도
+    //동일한 이유로 조용히 정리한다. fire-and-forget, 세션 없는 유저에도 안전한 no-op.
+    if(this.ui_holder_type === UI_HOLDER_TYPE.PRIVATE)
+    {
+      ipc_manager.sendWebSessionRequest({ action: 'release_owner_session', owner_id: this.user_id }).catch(() => {});
+    }
 
     if(this.ui !== undefined)
     {
@@ -562,6 +667,11 @@ class UIHolder
     return this.ui instanceof MultiplayerQuizLobbyUI;
   }
 
+  isDisplayingWebHandoff() //웹에서 세팅 중이면 새로운 ui 띄우는 대신 하이재킹 방어 안내(force_take)로 처리
+  {
+    return this.ui instanceof WebHandoffUI;
+  }
+
   sendMessageReply(message: any) //사실 상 base message 강조를 목적으로 하는 답장 보내기
   {
     if(this.base_message === undefined)
@@ -576,4 +686,4 @@ class UIHolder
 
 //#endregion
 
-module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, createAdminPanelUIHolder, getUIHolder, relayMultiplayerSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };
+module.exports = { initialize, createMainUIHolder, createQuizToolUIHolder, createAdminPanelUIHolder, createWebHandoffUIHolder, createQuizEditWebHandoffUIHolder, getUIHolder, relayMultiplayerSignal, relayWebSessionSignal, setGlobalLobbyCount, eraseUIHolder, startUIHolderAgingManager, uiHolderAgingManager, UIHolder };

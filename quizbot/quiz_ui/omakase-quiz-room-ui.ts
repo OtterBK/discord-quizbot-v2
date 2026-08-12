@@ -38,7 +38,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     const guild = interaction.guild;
     const omakase_quiz_info: any = {};
 
-    omakase_quiz_info['title']  = "오마카세 퀴즈";
+    omakase_quiz_info['title']  = "랜덤 퀴즈";
     omakase_quiz_info['icon'] = '🍴';
 
     omakase_quiz_info['type_name'] = "**퀴즈봇 마음대로 퀴즈!**";
@@ -73,6 +73,35 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     omakase_quiz_info['room_owner'] = interaction.member.id;
 
     return omakase_quiz_info;
+  };
+
+  //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) Phase 3 - 웹에서 받은 payload(공식/유저 태그, 인증
+  //필터, 퀴즈함, 문제 수)를 quiz_info에 덮어씌운다. omakase는 DB 조회가 필요 없는 작은 데이터라
+  //dev 모드처럼 동기로 처리 가능. WebHandoffUI(최초 적용)와 이 클래스 자신(확정 후 재적용)이 공유해서 씀.
+  static applyWebPayloadToQuizInfo = (quiz_info: any, payload: any): any =>
+  {
+    quiz_info['dev_quiz_tags'] = payload['dev_quiz_tags'] ?? 0;
+    quiz_info['basket_mode'] = payload['basket_mode'] ?? true;
+    quiz_info['custom_quiz_type_tags'] = payload['custom_quiz_type_tags'] ?? 0;
+    quiz_info['custom_quiz_tags'] = payload['custom_quiz_tags'] ?? 0;
+    quiz_info['certified_filter'] = payload['certified_filter'] ?? true;
+    quiz_info['basket_items'] = payload['basket_items'] ?? {};
+
+    const requested_count = parseInt(payload['selected_question_count']);
+    quiz_info['selected_question_count'] = isNaN(requested_count)
+      ? 30
+      : Math.max(1, Math.min(quiz_info['quiz_size'], requested_count));
+
+    return quiz_info;
+  };
+
+  //웹에서 최초로 "선택 완료"했을 때(WebHandoffUI.handleApplied) 기본 omakase_quiz_info를 만들고 그 위에
+  //웹 payload를 덮어씌운다. adapter_interaction은 실제 interaction 없이 호출해야 하는 WebHandoffUI가
+  //{guild, member: {id}} 형태의 최소 어댑터 객체를 넘김(createDefaultOmakaseQuizInfo가 그 둘만 씀).
+  static buildOmakaseQuizInfoFromWebPayload = (payload: any, adapter_interaction: any): any =>
+  {
+    const omakase_quiz_info = OmakaseQuizRoomUI.createDefaultOmakaseQuizInfo(adapter_interaction);
+    return OmakaseQuizRoomUI.applyWebPayloadToQuizInfo(omakase_quiz_info, payload);
   };
 
   constructor(quiz_info: any)
@@ -172,7 +201,7 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     this.quiz_info['basket_mode'] = true;
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`장바구니 모드를 사용합니다.\n장바구니 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`퀴즈함 모드를 사용합니다.\n퀴즈함 모드는 직접 원하는 유저 퀴즈들을 선택하면\n선택한 퀴즈들에서만 무작위로 문제가 출제됩니다. \`\`\``, flags: MessageFlags.Ephemeral});
 
     return new UserQuizSelectUI(basket_items);
   }
@@ -185,14 +214,14 @@ class OmakaseQuizRoomUI extends QuizInfoUI
     if(!cached_basket_items)
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 최근 장바구니 데이터가 없어요...\n🔸 장바구니 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
+      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 
     this.quiz_info['basket_items'] = cloneDeep(cached_basket_items);
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 장바구니 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 퀴즈함 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
 
     this.refreshUI();
     return this;
@@ -248,6 +277,31 @@ class OmakaseQuizRoomUI extends QuizInfoUI
       this.components.push(this.basket_select_component);
       this.components.push(request_basket_reopen_comp);
     }
+  }
+
+  //퀴즈 선택 웹 연동(docs/WEB_INTEGRATION_PLAN.md) Phase 3 - "선택 완료" 이후에도 웹 세션 토큰은
+  //살아있어서(dev/user 모드와 동일한 이유), 웹에서 설정을 다시 바꾸고 확정하면 이 화면에 그대로
+  //반영해야 한다. omakase는 DB 조회가 필요 없어 동기로 처리 가능 - dev-quiz-info-ui.ts와 같은 이유로
+  //새 인스턴스를 반환하지 않고 같은 인스턴스를 갱신한다(뒤로가기 스택 누적 방지).
+  onReceivedWebSessionSignal(signal: any): any
+  {
+    if(signal.event !== 'applied')
+    {
+      return undefined;
+    }
+
+    OmakaseQuizRoomUI.applyWebPayloadToQuizInfo(this.quiz_info, signal.payload);
+
+    const guild_id = this.holder?.guild_id;
+    if(guild_id !== undefined)
+    {
+      QuizInfoUI.BASKET_CACHE[guild_id] = this.quiz_info['basket_items'];
+    }
+
+    this.refreshUI();
+    this.update();
+
+    return this;
   }
 
 }
