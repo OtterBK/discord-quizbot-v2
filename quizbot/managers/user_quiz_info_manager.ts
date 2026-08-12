@@ -372,10 +372,10 @@ const loadQuestionListFromDBByTags = async (quiz_type_tags_value: number, tag_va
   return [total_question_count, question_list];
 };
 
-const loadQuestionListByBasket = async (basket_condition_query: string, limit: number): Promise<[number, UserQuestionInfo[]]> =>
+const loadQuestionListByBasket = async (quiz_id_list: number[], limit: number): Promise<[number, UserQuestionInfo[]]> =>
 { //quiz_id 로 랜덤 문제 불러오기
 
-  if(basket_condition_query == '') //선택된 퀴즈 basket이 없다면
+  if(quiz_id_list.length === 0) //선택된 퀴즈 basket이 없다면
   {
     return [0, []];
   }
@@ -389,7 +389,7 @@ const loadQuestionListByBasket = async (basket_condition_query: string, limit: n
   ];
   const question_list: UserQuestionInfo[] = [];
 
-  const result = await db_manager.selectRandomQuestionListByBasket(basket_condition_query, limit);
+  const result = await db_manager.selectRandomQuestionListByBasket(quiz_id_list, limit);
 
   for(const result_row of result.rows)
   {
@@ -425,7 +425,7 @@ const loadQuestionListByBasket = async (basket_condition_query: string, limit: n
   return [total_question_count, question_list];
 };
 
-const addPlayedCountByQuiz = (quiz_id: string): void =>
+const addPlayedCountByQuiz = (quiz_id: number): void =>
 {
   db_manager.addQuizInfoPlayedCount(quiz_id);
 }

@@ -88,15 +88,18 @@ test('selectOwnedQuizInfoById: quiz_id/creator_id를 파라미터로 넘기고 i
   assert.deepEqual(captured.values, [42, 'user_1']);
 });
 
-test('selectRandomQuestionListByBasket: basket_condition_query를 IN 절에 그대로 삽입하고 limit은 파라미터로 넘긴다', async (t) =>
+//2026-08-12(웹 API 보안 점검) - quiz_id_list를 문자열로 이어붙여 IN절에 직접 삽입하던 방식은
+//SQL 인젝션 지점이었음(퀴즈 선택 웹 연동의 basket_items가 서버 검증 없이 여기까지 도달할 수 있었음).
+//= ANY($1::int[]) 파라미터화로 교체됐는지 확인.
+test('selectRandomQuestionListByBasket: quiz_id_list와 limit을 둘 다 파라미터로 넘긴다(문자열 보간 없음)', async (t) =>
 {
   let captured = undefined;
   t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
 
-  await db_manager.selectRandomQuestionListByBasket('(1,2,3)', 10);
+  await db_manager.selectRandomQuestionListByBasket([1, 2, 3], 10);
 
-  assert.match(captured.query_string, /WHERE quiz_id IN \(1,2,3\)/);
-  assert.deepEqual(captured.values, [10]);
+  assert.match(captured.query_string, /WHERE quiz_id = ANY\(\$1::int\[\]\)/);
+  assert.deepEqual(captured.values, [[1, 2, 3], 10]);
 });
 
 test('selectRandomQuestionListByTags: certified_filter가 true면 certified 조건을 쿼리에 추가한다', async (t) =>

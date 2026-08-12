@@ -752,14 +752,19 @@ class InitializeOmakaseQuiz extends Initialize
 
       const basket_items = quiz_info['basket_items'];
 
-      const basket_items_value: any[] = Object.values(basket_items);
-      if(basket_items_value.length > 0)
-      {
-        const basket_condition_query = '(' + basket_items_value
-          .map((basket_item: any) => basket_item.quiz_id)
-          .join(',') + ')';
+      //웹 API(POST /api/session/confirm, mode:omakase/multiplayer)는 basket_items를 서버 검증 없이
+      //그대로 받는다 - quiz_id가 정수가 아닌 임의 문자열이어도 여기까지 그대로 도달할 수 있다(웹 API
+      //보안 점검, docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md). 디스코드 전용이던 시절엔 이
+      //값이 항상 DB에서 읽은 실제 quiz_id(정수)로만 채워져서 안전했지만, 이제는 실제로 쓰이기 직전에
+      //정수만 걸러내야 한다 - 걸러진 값은 이제 loadQuestionListByBasket이 파라미터화 쿼리로 넘긴다
+      //(예전엔 문자열로 이어붙여 SQL IN절에 그대로 삽입하던 인젝션 지점이었음).
+      const basket_quiz_ids: number[] = Object.values(basket_items ?? {})
+        .map((basket_item: any) => parseInt(basket_item?.quiz_id))
+        .filter((quiz_id: number) => Number.isInteger(quiz_id));
 
-        [total_custom_question_count, custom_question_list] = await loadQuestionListByBasket(basket_condition_query, limit);
+      if(basket_quiz_ids.length > 0)
+      {
+        [total_custom_question_count, custom_question_list] = await loadQuestionListByBasket(basket_quiz_ids, limit);
       }
       else
       {
@@ -770,9 +775,9 @@ class InitializeOmakaseQuiz extends Initialize
       dev_quiz_count = Math.round(limit / 2);
       custom_quiz_count = Math.round(limit / 2);
 
-      for(const basket_item of basket_items_value) //장바구니 모드에서 선택된 퀴즈들도 플레이된 횟수 +1
+      for(const quiz_id of basket_quiz_ids) //장바구니 모드에서 선택된 퀴즈들도 플레이된 횟수 +1
       {
-        addPlayedCountByQuiz(basket_item.quiz_id);
+        addPlayedCountByQuiz(quiz_id);
       }
 
       // this.quiz_session.already_liked = false; //장바구니 모드면 추천하기를 무조건 띄운다. -> 안띄운다 우선

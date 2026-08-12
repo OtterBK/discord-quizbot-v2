@@ -168,6 +168,29 @@ test('PUT /api/my-quizzes/:quiz_id: 다른 사람 퀴즈면 404를 반환한다'
   assert.equal(res.status, 404);
 });
 
+//웹 API 보안 점검(docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md 작업 2-A "남은 일") - 위 테스트는
+//selectOwnedQuizInfoById를 무조건 빈 배열로 mock해서 "404가 나온다"는 것만 확인했다. 이 테스트는 실제
+//두 개의 서로 다른 세션(owner_A/owner_B)을 만들고, mock이 creator_id를 비교해서 실제 DB 쿼리(db_quiz.ts
+//selectOwnedQuizInfoById의 `where creator_id = $2`)처럼 동작하게 해 owner_A의 토큰으로 owner_B 소유
+//퀴즈를 직접 수정 시도하는 상황을 더 사실적으로 재현한다.
+test('PUT /api/my-quizzes/:quiz_id: 세션 A 토큰으로 세션 B 소유 퀴즈를 수정 시도하면 404를 반환한다(라이브 IDOR 검증)', async (t) =>
+{
+  const session_a = web_session_manager.createOwnerScopedSession('owner_A', 'quiz_edit', '유저A');
+
+  t.mock.method(db_manager, 'selectOwnedQuizInfoById', async (quiz_id, creator_id) =>
+  {
+    return (creator_id === 'owner_B' && quiz_id === 1) ? { rows: [{ quiz_id: 1, quiz_title: '유저B의 퀴즈', is_private: true }] } : { rows: [] };
+  });
+
+  const res = await fetch(`${BASE_URL}/api/my-quizzes/1`, {
+    method: 'PUT',
+    headers: { ...authHeader(session_a), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quiz_title: '탈취 시도 제목' }),
+  });
+
+  assert.equal(res.status, 404);
+});
+
 test('PUT /api/my-quizzes/:quiz_id: 본인 퀴즈면 메타데이터를 수정하고 simple_description은 마크다운 특수문자를 제거한다', async (t) =>
 {
   const session = createOwnerSession();
@@ -317,6 +340,28 @@ test('DELETE /api/my-quizzes/:quiz_id: 다른 사람 퀴즈면 404를 반환한�
   });
 
   assert.equal(res.status, 404);
+});
+
+//위 PUT 테스트와 동일한 이유(작업 2-A "남은 일") - DELETE도 실제 두 세션 간 교차 접근을 재현한다.
+test('DELETE /api/my-quizzes/:quiz_id: 세션 A 토큰으로 세션 B 소유 퀴즈를 삭제 시도하면 404를 반환한다(라이브 IDOR 검증)', async (t) =>
+{
+  const session_a = web_session_manager.createOwnerScopedSession('owner_A', 'quiz_edit', '유저A');
+
+  t.mock.method(db_manager, 'selectOwnedQuizInfoById', async (quiz_id, creator_id) =>
+  {
+    return (creator_id === 'owner_B' && quiz_id === 1) ? { rows: [{ quiz_id: 1, quiz_title: '유저B의 퀴즈', is_private: true }] } : { rows: [] };
+  });
+
+  let disable_called = false;
+  t.mock.method(db_manager, 'disableQuizInfo', async () => { disable_called = true; });
+
+  const res = await fetch(`${BASE_URL}/api/my-quizzes/1`, {
+    method: 'DELETE',
+    headers: authHeader(session_a),
+  });
+
+  assert.equal(res.status, 404);
+  assert.equal(disable_called, false); //삭제 로직 자체가 실행되면 안 됨
 });
 
 //====================================================================================

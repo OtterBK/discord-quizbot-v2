@@ -91,12 +91,15 @@ exports.updateQuizInfo = async (key_fields: string, value_fields: any[], quiz_id
     placeholders += `$${i}` + (i == value_fields.length ? '' : ',');
   }
 
+  //quiz_id도 쿼리 문자열에 직접 보간하지 않고 마지막 플레이스홀더로 파라미터화한다(웹 API 보안 점검,
+  //docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md 작업 2-D5 - 호출 경로상 항상 parseInt를 거친
+  //정수만 들어와 지금도 익스플로잇은 불가하지만, 방어적인 코드가 아니었어서 하드닝 차원으로 정리).
   const query_string =
   `UPDATE tb_quiz_info set (${key_fields}) = (${placeholders})
-    where quiz_id = ${quiz_id}
+    where quiz_id = $${value_fields.length + 1}
     returning quiz_id`;
 
-  return db_core.sendQuery(query_string, value_fields);
+  return db_core.sendQuery(query_string, [...value_fields, quiz_id]);
 
 };
 
@@ -160,12 +163,13 @@ exports.updateQuestionInfo = async (key_fields: string, value_fields: any[], que
     placeholders += `$${i}` + (i == value_fields.length ? '' : ',');
   }
 
+  //updateQuizInfo와 동일한 이유로 question_id도 파라미터화(위 주석 참고).
   const query_string =
   `UPDATE tb_question_info set (${key_fields}) = (${placeholders})
-    where question_id = ${question_id}
+    where question_id = $${value_fields.length + 1}
     returning question_id`;
 
-  return db_core.sendQuery(query_string, value_fields);
+  return db_core.sendQuery(query_string, [...value_fields, question_id]);
 };
 
 /** User QuestioN Info */
@@ -263,14 +267,21 @@ exports.selectRandomQuestionListByTags = async (quiz_type_tags_value: number, ta
   return db_core.sendQuery(query_string, [quiz_type_tags_value, tags_value, limit]);
 };
 
-exports.selectRandomQuestionListByBasket = async (basket_condition_query: string, limit: number): Promise<any> =>
+//2026-08-12(웹 API 보안 점검, docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md) - 원래는
+//`basket_condition_query: string`을 `WHERE quiz_id IN ${...}`에 그대로 문자열 보간하는 SQL 인젝션
+//지점이었음. 디스코드 전용이던 시절엔 이 값이 항상 DB에서 읽은 실제 정수(quiz_id)로만 조립돼 실질적
+//위험이 없었지만, 퀴즈 선택 웹 연동(mode:omakase/multiplayer)이 basket_items를 서버 검증 없이 그대로
+//받게 되면서 임의 문자열이 이 함수까지 도달할 수 있는 경로가 새로 생겼음(호출부 initialize.ts에서
+//정수만 필터링하긴 하지만, 방어를 호출부에만 의존하지 않도록 이 함수 자체도 파라미터화함) -
+//quiz_id_list를 받아 `= ANY($1::int[])`로 교체.
+exports.selectRandomQuestionListByBasket = async (quiz_id_list: number[], limit: number): Promise<any> =>
 {
   const query_string =
   `
   WITH matching_quizzes AS (
     SELECT quiz_id, quiz_title, creator_name, creator_icon_url, simple_description, tags_value
     FROM tb_quiz_info
-    WHERE quiz_id IN ${basket_condition_query}
+    WHERE quiz_id = ANY($1::int[])
   )
   SELECT qu.*, mq.quiz_id, mq.quiz_title, mq.creator_name, mq.creator_icon_url, mq.simple_description, mq.tags_value,
     COUNT(*) OVER() AS total_count
@@ -278,7 +289,7 @@ exports.selectRandomQuestionListByBasket = async (basket_condition_query: string
   JOIN matching_quizzes mq ON qu.quiz_id = mq.quiz_id
   WHERE qu.answer_type = 1 OR qu.answer_type IS NULL
   ORDER BY RANDOM()
-  LIMIT $1;`;
+  LIMIT $2;`;
 
-  return db_core.sendQuery(query_string, [limit]);
+  return db_core.sendQuery(query_string, [quiz_id_list, limit]);
 };
