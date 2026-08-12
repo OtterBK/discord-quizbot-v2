@@ -205,7 +205,8 @@ class UserQuizInfoUI extends QuizInfoUI
 
     if(this.readonly)
     {
-      description += '\n`⚠️ 퀴즈 도중에는 설정을 변경하실 수 없습니다.`';
+      // description += '\n`⚠️ 퀴즈 도중에는 설정을 변경하실 수 없습니다.`';
+      description += "\n\n";
       this.components = [quiz_info_comp, feedback_manager.quiz_feedback_comp]; //게임 시작 가능한 comp, 퀴즈 feedback comp
     }
     else
