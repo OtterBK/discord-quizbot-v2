@@ -71,9 +71,11 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 - UI 클래스(`quiz_ui/*.js`)는 관례상 유닛테스트 대상이 아님 (Discord 인터랙션 의존이 커서) — 대신 `managers/`의 순수 로직/DB 래퍼가 테스트 대상. UI를 손댔으면 `node -e`로 require 스모크테스트만 해도 충분한 경우가 많음.
 - `npm test` / `npm run lint` (0 error 기준, warning은 기존 관행 수준 유지)
 
-## 빌드/배포 (실제 운영 봇이 `dist/`에서 도는 경우 주의)
+## 빌드/배포 (운영 봇은 반드시 `dist/index.js`로 실행)
 
-- `npm run build`(`tsc && copy-js-assets.js`)가 `.ts`는 컴파일, `.js`는 byte-for-byte 복사해서 `dist/`를 만듦. **운영 중인 봇 프로세스가 `dist/`를 참조한다면, 소스(`utility/`, `quizbot/` 등)만 고치고 재빌드를 안 하면 변경이 전혀 반영 안 됨** — 실제로 이 문제로 수정한 버그가 안 고쳐진 것처럼 보인 적 있음(2026-08-08). 코드 수정 후 사용자가 직접 재생/재현 테스트를 할 예정이면 `npm run build`부터 안내할 것.
+- `npm run build`(`tsc && copy-js-assets.js`)가 `.ts`는 컴파일, `.js`/`.json`은 byte-for-byte 복사해서 `dist/`를 만듦(`config/system_setting.js`의 `PROJECT_ROOT`가 `package.json` 위치까지 올라가서 찾으므로 `resources/`/`log/` 등 경로는 `dist/`에서 실행해도 항상 저장소 루트를 정확히 가리킴). **소스(`utility/`, `quizbot/` 등)만 고치고 재빌드를 안 하면 변경이 전혀 반영 안 됨** — 실제로 이 문제로 수정한 버그가 안 고쳐진 것처럼 보인 적 있음(2026-08-08). 코드 수정 후 사용자가 직접 재생/재현 테스트를 할 예정이면 `npm run build`부터 안내할 것.
+- 88개 이상의 `quizbot/`/`utility/`/`config` 하위 파일이 이미 `.ts`로 전환 완료됐고, 전환된 파일은 원본 `.js`가 삭제됨 — Node.js는 `.ts`를 직접 `require()`할 수 없고(`ts-node/register` 같은 런타임 트랜스파일 훅이 `index.js`/`bot.js` 어디에도 없음) 이 때문에 **소스 트리의 `index.js`를 그대로(`npm run build` 없이) 실행하면 전환된 매니저를 require하는 순간 크래시함**. 즉 운영 봇은 이제 선택이 아니라 필수로 `dist/index.js`를 실행해야 함(2026-08-12, `auto_script/` 점검 중 확인 — 그 전까지 실제 운영 서버는 TS 마이그레이션 이전 구코드가 배포된 상태였음).
+- `auto_script/install_quizbot3.sh`가 설치 마지막 단계에 `npm run build`를 실행하고 `auto_script/systemd/quizbot3.service.template`으로 systemd 유닛(`quizbot3.service`, `ExecStart=node dist/index.js`)을 생성/enable함. `auto_script/server_script/quizbot_start.sh`/`quizbot_stop.sh`는 `systemctl start/stop quizbot3` 래퍼임 — 자세한 흐름은 `auto_script/정석 사용법.txt`.
 - Windows PowerShell 기본 실행 정책이 `npm run build`(`npm.ps1`)를 막을 수 있음 — `npm.cmd run build`로 우회하거나 `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`로 영구 해결.
 
 ## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동)
@@ -101,6 +103,9 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 - `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함.
 - `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
 - `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` — A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건(미착수).
+- `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md` — `auto_script/`(설치/실행/중지 스크립트) 개선 작업계획서.
+  2026-08-12 조사+구현 완료(저장소 주소 수정, 브랜치 선택, `npm run build`+systemd 데몬화 등) — 상세는
+  문서 참고.
 - `docs/TEST_CHECKLIST.md` — 수동 테스트 체크리스트. 기능 추가/수정 시 관련 항목을 갱신(추가 또는 `[ ]`로 되돌리기)할 것.
 
 **UI/UX 개선 (별도 라운드, 상태 제각각)**

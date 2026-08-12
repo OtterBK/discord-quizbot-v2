@@ -28,6 +28,15 @@
 > 6번은 "사용자와 먼저 논의/결정"이 선행돼야 함 — 시작 전 반드시 확인할 것. 종합 배경은 `docs/
 > DEVELOP_V3_5_CHANGES_REVIEW.md`(develop-v3.5 전체 변경사항 리뷰 문서, 참고용).
 
+> **✅ 2026-08-12 `auto_script/` 운영 스크립트 개선 완료 (같은 날 후속 세션).** 저장소 주소 수정(옛
+> `OtterBK/Quizbot3` → `OtterBK/discord-quizbot-v2`) + 브랜치 선택 설치 + `npm run build` 자동화 +
+> systemd 데몬화(`quizbot3.service`, cron의 하루 2번 stop/start와 충돌 없게 `Restart=on-failure`)까지
+> 전부 구현. 착수 확인 중 "지금 운영 서버는 TS 마이그레이션 이전 구코드가 배포된 상태"라는 더 심각한
+> 사실을 발견 — 곧 GCP 신서버를 `develop-v3.5` 기준으로 재구축할 예정이라 그에 맞춰 설계함. **아직
+> 실제 신서버에 설치해보는 실사용 검증은 안 함** — 다음 서버 생성 시 최우선 확인. 상세는
+> `docs/COMPLETED_WORK_LOG.md` 2026-08-12 "`auto_script/` 운영 스크립트 개선 구현 완료" 항목,
+> `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`.
+
 ---
 
 ## A. 보류 중 (조건 충족 전까지 착수 금지)

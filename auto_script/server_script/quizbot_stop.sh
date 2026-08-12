@@ -1,15 +1,11 @@
+#!/bin/bash
+. /etc/profile.d/quizbot_path.sh
+
+if [ -z "$QUIZBOT_PATH" ]; then
+    echo "QUIZBOT_PATH is not set. Please set it before running the script."
+    exit 1
+fi
+
 echo "stopping quizbot"
-
-sudo pkill -f ".*quizbot_start.sh.*"
-echo "stopped start script";
-
-sudo pkill -f 'node.*index.js'; 
-echo "killed index.js"
-
-sudo pkill -f 'node.*bot.js'; 
-echo "killed bot.js"
-
-sudo pkill -f ".*ffmpeg.*";
-echo "killed all ffmpeg"
-
-echo "stopped"
+sudo systemctl stop quizbot3
+echo "quizbot3 systemd service stopped (systemd kills child ffmpeg processes in its cgroup automatically)"

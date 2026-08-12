@@ -1071,3 +1071,45 @@ UI를 다시 고르면 `WebHandoffUI`가 평소처럼 `'create'` 액션으로 �
 안내 메시지) → "권한 가져오기" 시뮬레이션(`free()` + `createMainUIHolder` 재호출) → 사용자2가 정확히
 `SelectUIModeUI`(두 트랙 선택 화면)에 도달하는 것까지 확인. **미검증** — 실제 Discord 클라이언트로는
 아직 안 돌려봄(특히 버튼 인터랙션의 `reply()`가 새 공개 메시지로 정상 발행되는지), 다음 세션 최우선.
+
+## 2026-08-12 — `auto_script/` 운영 스크립트 개선 구현 완료 (같은 날 후속 세션)
+
+위 조사 문서의 질문 5개를 순서대로 확인받은 뒤(가장 심각했던 저장소 주소 문제부터) 착수. 확인 과정에서
+**더 심각한 사실 발견**: 지금 운영 중인 서버는 TS 마이그레이션 이전(88개 파일이 아직 `.js`였던 시절) 구코드가
+배포된 상태 — 소스 트리의 `index.js`를 그대로(`npm run build` 없이) 실행하면 이미 `.ts`로 전환된 매니저를
+require하는 순간 크래시하기 때문(전환된 파일은 원본 `.js`가 삭제돼 있고, `index.js`/`bot.js` 어디에도
+`ts-node/register` 같은 런타임 트랜스파일 훅이 없음 — 직접 `node -e "require(...)"`로 재현 확인). 곧 GCP에
+새 서버를 만들며 `develop-v3.5`(TS 마이그레이션 반영) 기준으로 재구축할 예정이라는 걸 확인하고 그에 맞춰
+스크립트 전체를 재설계.
+
+**변경 내용**:
+- `install_quizbot3.sh`: 클론 주소를 `OtterBK/Quizbot3`(옛 이름) → `OtterBK/discord-quizbot-v2`로 수정,
+  설치할 브랜치를 고를 수 있는 프롬프트 추가(기본 `master`), `npm install` 뒤 `npm run build` 추가(TS를
+  `dist/`로 컴파일 — 이제 필수 단계), 신규 `auto_script/systemd/quizbot3.service.template`을 설치 경로로
+  채워 `/etc/systemd/system/quizbot3.service`로 설치 + `systemctl enable`(시작은 안 함, 기존처럼
+  `quizbot_start.sh`로 수동 시작).
+- `server_script/quizbot_start.sh`/`quizbot_stop.sh`: 포그라운드 `node index.js` 직접 실행 + `pkill -f`
+  기반 프로세스 종료를 `systemctl start/stop quizbot3`로 교체 — 경로 하드코딩 문제(설치 경로가 기본값이
+  아니면 실행 스크립트가 깨지던 버그) 자체가 사라짐(경로는 유닛 파일에 고정), 로그도 이제 journal로
+  자동 수집됨(`journalctl -u quizbot3 -f`), ffmpeg orphan은 systemd가 기본 동작(`KillMode=control-group`)으로
+  같은 cgroup의 자식 프로세스까지 정지 시 함께 정리해주므로 `pkill -f ".*ffmpeg.*"`(다른 용도의 ffmpeg까지
+  전부 죽이던 과도하게 넓은 패턴)를 제거.
+- `quizbot3.service`(신규): `Restart=on-failure` — cron이 하루 2번(9시/21시) 명시적으로 stop/start를
+  호출하는 기존 방식과 systemd의 자동재시작이 서로 안 부딪히도록(수동 `stop`은 systemd 시맨틱상 애초에
+  auto-restart 대상이 아님, 예기치 않은 크래시만 자동 복구).
+- `server_script/update_yt-dlp.sh`: `curl -LO`(cwd에 받고 `mv`) → `curl -Lo "$TARGET_PATH/yt-dlp"`(바로
+  받기)로 수정 — cron 실행 시 작업 디렉터리에 따라 파일이 엉뚱한 곳에 남을 수 있던 문제 제거.
+- `정석 사용법.txt`: 옛 스크립트 이름(`setup_quizbot3.sh`) 참조를 걷어내고, 구서버 백업 → 신서버에서
+  브랜치 선택 설치(빌드 자동 포함) → config 덮어쓰기 → cron 등록 → `quizbot_start.sh` 실행까지 실제
+  사용 순서 그대로, `systemctl status/journalctl` 확인 명령과 코드 업데이트 시 `git pull` 뒤 `npm run
+  build`를 빼먹으면 안 된다는 안내 추가.
+- 재시작 주기(하루 2번 9/21시)와 원격 백업(rsync) 스크립트 정식화는 사용자 확인 후 **이번 스코프에서
+  제외**(전자는 기존 install 스크립트 값 그대로 유지, 후자는 다음 기회로 보류 — 실주소가 레포에 안
+  들어가게 설계까지는 검토했으나 착수 안 함).
+- 루트 `CLAUDE.md` "빌드/배포" 섹션을 위 발견(운영 봇은 이제 `dist/index.js` 실행이 필수) 기준으로
+  갱신.
+
+검증: 수정한 셸 스크립트 4개(`install_quizbot3.sh`/`quizbot_start.sh`/`quizbot_stop.sh`/
+`update_yt-dlp.sh`) `bash -n` 문법 검사 전부 통과. **미검증** — 실제 GCP 서버에 새로 설치해보는 실사용
+테스트는 아직 안 함(다음 서버 생성 시 최우선 확인 대상), `drop_ffmpeg.sh`/`db_script/` 하위는 이번에
+검토만 하고 로직 변경은 없음.

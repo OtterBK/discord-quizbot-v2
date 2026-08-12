@@ -22,13 +22,9 @@ if [ -f "$TARGET_PATH/yt-dlp" ]; then
   cp "$TARGET_PATH/yt-dlp" "$TARGET_PATH/yt-dlp-prev"
 fi
 
-# Download the latest yt-dlp
+# Download the latest yt-dlp directly to the target path (avoids leaving stray files in whatever cwd cron runs from)
 echo "Downloading the latest version of yt-dlp..."
-curl -LO https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
-
-# Move the downloaded yt-dlp file to the target directory
-echo "Moving yt-dlp to $TARGET_PATH"
-mv -f yt-dlp $TARGET_PATH
+curl -Lo "$TARGET_PATH/yt-dlp" https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp
 
 # Grant 777 permissions to the yt-dlp file
 echo "Granting 777 permissions to yt-dlp"

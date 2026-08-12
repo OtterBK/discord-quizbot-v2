@@ -1,0 +1,19 @@
+[Unit]
+Description=Quizbot3 Discord Bot
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=__QUIZBOT_PATH__
+ExecStart=/usr/bin/node dist/index.js
+Environment=TZ=Asia/Seoul
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quizbot3
+
+[Install]
+WantedBy=multi-user.target

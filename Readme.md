@@ -224,7 +224,7 @@
 | 🧠 **vCPU**        | 1코어                                             |
 | 🛠️ **메모리**      | 2GB                                                             |
 | 💾 **디스크 공간**  | 10GB HDD                                                                                                                             |
-| 📦 **필수 패키지** | Net-tools, Git, Node.js (16, 17, 18 중 선택), PostgreSQL 14                                    |
+| 📦 **필수 패키지** | Net-tools, Git, Node.js (기본 22, 원하는 버전으로 변경 가능), PostgreSQL 14                     |
 | 🗄️ **데이터베이스** | PostgreSQL 14 (데이터베이스 및 사용자 생성 필요)                                                |
 | ⏲️ **크론 스케줄러** | (선택사항) 서버 자동 시작/정지 및 백업 스케줄링 가능                                                |
 | 🧹 **스왑 메모리**   | (선택사항) 지정한 크기의 스왑 메모리 설정 가능                                                     |
@@ -341,14 +341,17 @@ Git을 사용해 Quizbot3 소스 코드를 다운로드한 후, 필요한 Node.j
 # 홈 디렉토리로 이동
 cd ~
 
-# Quizbot3 소스 코드 다운로드
-git clone https://github.com/OtterBK/Quizbot3.git
+# Quizbot3 소스 코드 다운로드 (원하는 브랜치를 -b 옵션으로 지정 가능, 기본은 master)
+git clone https://github.com/OtterBK/discord-quizbot-v2.git quizbot3
 
 # 설치 디렉토리로 이동
-cd Quizbot3
+cd quizbot3
 
 # Node.js 패키지 설치
 npm install
+
+# TypeScript 소스를 dist/ 로 빌드 (봇 실행에 필수 단계)
+npm run build
 ```
 
 ---
@@ -461,12 +464,33 @@ vim /home/ubuntu/quizbot3/config/private_config.json
 
 ```
 
-### 2. 봇 실행
-
-봇 실행은 index.js를 실행하여 활성화 가능합니다.
+`private_config.json`을 수정한 뒤에는 `dist/`에도 반영되도록 아래처럼 다시 빌드해야 합니다(설치
+스크립트가 이미 한 번 빌드해뒀더라도, 설정 파일을 바꿨다면 다시 실행해야 함).
 
 ```bash
-node /home/ubuntu/quizbot3/index.js
+cd /home/ubuntu/quizbot3
+npm run build
+```
+
+### 2. 봇 실행
+
+TypeScript로 전환된 소스가 많아 `index.js`(소스)를 그대로 실행하면 동작하지 않습니다 — 반드시 빌드
+결과물인 `dist/index.js`를 실행해야 합니다.
+
+```bash
+node /home/ubuntu/quizbot3/dist/index.js
+```
+
+자동 설치 스크립트를 사용했다면 systemd 서비스(`quizbot3`)가 이미 등록돼 있어 아래처럼 실행/중지할
+수 있습니다(내부적으로 위 명령과 동일하게 `dist/index.js`를 실행함).
+
+```bash
+sh /home/ubuntu/quizbot3/auto_script/server_script/quizbot_start.sh
+sh /home/ubuntu/quizbot3/auto_script/server_script/quizbot_stop.sh
+
+# 상태/로그 확인
+sudo systemctl status quizbot3
+journalctl -u quizbot3 -f
 ```
 
 </details>

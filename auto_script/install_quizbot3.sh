@@ -31,6 +31,10 @@ done
 read -p "🧩 Enter Node.js version (default: 22): " NODE_VERSION
 NODE_VERSION="${NODE_VERSION:-22}"
 
+# Branch selection (TS 마이그레이션이 반영된 branch를 골라 받을 수 있도록)
+read -p "🌿 Enter branch to install (default: master): " BRANCH
+BRANCH="${BRANCH:-master}"
+
 # Cron registration
 read -p "🔁 Do you want to register cron jobs? (y/N): " REGISTER_CRON_INPUT
 if [[ "$REGISTER_CRON_INPUT" =~ ^[Yy]$ ]]; then
@@ -81,11 +85,16 @@ sudo apt remove libnode-dev -y
 sudo apt remove libnode72:amd64 -y
 sudo apt install nodejs -y
 
-print_emphasized "Cloning Quizbot3 repository..."
-sudo git clone https://github.com/OtterBK/Quizbot3.git "$INSTALL_PATH"
+print_emphasized "Cloning Quizbot3 repository (branch: $BRANCH)..."
+sudo git clone -b "$BRANCH" https://github.com/OtterBK/discord-quizbot-v2.git "$INSTALL_PATH"
 cd "$INSTALL_PATH"
 sudo npm install
 sudo cp -R custom_node_modules/* node_modules/
+
+# TS로 전환된 소스는 dist/ 로 빌드해야 node가 바로 require할 수 있음(.ts는 직접 못 읽음)
+print_emphasized "Building TypeScript sources (npm run build)..."
+sudo npm run build
+
 print_emphasized "Quizbot3 has been installed!"
 
 # Set environment variable
@@ -118,6 +127,19 @@ if [ -n "$BACKUP_FILE" ]; then
     cp "$BACKUP_FILE" "$TMP_FILE"
     sudo -u postgres psql -d quizbot3 -f "$TMP_FILE"
     rm "$TMP_FILE"
+fi
+
+# systemd service setup (start/stop 스크립트가 이 유닛을 systemctl로 제어함)
+print_emphasized "Installing systemd service (quizbot3)..."
+SERVICE_TEMPLATE="$INSTALL_PATH/auto_script/systemd/quizbot3.service.template"
+SERVICE_TARGET="/etc/systemd/system/quizbot3.service"
+if [ -f "$SERVICE_TEMPLATE" ]; then
+    sudo sh -c "sed 's|__QUIZBOT_PATH__|$INSTALL_PATH|g' '$SERVICE_TEMPLATE' > '$SERVICE_TARGET'"
+    sudo systemctl daemon-reload
+    sudo systemctl enable quizbot3
+    print_emphasized "quizbot3.service installed and enabled (run quizbot_start.sh to start it)"
+else
+    echo "❌ systemd template not found at $SERVICE_TEMPLATE. Skipping service setup."
 fi
 
 # Cron setup
