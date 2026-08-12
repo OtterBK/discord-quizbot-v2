@@ -641,6 +641,23 @@ select.sort-select {
 .df-empty-note { font-size: 12.5px; color: #949ba4; line-height: 1.6; padding: 10px 2px; }
 .df-image-ph { border-radius: 6px; max-width: 100%; max-height: 180px; display: block; }
 
+/* 문제/힌트/정답 텍스트의 마크다운 렌더링(2026-08-12) - .markdown-desc와 달리 라이트/다크 앱 테마
+   변수를 쓰지 않고 항상 color: inherit(디스코드 다크 테마 하드코딩 색을 그대로 물려받음, 위 주석의
+   "의도적으로 CSS 변수 미사용" 원칙과 동일). q-prompt/df-plain-msg/df-desc 안에서 인라인으로도
+   쓰이므로 문단 여백은 마지막 문단만 0으로 접어 겹치는 여백이 안 생기게 함. */
+.df-markdown { color: inherit; }
+.df-markdown p { margin: 0 0 6px; }
+.df-markdown p:last-child { margin-bottom: 0; }
+.df-markdown ul, .df-markdown ol { margin: 0 0 6px; padding-left: 18px; }
+.df-markdown ul:last-child, .df-markdown ol:last-child { margin-bottom: 0; }
+.df-markdown a { color: #00a8fc; }
+.df-markdown code { background: rgba(255, 255, 255, 0.08); padding: 1px 5px; border-radius: 4px; font-family: var(--font-num); }
+.df-markdown blockquote { margin: 0 0 6px; padding-left: 8px; border-left: 3px solid #4e5058; color: #b5bac1; }
+.df-markdown strong { color: inherit; }
+/* 힌트/정답 텍스트처럼 고정 문구 사이에 인라인으로 섞여야 하는 자리 - <p> 블록을 만들지 않고
+   그대로 흐르게 한다(questionDisplay.jsx의 INLINE_MARKDOWN_COMPONENTS가 p를 Fragment로 치환). */
+.df-markdown.inline { display: inline; }
+
 /* 유튜브 인라인 임베드 플레이어(2026-08-12 피드백 - 링크 대신 지정 시작지점부터 바로 재생 가능하게) */
 .yt-embed-wrap { display: flex; flex-direction: column; gap: 5px; }
 .yt-embed-label { font-size: 11px; font-weight: 600; color: #00a8fc; }

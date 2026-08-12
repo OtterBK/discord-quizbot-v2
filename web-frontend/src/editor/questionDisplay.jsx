@@ -3,6 +3,18 @@
 // docs/WEB_QUIZ_CREATION_UI_MOCKUP.html의 computeContentTags/renderContentTagChips/TYPE_LABEL을
 // 그대로 이식(값만 문자열 키 대신 config/system_setting.js ANSWER_TYPE의 숫자 값으로 맞춤).
 
+import Markdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
+
+// 실제 디스코드 임베드/메시지는 마크다운을 그대로 렌더링하므로 미리보기도 동일하게 처리한다
+// (docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md 작업 1). react-markdown은 기본 CommonMark라
+// 단일 개행이 문단으로 안 나뉘는데, 디스코드는 단일 개행도 줄바꿈으로 보여주므로 remark-breaks로
+// 맞춘다. react-markdown은 raw HTML을 꽂지 않아 안전(QuizDetailCard.jsx와 동일 근거).
+const BLOCK_MARKDOWN_PROPS = { remarkPlugins: [remarkBreaks] };
+// 힌트/정답 텍스트는 고정 문구 사이에 인라인으로 섞여 들어가야 해서 <p> 블록 없이 흐르게 한다.
+const INLINE_MARKDOWN_COMPONENTS = { p: ({ children }) => <>{children}</> };
+const INLINE_MARKDOWN_PROPS = { ...BLOCK_MARKDOWN_PROPS, components: INLINE_MARKDOWN_COMPONENTS };
+
 export const ANSWER_TYPE = { SHORT_ANSWER: 1, OX: 2, MULTIPLE_CHOICE: 3 };
 
 export const ANSWER_TYPE_LABEL = {
@@ -174,7 +186,9 @@ export function DiscordQuestionPreview({ quizTitle, form, index, total }) {
       <div className="df-embed">
         <div className="df-title">[ {ICON_CUSTOM_QUIZ} {quizTitle} ]</div>
         <div className="df-desc">
-          <span className="q-prompt">{promptText}</span>
+          <div className="q-prompt df-markdown">
+            <Markdown {...BLOCK_MARKDOWN_PROPS}>{promptText}</Markdown>
+          </div>
           <span className="df-progress">{progressBarString(4, 10)}</span>
         </div>
         <YoutubeEmbed url={form.question_audio_url} start={form.audio_start} label="오디오 미리듣기" />
@@ -227,7 +241,11 @@ export function DiscordHintPreview({ form }) {
     );
   }
 
-  const hintLine = `💡 힌트 공개: ${effectiveText || '(힌트 텍스트 없음)'}`;
+  // 유저가 직접 쓴 hint 텍스트일 때만 마크다운 적용 - 자동 생성 힌트(◼로 가린 정답)는 대상이 아님.
+  const hintBody = !isAuto && effectiveText
+    ? <Markdown {...INLINE_MARKDOWN_PROPS}>{effectiveText}</Markdown>
+    : (effectiveText || '(힌트 텍스트 없음)');
+  const hintLine = <>💡 힌트 공개: <span className="df-markdown inline">{hintBody}</span></>;
 
   return (
     <div className="discord-frame">
@@ -268,7 +286,14 @@ export function DiscordAnswerPreview({ form }) {
         <div className="df-title">[ 💯 정답!!! ]</div>
         <div className="df-desc">
           😆 정답자: <b>모건, 루크</b>{'\n\n'}📄 정답 목록{'\n'}{answerText}
-          {answering_text && `\n\n${answering_text}`}
+          {answering_text && (
+            <>
+              {'\n\n'}
+              <span className="df-markdown inline">
+                <Markdown {...INLINE_MARKDOWN_PROPS}>{answering_text}</Markdown>
+              </span>
+            </>
+          )}
         </div>
         <YoutubeEmbed url={form.answer_audio_url} start={form.answer_audio_start} label="정답 오디오 미리듣기" />
         {(form.answer_image_url ?? '').trim() && <img className="df-image-ph" src={form.answer_image_url} alt="정답 이미지 미리보기" />}
