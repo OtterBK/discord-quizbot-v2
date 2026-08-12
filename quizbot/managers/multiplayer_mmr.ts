@@ -70,8 +70,12 @@ exports.calcLoserMMR = (guild_info: GuildInfo | undefined, score: number = 0, qu
   mmr_add *= 0.80;
 
   // 진행된 문제 수 비율 계산
-  const question_ratio = Math.min(0.5, current_quiz_size / max_question_size);
-  mmr_add *= question_ratio; // 문제 수 비율만큼 감소(적게 했으면 적게) 최대 50퍼 감면
+  // (2026-08-12, MMR 비대칭 보정 - 사용자 피드백 "점수 변동폭이 부적절") 원래 여기만 0.5로 캡이
+  // 걸려있어서, calcWinnerMMR의 question_ratio(캡 없음, 풀게임이면 최대 1.0)와 달리 풀게임을 져도
+  // 최대 -40점까지밖에 안 깎였음(승자는 최대 120점까지 얻음) - 승자와 동일하게 캡을 제거해서
+  // 구조적 비대칭만 보정(다른 보너스/공식은 그대로 유지).
+  const question_ratio = current_quiz_size / max_question_size;
+  mmr_add *= question_ratio; // 문제 수 비율만큼 감소(적게 했으면 적게)
 
   // 최고 점수 대비 자신의 점수 비율 계산
   let score_ratio = 0;

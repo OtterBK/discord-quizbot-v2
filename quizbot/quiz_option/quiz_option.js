@@ -31,7 +31,24 @@ const OPTION_TYPE = {
 
 //#region exports 정의
 
+//2026-08-12(UI 개선 2라운드 B-4 [P2], "기본값으로 초기화" 신설) - OptionStorage 생성자에 있던
+//기본값 객체를 모듈 상수로 뽑아서 서버 설정 화면(server-setting-ui.ts)의 초기화 버튼도 같은 값을
+//쓸 수 있게 함(값 자체는 변경 없음, 동작 변경 없는 순수 추출).
+const DEFAULT_QUIZ_OPTION = {
+  audio_play_time: 30000,
+  hint_type: OPTION_TYPE.HINT_TYPE.VOTE,
+  skip_type: OPTION_TYPE.SKIP_TYPE.VOTE,
+  use_similar_answer: OPTION_TYPE.ENABLED,
+  score_type: OPTION_TYPE.SCORE_TYPE.POINT,
+  improved_audio_cut: OPTION_TYPE.ENABLED,
+  use_message_intent: OPTION_TYPE.ENABLED,
+  score_show_max: OPTION_TYPE.UNLIMITED,
+  max_chance: OPTION_TYPE.UNLIMITED,
+};
+
 exports.OPTION_TYPE = OPTION_TYPE;
+
+exports.getDefaultQuizOption = () => ({ ...DEFAULT_QUIZ_OPTION });
 
 exports.getOptionStorage = (guild_id) => 
 {
@@ -75,17 +92,7 @@ class OptionStorage
     this.guild_id = guild_id;
 
     this.option = {
-      quiz: {
-        audio_play_time: 30000,
-        hint_type: OPTION_TYPE.HINT_TYPE.VOTE, 
-        skip_type: OPTION_TYPE.SKIP_TYPE.VOTE,
-        use_similar_answer: OPTION_TYPE.ENABLED,
-        score_type: OPTION_TYPE.SCORE_TYPE.POINT,
-        improved_audio_cut: OPTION_TYPE.ENABLED,
-        use_message_intent: OPTION_TYPE.ENABLED,
-        score_show_max: OPTION_TYPE.UNLIMITED,
-        max_chance: OPTION_TYPE.UNLIMITED,
-      }
+      quiz: { ...DEFAULT_QUIZ_OPTION }
     };
   }
 

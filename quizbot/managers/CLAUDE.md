@@ -33,7 +33,7 @@
 
 - **`multiplayer_manager.js`** — 얇은 facade. `initialize(manager)` / `onSignalReceived(signal)`만 노출, 아래 파일들에 위임.
 - **`multiplayer_session_registry.js`** — `multiplayer_sessions` 레지스트리 객체 + `cluster_manager`(discord-hybrid-sharding 참조) + `broadcast(signal)` + `sendMultiplayerLobbyCount()`.
-- **`multiplayer_mmr.js`** — MMR 계산 순수 함수(`calcWinnerMMR`/`calcLoserMMR`), 부수효과 없어 테스트하기 쉬움.
+- **`multiplayer_mmr.js`** — MMR 계산 순수 함수(`calcWinnerMMR`/`calcLoserMMR`), 부수효과 없어 테스트하기 쉬움. **상대 길드의 MMR/전적은 전혀 참조하지 않음**(Elo류 상대평가 아님, 각자 자기 승률/점수만 봄) — 의도된 설계, 실력차 비교가 필요하면 별도 재설계 필요. `calcLoserMMR`의 `question_ratio`(2026-08-12, MMR 비대칭 보정)는 원래 `Math.min(0.5, ...)`로 캡이 걸려있어서 `calcWinnerMMR`의 캡 없는 `question_ratio`와 비대칭이었음(풀게임 패배가 최대 -40점, 승리는 최대 120점) — 사용자 피드백("점수 변동폭 부적절")으로 캡 제거, 승자와 동일 구조로 맞춤. 승률 보너스(이미 승률 높은 길드가 이기면 더 받는 부분)는 안 건드림.
 - **`multiplayer_guild_info.js`** — `MultiplayerGuildInfo` 클래스, 대결에 참가한 개별 길드의 상태(참가자, 점수, 동기화 여부 등).
 - **`multiplayer_session.js`** — `MultiplayerSession` 클래스(~1000줄) + `SESSION_STATE` enum. 대결 세션의 생명주기 전체(로비 생성 → 시작 → 진행 → 종료/정리). `changeHost()`에 방장 교체 시 레지스트리 재등록 누락 버그가 있었는데 수정됨(`docs/BUGS_FOUND.md` Phase 3).
 - **`multiplayer_signal.js`** — `CLIENT_SIGNAL`(0x00~0x12)/`SERVER_SIGNAL`(0x80~0x94, 최상위 비트 set) enum. IPC 메시지 방향 구분용.

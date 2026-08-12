@@ -71,6 +71,7 @@ class ServerSettingUI extends QuizBotControlComponentUI
       'option_select': this.handleOptionSelected.bind(this),
       'option_value_select': this.handleOptionValueSelected.bind(this),
       'save_option_data': this.handleSaveOption.bind(this),
+      'reset_option_data': this.handleResetOption.bind(this),
     };
   }
 
@@ -153,6 +154,23 @@ class ServerSettingUI extends QuizBotControlComponentUI
 
     interaction.explicit_replied = true;
     interaction.reply({content: `\`\`\`🔸 옵션 값을 ${selected_value_label}로 설정했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+
+    return this;
+  }
+
+  //2026-08-12(UI 개선 2라운드 B-4 [P2]) - "기본값으로 초기화" 신설. handleSaveOption과 동일하게
+  //[저장]을 눌러야 실제로 반영됨(quiz_ui/CLAUDE.md의 "저장 안 하고 나가면 변경사항 사라짐" 관례
+  //그대로 유지 - 여기서 DB에 바로 쓰지 않음).
+  handleResetOption(interaction: any)
+  {
+    this.option_data.quiz = option_system.getDefaultQuizOption();
+    this.fillDescription(this.option_data);
+    this.option_control_btn_component.components[0].setDisabled(false); //저장 버튼 활성화
+
+    this.embed.footer = undefined;
+
+    interaction.explicit_replied = true;
+    interaction.reply({content: `\`\`\`🔸 옵션을 기본값으로 되돌렸어요. [저장]을 눌러야 실제로 반영돼요.\`\`\``, flags: MessageFlags.Ephemeral});
 
     return this;
   }

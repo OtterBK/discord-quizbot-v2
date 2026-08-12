@@ -21,6 +21,13 @@ const commands = [
     .setName('퀴즈만들기')
     .setDescription('직접 퀴즈를 만들 수 있는 퀴즈툴을 요청합니다.'),
 
+  //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 온보딩/도움말이 전혀 없어서, 새 유저는 디스코드가 보여주는
+  //슬래시커맨드 한 줄 설명이 안내의 전부였음. bot.js의 help_handler와 짝(관리자 전용 명령어는
+  //의도적으로 여기 안 나열함 - 루트 CLAUDE.md "관리자 전용 기능" 참고).
+  new SlashCommandBuilder()
+    .setName('도움말')
+    .setDescription('퀴즈봇 주요 명령어 사용법을 안내합니다.'),
+
   new SlashCommandBuilder()
     .setName('quiz')
     .setDescription('Quizbot\'s commands'),

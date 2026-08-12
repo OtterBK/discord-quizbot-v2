@@ -17,6 +17,20 @@ const logger = require('../../../utility/logger.js')('QuizSystem');
 const tagged_dev_quiz_manager = require('../../managers/tagged_dev_quiz_manager');
 const { loadQuestionListFromDBByTags, loadQuestionListByBasket, addPlayedCountByQuiz } = require('../../managers/user_quiz_info_manager');
 
+//2026-08-12(랜덤 추첨 쏠림 조사 중 발견) - question_list.sort(() => Math.random() - 0.5)는 균등분포가
+//안 나오는 잘 알려진 깨진 셔플 패턴(정렬 알고리즘 구현에 따라 원래 순서에 편향됨). 같은 코드베이스의
+//tagged_dev_quiz_manager.ts(getQuestionListByTags)가 이미 쓰고 있는 Fisher-Yates와 동일 패턴으로 교체.
+const shuffleArray = <T>(array: T[]): T[] =>
+{
+  for(let i = array.length - 1; i > 0; i--)
+  {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+
+  return array;
+};
+
 //#region Initialize Cycle
 /** 처음 초기화 시 동작하는 Initialize Cycle들 **/
 class Initialize extends QuizLifeCycle
@@ -575,7 +589,7 @@ class InitializeDevQuiz extends Initialize
       });
     }
 
-    question_list.sort(() => Math.random() - 0.5); //퀴즈 목록 무작위로 섞기
+    shuffleArray(question_list); //퀴즈 목록 무작위로 섞기 (Fisher-Yates - 깨진 sort(Math.random()-0.5) 셔플 수정)
     quiz_data['question_list'] = question_list;
 
     let selected_question_count = quiz_info['selected_question_count'] ?? quiz_info['quiz_size'];
@@ -639,7 +653,7 @@ class InitializeCustomQuiz extends Initialize
 
     this.extractIpAddresses(quiz_session);
 
-    question_list.sort(() => Math.random() - 0.5); //퀴즈 목록 무작위로 섞기
+    shuffleArray(question_list); //퀴즈 목록 무작위로 섞기 (Fisher-Yates - 깨진 sort(Math.random()-0.5) 셔플 수정)
     quiz_data['question_list'] = question_list;
 
     let selected_question_count = quiz_info['selected_question_count'] ?? quiz_info['quiz_size'];
@@ -851,7 +865,7 @@ class InitializeOmakaseQuiz extends Initialize
 
     this.extractIpAddresses(quiz_session); //IP는 언제나 준비
 
-    question_list.sort(() => Math.random() - 0.5); //퀴즈 목록 무작위로 섞기
+    shuffleArray(question_list); //퀴즈 목록 무작위로 섞기 (Fisher-Yates - 깨진 sort(Math.random()-0.5) 셔플 수정)
     quiz_data['question_list'] = question_list;
 
     if(selected_question_count > question_list.length)

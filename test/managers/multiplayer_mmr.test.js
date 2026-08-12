@@ -80,11 +80,21 @@ test('calcLoserMMR: 최고 점수가 0이면(전원 0점) 감면 없이 그대�
   assert.equal(mmr, -40);
 });
 
-test('calcLoserMMR: 문제 진행률 페널티 감면은 최대 50%로 제한된다', () =>
+//2026-08-12(MMR 비대칭 보정, 사용자 피드백 "점수 변동폭이 부적절") - 원래 여기 있던
+//"문제 진행률 페널티 감면은 최대 50%로 제한된다" 테스트는 loser의 question_ratio에 걸려있던
+//Math.min(0.5, ...) 캡을 검증하는 테스트였음. calcWinnerMMR의 question_ratio(캡 없음)와 다르게
+//loser만 캡이 걸려있어 풀게임을 져도 최대 -40점밖에 안 깎이던 구조적 비대칭이 원인으로 지목돼
+//캡을 제거함 - 아래 두 테스트로 교체(캡 없이 승자와 동일한 비율로 계속 늘어나는지 확인).
+test('calcLoserMMR: 캡 제거 후 진행률이 늘수록 감소분도 계속 늘어난다(승자의 question_ratio와 동일 구조)', () =>
 {
-  const mmr_full_quiz = calcLoserMMR({ stat: {} }, 0, 59, 100); // 거의 다 풀어도
-  const mmr_over_max = calcLoserMMR({ stat: {} }, 0, 120, 100); // max_question_size(60)를 넘어가도
+  const mmr_full_quiz = calcLoserMMR({ stat: {} }, 0, 59, 100); // 59/60 진행
 
-  assert.equal(mmr_full_quiz, -40); // min(0.5, 60/60=1) -> 0.5로 제한
-  assert.equal(mmr_over_max, -40); // min(0.5, 120/60=2) -> 0.5로 제한, 동일
+  assert.equal(mmr_full_quiz, -79); // -100 * 0.8 * (59/60) = -78.666... -> 반올림 -79
+});
+
+test('calcLoserMMR: max_question_size(60)를 넘는 진행률도 캡 없이 그대로 반영된다(승자와 동일하게 방어 없음)', () =>
+{
+  const mmr_over_max = calcLoserMMR({ stat: {} }, 0, 120, 100); // 120/60 = 2배
+
+  assert.equal(mmr_over_max, -160); // -100 * 0.8 * 2
 });

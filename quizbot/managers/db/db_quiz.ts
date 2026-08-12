@@ -274,6 +274,11 @@ exports.selectRandomQuestionListByTags = async (quiz_type_tags_value: number, ta
 //받게 되면서 임의 문자열이 이 함수까지 도달할 수 있는 경로가 새로 생겼음(호출부 initialize.ts에서
 //정수만 필터링하긴 하지만, 방어를 호출부에만 의존하지 않도록 이 함수 자체도 파라미터화함) -
 //quiz_id_list를 받아 `= ANY($1::int[])`로 교체.
+//2026-08-12(같은 날, 추가 심화 점검) - SQL 인젝션은 막혔지만 is_private/is_use 필터가 없어서, 웹
+//API를 프론트엔드 없이 직접 호출하면(정당한 사용 흐름은 항상 공개 퀴즈만 담기지만, API 자체는
+//basket_items를 검증하지 않음) 순차 발급되는 quiz_id를 추측해 다른 유저의 비공개 퀴즈 문제를
+//출제시킬 수 있었음 - 짝 함수 selectRandomQuestionListByTags(위)와 동일하게
+//is_private = false and is_use = true를 추가.
 exports.selectRandomQuestionListByBasket = async (quiz_id_list: number[], limit: number): Promise<any> =>
 {
   const query_string =
@@ -282,6 +287,8 @@ exports.selectRandomQuestionListByBasket = async (quiz_id_list: number[], limit:
     SELECT quiz_id, quiz_title, creator_name, creator_icon_url, simple_description, tags_value
     FROM tb_quiz_info
     WHERE quiz_id = ANY($1::int[])
+    and is_private = false
+    and is_use = true
   )
   SELECT qu.*, mq.quiz_id, mq.quiz_title, mq.creator_name, mq.creator_icon_url, mq.simple_description, mq.tags_value,
     COUNT(*) OVER() AS total_count

@@ -102,6 +102,22 @@ test('selectRandomQuestionListByBasket: quiz_id_list와 limit을 둘 다 파라�
   assert.deepEqual(captured.values, [[1, 2, 3], 10]);
 });
 
+//2026-08-12(웹 API 보안 점검, 다음 세션 최우선 항목) - is_private/is_use 필터가 없어서, quiz_id만
+//알면(순차 발급이라 열거 가능) 다른 유저의 비공개 퀴즈 문제가 그대로 출제될 수 있었음. 웹 API를
+//프론트엔드 없이 직접 호출하는 경로(basket_items는 서버 검증 없이 quiz_id 정수 필터링만 거침)로
+//도달 가능 - 짝 함수 selectRandomQuestionListByTags와 동일하게 is_private = false and is_use = true를
+//요구하도록 수정됐는지 확인.
+test('selectRandomQuestionListByBasket: 비공개(is_private) 또는 삭제된(is_use=false) 퀴즈를 걸러낸다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectRandomQuestionListByBasket([1, 2, 3], 10);
+
+  assert.match(captured.query_string, /and is_private = false/);
+  assert.match(captured.query_string, /and is_use = true/);
+});
+
 test('selectRandomQuestionListByTags: certified_filter가 true면 certified 조건을 쿼리에 추가한다', async (t) =>
 {
   let captured_with_filter = undefined;

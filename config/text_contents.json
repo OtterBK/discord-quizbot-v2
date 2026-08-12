@@ -242,7 +242,8 @@
         "scoreboard":
         {
             "title": "🧮 점수판",
-            "point_name": "점"
+            "point_name": "점",
+            "season_label": "베타 시즌"
         },
         "ending_ui":
         {
@@ -283,9 +284,9 @@
                     { "label": "노래 재생 시간", "description": "음악 퀴즈에서 얼마동안 음악을 재생할 지 설정합니다.", "value": "audio_play_time" },
                     { "label": "힌트 요청 방식", "description": "퀴즈 진행 시, 힌트 요청 방식을 설정합니다.", "value": "hint_type" },
                     { "label": "스킵 요청 방식", "description": "퀴즈 진행 시, 스킵 요청 방식을 설정합니다.", "value": "skip_type" },
-                    { "label": "유사 정답 생성 여부", "description": "유사 정답(크레이지 아케이드 -> 크아) 자동 생성 여부를 설정합니다.", "value": "use_similar_answer" },
+                    { "label": "유사 정답 생성 여부", "description": "여러 단어로 된 정답의 각 단어 앞글자를 조합한 축약형(예: 크레이지 아케이드 -> 크아)도 정답으로 추가 인정할지 설정합니다.", "value": "use_similar_answer" },
                     { "label": "점수 채점 방식", "description": "정답자가 얻는 점수 채점 방식을 지정합니다.", "value": "score_type" },
-                    { "label": "정밀 오디오 자르기", "description": "하이트라이트 부분을 추측하여 노래를 재생합니다.", "value": "improved_audio_cut" },
+                    { "label": "정밀 오디오 자르기", "description": "하이라이트 부분을 추측하여 노래를 재생합니다.", "value": "improved_audio_cut" },
                     { "label": "메시지 입력 감지", "description": "채팅 메시지를 답안으로 인식합니다.", "value": "use_message_intent" },
                     { "label": "점수판 표시 인원", "description": "점수판에 표시할 최대 인원을 설정합니다.", "value": "score_show_max" },
                     { "label": "정답 제출 기회", "description": "각 문제 당 정답 제출 기회를 제한합니다.", "value": "max_chance" }

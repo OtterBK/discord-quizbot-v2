@@ -221,10 +221,11 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
 
   createLobby(interaction)
   {
-    if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
+    const ban_message = this.checkMultiplayerBanMessage(interaction);
+    if(ban_message !== undefined)
     {
       interaction.explicit_replied = true;
-      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      interaction.reply({ content: ban_message, flags: MessageFlags.Ephemeral });
       return undefined;
     }
 
@@ -234,15 +235,16 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     }
 
     const multiplayer_quiz_info = MultiplayerQuizLobbyUI.createDefaultMultiplayerQuizInfo(interaction);
-    return new MultiplayerQuizLobbyUI(multiplayer_quiz_info, interaction, false); 
+    return new MultiplayerQuizLobbyUI(multiplayer_quiz_info, interaction, false);
   }
 
   tryJoinLobby(interaction, multiplayer_lobby_info)
   {
-    if(this.checkMultiplayerBan([interaction.guild.id, interaction.user.id]))
+    const ban_message = this.checkMultiplayerBanMessage(interaction);
+    if(ban_message !== undefined)
     {
       interaction.explicit_replied = true;
-      interaction.reply({ content: `\`\`\`🌐 당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+      interaction.reply({ content: ban_message, flags: MessageFlags.Ephemeral });
       return undefined;
     }
 
@@ -278,10 +280,25 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     return new MultiplayerQuizLobbyUI(fake_quiz_info, interaction, true, session_id);
   }
 
-  checkMultiplayerBan(list)
+  checkMultiplayerBanMessage(interaction)
   {
     //멀티플레이 ban 시스템
-    return ban_manager.isBanned(list);
+    //2026-08-12(UI 개선 2라운드 B-5, 사용자 피드백) - 원래 checkMultiplayerBan(list)가
+    //[guild.id, user.id]를 한꺼번에 검사해서 "당신 또는 이 서버가..."로 뭉뚱그려 안내했음 - 본인이
+    //밴된 건지 서버가 밴된 건지 구분이 안 되고 다음 행동(이의제기) 안내도 없었음. 둘을 나눠 검사해서
+    //어느 쪽이 밴됐는지 명시하고, 다른 실패 안내(user-question-info-ui.ts 등)와 동일한 문의처 안내를
+    //추가 - 밴 아니면 undefined 반환.
+    if(ban_manager.isBanned([interaction.user.id]))
+    {
+      return `\`\`\`🌐 회원님이 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\n이의가 있으시면 otter6975@gmail.com 으로 문의해주세요.\`\`\``;
+    }
+
+    if(ban_manager.isBanned([interaction.guild.id]))
+    {
+      return `\`\`\`🌐 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\n이의가 있으시면 otter6975@gmail.com 으로 문의해주세요.\`\`\``;
+    }
+
+    return undefined;
   }
 }
 

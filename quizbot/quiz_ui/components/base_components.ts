@@ -203,6 +203,14 @@ const option_control_btn_component = new ActionRowBuilder()
       .setLabel('저장')
       .setDisabled(true)
       .setStyle(ButtonStyle.Success),
+    //2026-08-12(UI 개선 2라운드 B-4 [P2]) - "기본값으로 초기화" 기능 신설. 저장 버튼과 동일하게
+    //[저장]을 눌러야 실제 반영됨(server-setting-ui.ts의 handleResetOption 참고, 기존 "저장 안 하면
+    //사라짐" 관례 그대로 유지) - components[0](저장 버튼) 인덱스는 이 버튼을 중간에 끼워넣어도
+    //그대로 0이라 기존 코드(handleSaveOption 등)를 안 건드려도 됨.
+    new ButtonBuilder()
+      .setCustomId('reset_option_data')
+      .setLabel('기본값으로 초기화')
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('back')
       .setLabel('뒤로가기')

@@ -40,6 +40,12 @@ const ban_manager = require('./managers/ban_manager');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
 const { startMonitoring } = require('./managers/monitoring_manager');
 
+//2026-08-12(UI 개선 2라운드 B-1 [P3]) - 모든 봇 메시지가 🔸 하나로 정보/에러/성공을 뭉뚱그려
+//표현하던 것을 이 파일 안에서는 심각도별로 구분: 🔸 안내/일반 정보, ⚠️ 실패/권한없음/제한된 동작,
+//✅ 성공/완료. 이번엔 bot.js 범위만 정리했고, quiz_ui/* 등 나머지 파일들의 메시지는 아직 전부
+//🔸(또는 파일마다 제각각)라서 별도 후속 작업 필요 - 전체 스윕은 범위가 커서 이번엔 안 함
+//(docs/UI_IMPROVEMENT_PLAN_ROUND2.md B-1 참고).
+
 /** global 변수 **/
 
 const client = new Client({
@@ -153,6 +159,35 @@ client.on('ready', () =>
   createCleanUp();
 });
 
+//2026-08-12(UI 개선 2라운드 B-1 [P2]) - 봇이 새 서버에 들어갔을 때 안내 메시지가 전혀 없어서,
+//새 유저는 디스코드가 보여주는 슬래시커맨드 한 줄 설명이 안내의 전부였음. 시스템 채널을 우선
+//시도하고, 없거나 권한이 없으면 메시지를 보낼 수 있는 첫 텍스트 채널로 폴백 - 보낼 수 있는 채널이
+//아예 없으면 조용히 넘어감(checkPermission과 동일하게 SendMessages 권한 확인).
+client.on('guildCreate', (guild) =>
+{
+  logger.info(`Joined new guild: ${guild.name} (${guild.id})`);
+
+  const canSendMessages = (channel) => channel.permissionsFor(guild.members.me)?.has(PermissionsBitField.Flags.SendMessages) === true;
+
+  const target_channel =
+    (guild.systemChannel != undefined && canSendMessages(guild.systemChannel) ? guild.systemChannel : undefined)
+    ?? guild.channels.cache
+      .filter((channel) => channel.isTextBased() && canSendMessages(channel))
+      .sort((a, b) => a.rawPosition - b.rawPosition)
+      .first();
+
+  if(target_channel == undefined)
+  {
+    return; //메시지를 보낼 수 있는 채널이 없음
+  }
+
+  target_channel.send({
+    content:
+      `\`\`\`🔸 안녕하세요! 퀴즈봇을 초대해주셔서 감사합니다.\n\n`
+      + `/퀴즈 명령어로 바로 시작할 수 있어요. 사용법이 궁금하면 /도움말을 입력해보세요!\`\`\``,
+  }).catch((err) => logger.error(`Failed to send welcome message to guild ${guild.id}, err: ${err.stack}`));
+});
+
 const registerMainClusterService = () =>
 {
   if(client.cluster.id != 0) //0번 클러스터에서만 수행되는 서비스
@@ -255,7 +290,7 @@ const checkPermission = (interaction) =>
     interaction.explicit_replied = true; 
     interaction.reply({
       content:
-        `\`\`\`🔸 이 채널에 메시지를 보낼 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
+        `\`\`\`⚠️ 이 채널에 메시지를 보낼 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
       flags: MessageFlags.Ephemeral,
     });
     return false;
@@ -270,7 +305,7 @@ const checkPermission = (interaction) =>
     interaction.explicit_replied = true; 
     interaction.reply({
       content:
-        `\`\`\`🔸 이 채널의 속성을 확인할 수 있는 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
+        `\`\`\`⚠️ 이 채널의 속성을 확인할 수 있는 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
       flags: MessageFlags.Ephemeral,
     });
     return false;
@@ -285,7 +320,7 @@ const start_quiz_handler = async (interaction) =>
   if (interaction.guild == undefined) 
   {
     interaction.reply({
-      content: `\`\`\`🔸 개인 메시지 채널에서는 퀴즈 플레이가 불가능합니다.\`\`\``,
+      content: `\`\`\`⚠️ 개인 메시지 채널에서는 퀴즈 플레이가 불가능합니다.\`\`\``,
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -336,7 +371,7 @@ const create_quiz_handler = async (interaction) =>
   if (ban_manager.isBanned([interaction.user.id]))
   {
     interaction.explicit_replied = true;
-    interaction.reply({ content: `\`\`\`🔸 퀴즈 생성 권한이 영구적으로 제한되었습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+    interaction.reply({ content: `\`\`\`⚠️ 퀴즈 생성 권한이 영구적으로 제한되었습니다.\`\`\``, flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -362,7 +397,26 @@ const create_quiz_handler = async (interaction) =>
   interaction.explicit_replied = true;
   interaction.reply({
     content:
-      `\`\`\`🔸 개인 메시지로 퀴즈 제작 화면을 보내드렸어요!\n퀴즈봇과의 개인 메시지를 확인해주세요 🛠\`\`\``,
+      `\`\`\`✅ 개인 메시지로 퀴즈 제작 화면을 보내드렸어요!\n퀴즈봇과의 개인 메시지를 확인해주세요 🛠\`\`\``,
+    flags: MessageFlags.Ephemeral,
+  });
+};
+
+//2026-08-12(UI 개선 2라운드 B-1 [P2]) - 도움말/온보딩이 전혀 없던 문제 신설. 관리자 전용 명령어
+//(quizmgr/신고처리)는 의도적으로 여기서 언급 안 함(루트 CLAUDE.md "관리자 전용 기능" - 호기심 유발 방지 관례).
+const help_handler = (interaction) =>
+{
+  interaction.explicit_replied = true;
+  interaction.reply({
+    content:
+      `\`\`\`🔸 퀴즈봇 사용법\n\n`
+      + `/퀴즈 - 퀴즈 메뉴를 열어요. 공식/유저 제작/랜덤 퀴즈를 고르고 시작할 수 있어요.\n`
+      + `/퀴즈만들기 - 나만의 퀴즈를 직접 만들 수 있어요. (개인 메시지로 진행돼요)\n`
+      + `/답 [답안] - 진행 중인 문제의 정답을 제출해요. (서버 설정에 따라 채팅으로 바로 입력해도 인식될 수 있어요)\n`
+      + `/챗 [메시지] - 멀티플레이 대결 중 상대 서버에 메시지를 보내요.\n`
+      + `/채팅전환 - 멀티플레이 전체 채팅 기능을 켜고 꺼요.\n`
+      + `/퀴즈정리 - 문제가 생겼을 때 진행 중인 세션을 강제로 정리해요. (일반적인 상황에서는 사용하지 마세요)\n\n`
+      + `각 화면의 버튼/메뉴를 눌러보면 더 많은 기능을 찾을 수 있어요!\`\`\``,
     flags: MessageFlags.Ephemeral,
   });
 };
@@ -419,7 +473,7 @@ const handle_web_handoff_force_take = async (interaction) =>
   if(prev_holder === undefined || prev_holder.isDisplayingWebHandoff() === false)
   {
     interaction.explicit_replied = true;
-    interaction.reply({ content: `\`\`\`🔸 이미 상황이 바뀌었어요. [/퀴즈]를 다시 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+    interaction.reply({ content: `\`\`\`⚠️ 이미 상황이 바뀌었어요. [/퀴즈]를 다시 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
     return;
   }
 
@@ -431,23 +485,55 @@ const handle_web_handoff_force_take = async (interaction) =>
   const reply = await ipc_manager.sendWebSessionRequest({ action: 'force_take', guild_id, owner_id: interaction.user.id, mode });
   if(reply?.success !== true)
   {
-    interaction.followUp({ content: `\`\`\`🔸 권한을 가져오지 못했어요. 잠시 후 다시 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+    interaction.followUp({ content: `\`\`\`⚠️ 권한을 가져오지 못했어요. 잠시 후 다시 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
     return;
   }
 
   quizbot_ui.createWebHandoffUIHolder(interaction, mode, { token: reply.token, expires_at: reply.expires_at }, true); //true: interaction이 이미 deferUpdate로 소비됨 -> channel.send로 새 메시지 발행
 };
 
+//2026-08-12(UI 개선 2라운드 B-1 [P3]) - 확인 절차 없이 즉시 서버 전체 세션을 지우던 것을 확인/취소
+//2버튼 프롬프트로 변경(다른 화면의 파괴적 동작 확인 패턴과 동일, quiz_ui/CLAUDE.md B-5/B-6 참고).
+//진행 중인 사람이 있을 수 있는데 실수로 누르면 되돌릴 방법이 없었음.
+const clear_quiz_confirm_component = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('confirm_clear_quiz')
+    .setLabel('정리하기')
+    .setStyle(ButtonStyle.Danger),
+  new ButtonBuilder()
+    .setCustomId('cancel_clear_quiz')
+    .setLabel('취소')
+    .setStyle(ButtonStyle.Secondary)
+);
+
 const clear_quiz_handler = (interaction) =>
 {
-  interaction.explicit_replied = true; 
-  interaction.reply({ content: `\`\`\`🔸 서버에서 진행 중인 모든 세션을 정리했습니다.\n이 명령어는 봇 이용에 문제가 발생했을 때만 사용하세요.\`\`\`` });
-  logger.info(`Cleared quiz session of ${interaction.guild.id} by ${interaction.user.id}`);
+  interaction.explicit_replied = true;
+  interaction.reply({
+    content: `\`\`\`⚠️ 서버에서 진행 중인 모든 세션을 정리할까요?\n이 명령어는 봇 이용에 문제가 발생했을 때만 사용하세요.\`\`\``,
+    components: [clear_quiz_confirm_component],
+    flags: MessageFlags.Ephemeral,
+  });
+};
 
+const handle_confirm_clear_quiz = (interaction) =>
+{
   const guild = interaction.guild;
 
   quizbot_ui.eraseUIHolder(guild);
   quiz_system.forceStopSession(guild);
+
+  logger.info(`Cleared quiz session of ${guild.id} by ${interaction.user.id}`);
+
+  interaction.explicit_replied = true;
+  interaction.update({ content: `\`\`\`✅ 정리했어요.\`\`\``, components: [] }); //확인 프롬프트(본인에게만 보임) 정리
+  interaction.channel.send({ content: `\`\`\`✅ 서버에서 진행 중인 모든 세션을 정리했습니다.\n이 명령어는 봇 이용에 문제가 발생했을 때만 사용하세요.\`\`\`` }); //진행 중이던 다른 참가자들도 알 수 있도록 채널에 공개 안내(기존 동작 유지)
+};
+
+const handle_cancel_clear_quiz = (interaction) =>
+{
+  interaction.explicit_replied = true;
+  interaction.update({ content: `\`\`\`🔸 취소했어요.\`\`\``, components: [] });
 };
 
 // 상호작용 이벤트
@@ -469,9 +555,15 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   }
 
   const main_command = interaction.commandName;
-  if (main_command === '퀴즈' || main_command === 'quiz') 
+  if (main_command === '퀴즈' || main_command === 'quiz')
   {
     await start_quiz_handler(interaction);
+    return;
+  }
+
+  if (main_command === '도움말')
+  {
+    help_handler(interaction);
     return;
   }
 
@@ -496,6 +588,18 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   if (main_command === '퀴즈정리')
   {
     clear_quiz_handler(interaction);
+    return;
+  }
+
+  if (interaction.customId === 'confirm_clear_quiz')
+  {
+    handle_confirm_clear_quiz(interaction);
+    return;
+  }
+
+  if (interaction.customId === 'cancel_clear_quiz')
+  {
+    handle_cancel_clear_quiz(interaction);
     return;
   }
 
@@ -541,7 +645,7 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
     {
       //이제 Public UI 조작은 주인만 가능~
       interaction.reply({
-        content: `\`\`\`🔸 해당 UI를 생성한 ${uiHolder.getOwnerName()}님만이 조작할 수 있어요.\nUI를 새로 만들려면 [/퀴즈] 명령어를 다시 입력해주세요!\`\`\``,
+        content: `\`\`\`⚠️ 해당 UI를 생성한 ${uiHolder.getOwnerName()}님만이 조작할 수 있어요.\nUI를 새로 만들려면 [/퀴즈] 명령어를 다시 입력해주세요!\`\`\``,
         flags: MessageFlags.Ephemeral,
       });
       return;
@@ -558,15 +662,22 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
     (!interaction.replied && !interaction.deferred && !interaction.explicit_replied)
   ) 
   {
-    //quiz_session, ui_holder 거쳤는데도 reply 되지 않았다면
-    try 
+    //quiz_session, ui_holder 거쳤는데도 reply 되지 않았다면 - 대부분 화면이 만료돼서(UIHolder GC,
+    //봇 재시작 등) 이 버튼/메뉴를 처리해줄 곳이 없는 경우다.
+    //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 원래 여기서 deferUpdate()만 하고 끝(성공하든 실패하든
+    //화면에 아무 변화도 안내도 없었음) - "이 버튼은 만료됐어요" 안내를 추가.
+    try
     {
-      interaction.explicit_replied = true; 
+      interaction.explicit_replied = true;
       await interaction.deferUpdate();//ㅇㅋ deffer로 보내
+      await interaction.followUp({ content: `\`\`\`⚠️ 이 버튼은 만료됐어요. 메뉴를 다시 열어주세요.\`\`\``, flags: MessageFlags.Ephemeral });
     }
-    catch (err) 
+    catch (err)
     {
-      return; //이 경우에는 아마 unknown interaction 에러임
+      //이 경우에는 아마 unknown interaction 에러(인터랙션 토큰 자체가 만료됨) - 응답할 방법이
+      //없어 로그만 남긴다.
+      logger.info(`Failed to notify expired interaction, customId: ${interaction.customId}, err: ${err.message}`);
+      return;
     }
   }
 });

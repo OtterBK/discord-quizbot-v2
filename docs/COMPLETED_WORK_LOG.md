@@ -822,3 +822,113 @@ ANY($1::int[])`로 파라미터화, (2) `user_quiz_info_manager.ts`의 `loadQues
 오마카세/멀티플레이 장바구니 모드는 이번에 SQL 호출 방식(문자열 조립 → 파라미터화 배열)이 실제로
 바뀌었으니 다음 세션에 실제 Discord에서 한 번 플레이해서 정상 동작하는지 확인 권장
 (`docs/TEST_CHECKLIST.md` Y 섹션).
+
+## 2026-08-12 — `basket_items` 소유권/공개여부 검사 추가 (B-7 심화 조사 후속)
+
+같은 날 B-7 심화 조사에서 SQL 인젝션은 막았지만 `is_private`/`is_use` 필터가 빠진 걸 발견했던 항목
+(위 항목 참고) — 다음 세션 최우선으로 남겨뒀던 걸 바로 착수. `db_quiz.ts`의
+`selectRandomQuestionListByBasket` CTE에 `and is_private = false`, `and is_use = true` 추가(짝
+함수 `selectRandomQuestionListByTags`와 동일 패턴). 착수 전 사용자가 "애초에 퀴즈함에 private 퀴즈를
+담는게 불가능하지 않냐"고 전제를 확인해왔는데, 맞는 지적이었음 — **정상 프론트엔드 UI 흐름으로는
+불가능**하고, 실제 공격 경로는 웹 API를 프론트엔드 없이 직접 호출하는 경우(`POST
+/api/session/confirm`의 `basket_items`는 서버가 정수 여부만 검증하고 quiz_id 자체는 검증하지 않음 —
+자기 세션 토큰으로 `curl` 등으로 임의 quiz_id를 보내면, 순차 발급이라 열거 가능한 다른 유저의 비공개
+퀴즈 ID를 문제 출제에 끼워넣을 수 있었음). 이 전제를 확인받은 뒤 진행. 회귀 테스트:
+`db_manager.test.js`에 쿼리 문자열이 두 조건을 포함하는지 확인하는 테스트 1건 신규.
+
+검증: `tsc --noEmit`(0 error)/`lint`(0 error)/`test`(346 pass)/`build` 미실행(백엔드 `.ts` 변경뿐,
+런타임 반영 필요 시 `npm run build`부터). **미검증** — 실제 Discord+브라우저로 정상 흐름(공개 퀴즈
+장바구니 담기→오마카세/멀티플레이 플레이) 재확인 안 함, B-7의 기존 미검증 항목과 함께 다음 세션에
+확인 권장.
+
+## 2026-08-12 — MMR 비대칭 보정 + 랜덤 추첨 셔플 버그 수정 (POST_B_ROUND_TEST_FEEDBACK_TODO 11/12)
+
+같은 세션에서 이어서 진행. 사용자에게 구체적 불만을 먼저 물어봄 — MMR은 "점수 변동폭 부적절/실력차
+반영 안 됨", 추첨은 "특정 퀴즈/문제 쏠림".
+
+**MMR(`multiplayer_mmr.ts`)**: 코드 리뷰 결과 `calcWinnerMMR`/`calcLoserMMR` 둘 다 상대 길드의
+MMR/전적을 전혀 참조하지 않는 구조(Elo류 상대평가 아님)라 "실력차 미반영"은 설계상 원래 그런 것임을
+설명. 사용자가 "구조는 그대로 두고 비대칭만 보정"으로 범위를 좁힘(Elo식 재설계는 안 함) — 구체적으로
+`calcLoserMMR`의 `question_ratio`에만 `Math.min(0.5, ...)` 캡이 걸려있어서, 캡 없는 `calcWinnerMMR`과
+달리 풀게임(60문제)을 져도 최대 -40점밖에 안 깎이는데 승자는 최대 120점까지 얻는 구조적 비대칭이
+있었음 — 이 캡을 제거해 승자와 동일한 비율 공식으로 맞춤(다른 보너스/공식은 그대로 유지, 승률
+스노우볼 보너스는 이번엔 안 건드림 — 사용자가 "가장 작은 변경"으로 캡 제거만 선택). 회귀 테스트:
+`multiplayer_mmr.test.js`의 옛 "최대 50%로 제한된다" 테스트(캡 자체를 검증하던 테스트라 전제가
+사라짐)를 새 값 기준 2개 테스트로 교체.
+
+**랜덤 추첨(`quiz_system/lifecycle/initialize.ts`)**: 원인 후보 2개 발견 — (1) `db_quiz.ts`의
+`ORDER BY RANDOM()`이 퀴즈 단위가 아니라 문제 단위로 균등해서 문제 수 많은 퀴즈가 구조적으로 더 자주
+나오는 것(쿼리 구조 변경 필요, 범위가 커서 이번엔 미착수), (2) `initialize.ts` 3곳(Dev/Custom/Omakase
+퀴즈 초기화)의 `question_list.sort(() => Math.random() - 0.5)`가 균등분포가 안 나오는 것으로 잘 알려진
+깨진 셔플 패턴 — 같은 코드베이스의 `tagged_dev_quiz_manager.ts`(`getQuestionListByTags`)엔 이미 올바른
+Fisher-Yates가 있어서 방식이 갈려있었음. 사용자가 (2)만 먼저 고치기로 결정 — `initialize.ts`에
+Fisher-Yates `shuffleArray` 헬퍼를 추가해 3곳 전부 교체.
+
+검증: `tsc --noEmit`(0 error)/`lint`(0 error)/`test`(347 pass, MMR 회귀 테스트 갱신 포함)/`build`
+미실행(백엔드 `.ts` 변경뿐). **미검증** — 셔플 자체는 알고리즘이 잘 알려진 표준 패턴이라 별도 분포
+테스트는 추가 안 함(기존 `tagged_dev_quiz_manager.ts`의 Fisher-Yates도 동일하게 분포 테스트 없음).
+실제 멀티플레이 대결로 MMR 변동폭이 체감상 나아졌는지는 다음 세션에 실사용으로 확인 필요. "특정 퀴즈
+쏠림"의 근본 원인 후보 (1)(퀴즈 단위 계층화 샘플링 검토)은 여전히 미해결 — 이번 셔플 수정 후에도
+쏠림이 계속 느껴지면 그때 착수.
+
+## 2026-08-12 — UI 개선 2라운드 마지막 [P1] 항목 완료 (`UI_IMPROVEMENT_PLAN_ROUND2.md` B-5)
+
+같은 세션에서 이어서 진행. `docs/ACTIVE_PLAN.md` B-4에 남아있던 마지막 [P1] 항목 — 멀티플레이 밴
+메시지가 "당신 또는 이 서버가 퀴즈봇 운영 정책을 위반하여..."로 시작해 본인이 밴된 건지 서버가
+밴된 건지 구분이 안 되고, 다음 행동(이의제기 등) 안내도 없던 문제. `multiplayer-quiz-select-ui.js`의
+`checkMultiplayerBan(list)`(길드ID/유저ID를 한 배열로 묶어 한 번에 검사)를
+`checkMultiplayerBanMessage(interaction)`으로 교체 — 유저/길드를 따로따로 검사해서 어느 쪽이 밴됐는지
+명시하는 메시지를 반환하고, 다른 실패 안내(`user-question-info-ui.ts` 등)와 동일한 문의처
+(otter6975@gmail.com) 안내를 추가. `createLobby`/`tryJoinLobby` 두 호출부 모두 교체.
+
+같은 증상이 있는 `web-handoff-ui.ts`의 `buildMultiplayerUI`(웹 경로, `failWithReason('이용 정책
+위반으로 멀티플레이를 이용할 수 없어요.')`)는 계획 문서의 스코프(`multiplayer-quiz-select-ui.js`,
+디스코드 경로)가 아니라 이번엔 손 안 댐 — 필요하면 다음에 별도로 논의.
+
+검증: `tsc --noEmit`(0 error)/`lint`(0 error)/`test`(347 pass, UI 클래스라 관례상 별도 유닛테스트는
+추가 안 함). **미검증** — 실제 Discord에서 밴된 계정/서버로 멀티플레이 시도해서 새 메시지가 정상
+노출되는지 확인 안 함, 다음 세션에 확인 권장.
+
+## 2026-08-12 — UI 개선 2라운드 [P2]/[P3] 일부 완료 (사용자가 직접 항목 지정)
+
+같은 세션에서 이어서 진행. 사용자가 `UI_IMPROVEMENT_PLAN_ROUND2.md`에서 구체적으로 지정한 항목만
+착수 — B-1 전체 4항목, B-4 2항목, B-7 1항목.
+
+**B-1 (봇 전역 에러/온보딩) 전체 4항목**:
+- 도움말/온보딩 신설 — `/도움말` 슬래시커맨드(`command_manager.ts` + `bot.js`의 `help_handler`,
+  주요 명령어 사용법 안내. 관리자 전용 명령어(`quizmgr`/`신고처리`)는 루트 CLAUDE.md의 "호기심 유발
+  방지" 관례에 따라 의도적으로 제외) + `client.on('guildCreate', ...)` 신설(시스템 채널 우선 시도,
+  권한 없으면 메시지를 보낼 수 있는 첫 텍스트 채널로 폴백, 보낼 채널이 아예 없으면 조용히 넘어감).
+- 인터랙션 타임아웃 안내 — 만료된 버튼을 눌렀을 때 `deferUpdate()`만 하고 끝나던 것을, 성공 시
+  `followUp()`으로 "이 버튼은 만료됐어요" 안내 추가. `deferUpdate()` 자체가 실패하는 경우(인터랙션
+  토큰이 완전히 죽은 경우)는 응답할 방법이 없어 로그만 남기도록 변경(기존엔 완전히 침묵).
+- `/퀴즈정리` 확인 절차 — 확인/취소 2버튼 프롬프트 추가(다른 화면의 파괴적 동작 확인 패턴과 동일).
+  확인 프롬프트는 본인만 보이게(ephemeral), 실제 정리 결과는 기존과 동일하게 채널에 공개로 안내해
+  진행 중이던 다른 참가자도 알 수 있게 유지.
+- 메시지 심각도 구분 — `bot.js` 안의 모든 메시지가 🔸 하나로 통일돼 있던 것을 🔸(안내)/⚠️(실패·
+  제한)/✅(성공) 3단계로 구분(18곳). **`bot.js` 범위로만 한정** — `quiz_ui/*` 등 나머지 파일은 여전히
+  전부 🔸(또는 파일마다 제각각)라서, 전체 코드베이스 스윕은 범위가 커서 이번엔 안 함(후속 과제로 문서에
+  남김).
+
+**B-4 (서버 설정) 2항목**:
+- "기본값으로 초기화" 버튼 신설 — `quiz_option.js`의 `OptionStorage` 생성자 초기값을 모듈 상수
+  `DEFAULT_QUIZ_OPTION`으로 추출(동작 변경 없는 순수 추출) + `getDefaultQuizOption()` export.
+  `option_control_btn_component`(`base_components.ts`)에 버튼 추가, `server-setting-ui.ts`의
+  `handleResetOption`이 이 값으로 `option_data`를 되돌림 — 기존 "[저장]을 눌러야 실제 반영"
+  관례 그대로 유지(초기화만으로는 DB에 안 씀). 회귀 테스트 `test/quiz_option/quiz_option.test.js` 신설.
+- 문구 개선 — "유사 정답 생성" 설명이 예시 하나(크레이지 아케이드→크아)에만 의존하던 것을 실제 동작
+  (여러 단어 정답의 각 단어 앞글자 조합)을 먼저 설명하도록 수정, 예시는 괄호로 보조. "정밀 오디오
+  자르기" 설명의 "하이트라이트" 오타를 "하이라이트"로 수정. 둘 다 `text_contents.json`만 수정.
+
+**B-7 (스코어보드) 1항목**:
+- "[베타 시즌]" 하드코딩 이동 — 사용자가 지정한 범위(그 문구 하나)만 `text_contents.json`의
+  `scoreboard.season_label`로 이동, `scoreboard-ui.ts`의 임베드 제목이 이 값을 보간하도록 수정.
+  스코어보드의 나머지 문구(제목 앞부분, "불러오는 중...", "불러오지 못했습니다" 등)는 여전히
+  하드코딩 — 전체 마이그레이션은 스코프 밖.
+
+검증: `tsc --noEmit`(0 error)/`lint`(0 error, 기존 warning 수준 유지)/`test`(349 pass, 신규
+`quiz_option.test.js` 2건 포함)/`build` 미실행(소스 변경뿐, 실제 봇 재생 확인 시 `npm run build`부터
+안내할 것). **미검증** — 전부 코드 리뷰+자동 테스트 레벨. 실제 Discord로 확인 필요: `/도움말` 응답,
+`guildCreate` 환영 메시지(새 서버 초대해야 트리거됨 — 로컬 테스트 어려움), 만료된 버튼 클릭 시 안내,
+`/퀴즈정리` 확인 플로우, 서버 설정 화면의 "기본값으로 초기화" 버튼, 스코어보드 제목 표시. 다음 세션
+`docs/TEST_CHECKLIST.md` AB 섹션 참고.

@@ -39,7 +39,9 @@ class ScoreboardUI extends QuizbotUI
   {
     this.embed = {
       color: 0xFED049,
-      title: `🎖 순위표 [베타 시즌]`,
+      //2026-08-12(UI 개선 2라운드 B-7 [P3]) - "[베타 시즌]"이 코드에 하드코딩돼 있어 시즌이 바뀌어도
+      //배포 없이는 못 바꾸던 문제 - text_contents.json의 scoreboard.season_label로 이동.
+      title: `🎖 순위표 [${text_contents.scoreboard.season_label}]`,
       description: `데이터를 불러오는 중 잠시만 기다려주세요...`,
       footer: { //내 이름 표시
         text: `${this.guild.name ?? this.guild.id}`,
