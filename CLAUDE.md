@@ -118,6 +118,28 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 - `docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md` — 2라운드(봇 전역), 실제 버그 파트 완료·UX 개선 후보 파트 일부 진행 중.
 - `docs/plans/I18N_ARCHITECTURE_PLAN.md` — 다국어 지원 아키텍처 조사/설계 문서. **코드 미수정, 사용자가 명시적으로 지시하기 전까지 착수 금지.**
 
-## 브랜치 상태 (참고용, 시점에 따라 달라질 수 있음)
+## 브랜치 전략 (2026-08-13 확정)
 
-`master`/`develop`는 origin과 동기화된 상태 유지. 실제 작업은 `develop-v3.5`에서 진행 (전체 구조 리팩터 + 버그수정 + 관리자 패널 기능까지 누적된 브랜치). 새 브랜치를 만들 때 이 상태를 먼저 `git log`/`git branch -vv`로 확인할 것.
+3개 브랜치를 용도별로 분리해서 씀 — 새 세션은 지시 없이도 이 규칙을 지킬 것:
+
+- **`develop-claude`** — Claude와 사용자가 실제로 코드를 짜는 브랜치(바이브코딩용). CLAUDE.md
+  전체(루트+하위 9개)와 `docs/`(`ACTIVE_PLAN.md`/`COMPLETED_WORK_LOG.md`/`plans/`/`archive/`/
+  `mockups/`) 전부 여기에만 있음. **평소 작업은 전부 이 브랜치에서.**
+- **`develop`** — 실서버에 설치해서 전수 테스트하는 브랜치. `docs/`엔 `TEST_CHECKLIST.md`만 있고
+  CLAUDE.md 전 파일과 나머지 `docs/`는 의도적으로 없음(2026-08-13 정리 완료, 이유는 아래 참고).
+- **`master`** — 전수 테스트 통과 후 장기 운영하는 안정 버전.
+
+**`develop-claude` → `develop` 반영은 반드시 `dev_tools/sync_to_develop.sh`로만 할 것 — 절대
+`git merge develop-claude`를 손으로 직접 하지 말 것.** 두 브랜치가 이미 갈라져 있어서(`develop`엔
+CLAUDE.md/docs 삭제 커밋이, `develop-claude`엔 그 이후 커밋들이 있음) 일반 merge는 3-way merge가
+되는데, 이 상태에서:
+- 기존 CLAUDE.md/docs 파일을 `develop-claude`에서 **수정**하면 modify/delete **충돌**로 걸림(눈에 보임,
+  안전).
+- 하지만 `develop-claude`에서 **새로 만든** CLAUDE.md나 `docs/` 밑 새 파일/폴더는 `develop` 입장에서
+  "본 적 없는 파일"이라 **충돌 없이 조용히 같이 병합됨** — 이게 진짜 위험 지점.
+
+`dev_tools/sync_to_develop.sh`는 병합을 `--no-commit`으로 멈춘 뒤 제외 목록(`EXCLUDE_PATHS`)을 다시
+적용하고 나서 커밋하는 방식으로 이 문제를 막는다. **새 CLAUDE.md 파일을 추가하거나(새 하위 디렉터리
+생길 때 등) `docs/` 밑에 새 최상위 카테고리 폴더를 만들면, 반드시 같은 커밋에서
+`dev_tools/sync_to_develop.sh`의 `EXCLUDE_PATHS` 배열도 같이 갱신할 것** — 안 그러면 다음 동기화 때
+그 파일이 `develop`으로 새어 들어간다.
