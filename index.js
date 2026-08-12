@@ -21,6 +21,7 @@ const { IPC_MESSAGE_TYPE } = require('./quizbot/managers/ipc_manager');
 // const web_manager = require('./web/web_manager.js'); //고정 html 표시로 바꿔서 웹서버 열 필요 없음
 const multiplayer_manager = require('./quizbot/managers/multiplayer_manager.js');
 const ban_manager = require('./quizbot/managers/ban_manager');
+const db_manager = require('./quizbot/managers/db_manager.js');
 const web_session_manager = require('./quizbot/managers/web/web_session_manager');
 const web_express_app = require('./quizbot/managers/web/web_express_app');
 
@@ -38,6 +39,13 @@ const manager = new ClusterManager(`${__dirname}/quizbot/bot.js`, {
 
 multiplayer_manager.initialize(manager);
 ban_manager.initialize(); //멀티플레이 웹 연동(Phase 4) - /api/session/confirm mode:multiplayer가 로비 생성/참가 전 밴 체크를 마스터에서 바로 하기 위함(파일 기반 싱글턴이라 클러스터와 별개로 필요)
+
+//퀴즈 만들기/선택 웹 연동 - web_express_app.ts의 라우트(GET/POST /api/my-quizzes, GET /api/user-quizzes,
+//PUT /api/server-option 등)가 db_manager를 마스터 프로세스에서 직접 호출한다. db_core.ts의 sendQuery는
+//initialize()로 is_initialized가 true가 되기 전까지는 실제 쿼리를 보내지 않고 항상 undefined만 반환하는데
+//(클러스터 쪽 bot.js는 이미 initialize()를 호출하지만) 마스터에서는 이 호출이 빠져있어서 위 라우트들이
+//전부 조용히 실패(save_failed 등)하고 있었음 - bot.js와 동일한 방식으로 초기화.
+db_manager.initialize();
 
 web_session_manager.initialize(manager);
 web_express_app.start();

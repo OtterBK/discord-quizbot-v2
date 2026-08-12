@@ -74,7 +74,7 @@ exports.SYSTEM_CONFIG = {
   HINT_PERCENTAGE: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
   HINT_MAX_TRY: 1000, //힌트 만들 때 최대 시도 횟수
 
-  PG_MAX_POOL_SIZE: 5, //Postgresql max pool 개수
+  PG_MAX_POOL_SIZE: 20, //Postgresql max pool 개수 - 프로세스(마스터 1개 + 클러스터 N개)마다 각자 이만큼의 pool을 가짐, 참고: index.js의 db_manager.initialize() 주석
 
   LOG_MAX_FILES: 10, //log로 남길 파일 최대 수
   LOG_MAX_SIZE: '100m', //각 log 파일 최대 크기

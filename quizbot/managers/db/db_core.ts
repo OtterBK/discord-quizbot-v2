@@ -51,7 +51,10 @@ exports.initialize = (): Promise<boolean> =>
 {
   return new Promise((resolve, reject) =>
   {
-    pool.connect((err: any) =>
+    //pool.connect(callback)의 콜백 시그니처는 (err, client, release) - client/release를 안 받고 err만
+    //받으면 연결 테스트로 체크아웃한 client가 pool에 영영 반납되지 않아 프로세스 생애 동안 슬롯 하나를
+    //계속 점유한다(PG_MAX_POOL_SIZE 검토 중 발견). release()를 명시적으로 호출해서 반납.
+    pool.connect((err: any, client: any, release: any) =>
     {
       if (err)
       {
@@ -62,6 +65,7 @@ exports.initialize = (): Promise<boolean> =>
       {
         logger.info(`Connected to db!`);
         is_initialized = true;
+        release();
       }
       resolve(is_initialized);
     });
