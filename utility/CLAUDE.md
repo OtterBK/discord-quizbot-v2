@@ -8,6 +8,7 @@
 - **`audio_utility.js`** — BGM 재생(`playBGM`, `initializeBGM`), 오디오 페이드(`fade_audio_play`), 메타데이터 파싱(`getAudioInfoFrom{Path,Stream,Buffer}`). `playBGM` 내부에서 랜덤 롱타이머 고를 때 `misc_utility.getRandom(...)`을 씀(원래 `exports.getRandom`이었다가 분리하면서 재배선됨).
 - **`network_utility.js`** — `getIPv4Address`/`getIPv6Address` (OS 네트워크 인터페이스 조회).
 - **`misc_utility.js`** — 나머지 전부: `getRandom`, `sleep`, `sortDictByValue`/`sortMapByProperty`, `isImageFile`/`isValidURL`, `convertTagsValueToString`(비트플래그 태그 → 문자열), `extractYoutubeVideoID`, `generateUUID`, `calcTagsValue`, `removeMarkdownSpecialChars`, `sanitizeName`(멘션/마크다운 인젝션 방지).
+- **`web_token_utility.js`** (신규, 2026-08-08) — 퀴즈 선택 웹 연동(`docs/WEB_INTEGRATION_PLAN.md`)용 세션 토큰 생성. `generateWebSessionToken()`은 `crypto.randomBytes(32).toString('hex')` 기반 — `misc_utility.generateUUID()`는 `Math.random()` 기반이라 암호학적으로 안전하지 않아 세션 토큰 용도로는 재사용하지 않았다.
 
 facade(`utility.js`) 자체에 죽은 import 5개(`EmbedBuilder`/`axios`/`PRIVATE_CONFIG`/`CUSTOM_EVENT_TYPE`/`orderBy`)가 남아있음 — 원본에도 있던 미사용 import라 lint 경고 개수를 그대로 유지하려고 일부러 지우지 않음.
 

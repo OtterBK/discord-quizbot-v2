@@ -30,6 +30,10 @@ config/                      공개 설정 + 비밀 설정 → config/CLAUDE.md
   text_contents.json         언어별 UI 문구
 test/                        quizbot/utility 구조를 그대로 미러링한 node:test 스위트
 resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_user.txt 등 런타임 리소스
+web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite, 독립 프로젝트, 별도 package.json) →
+                              docs/WEB_INTEGRATION_PLAN.md. tsconfig/copy-js-assets 빌드 파이프라인 및
+                              루트 eslint.config.js 대상 밖(독립 ESM/JSX). quizbot/managers/web/web_express_app.js가
+                              빌드 산출물(web-frontend/dist/)을 정적 서빙.
 ```
 
 ## 아키텍처 핵심 패턴
