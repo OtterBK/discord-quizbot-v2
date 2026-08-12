@@ -22,7 +22,7 @@
 >    상세는 아래 B-4 항목 및 `docs/COMPLETED_WORK_LOG.md` 2026-08-12 항목. 나머지 [P2]/[P3]는 여전히
 >    미착수.
 > 5. **[결정 필요] UI 개선 [P3]** — 같은 문서, 우선순위 가장 낮음. (4번과 일부 겹쳐 같이 진행됨 — 위 참고)
-> 6. **[결정 필요] B-1. 문제 일괄 등록** — 아래 B-1 항목, `docs/B1_BULK_IMPORT_EXPORT_TODO.md`의
+> 6. **[결정 필요] B-1. 문제 일괄 등록** — 아래 B-1 항목, `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md`의
 >    3가지 결정부터. (2026-08-12 사용자가 마지막 순서로 재조정)
 >
 > 6번은 "사용자와 먼저 논의/결정"이 선행돼야 함 — 시작 전 반드시 확인할 것. 종합 배경은 `docs/
@@ -35,17 +35,17 @@
 > 사실을 발견 — 곧 GCP 신서버를 `develop-v3.5` 기준으로 재구축할 예정이라 그에 맞춰 설계함. **아직
 > 실제 신서버에 설치해보는 실사용 검증은 안 함** — 다음 서버 생성 시 최우선 확인. 상세는
 > `docs/COMPLETED_WORK_LOG.md` 2026-08-12 "`auto_script/` 운영 스크립트 개선 구현 완료" 항목,
-> `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`.
+> `docs/plans/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`.
 
 ---
 
 ## A. 보류 중 (조건 충족 전까지 착수 금지)
 
 - **A-3 6단계: `multiplayer_*` 전체 TS 전환** — 실전 대결(2개 이상 길드) 테스트가 끝나기 전까지 보류.
-  상세: `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` A-3 표.
+  상세: `docs/plans/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` A-3 표.
 - **다국어(i18n) 지원** — 순수 설계 문서 단계, **코드 미수정, 사용자가 명시적으로 지시하기 전까지 착수 금지**.
   착수 전 사용자가 정해야 할 것 3가지(동시 다국어 vs 언어 통째 교체 / locale 저장 단위 / 실제 2번째 언어)는
-  `docs/I18N_ARCHITECTURE_PLAN.md` 5장 참고.
+  `docs/plans/I18N_ARCHITECTURE_PLAN.md` 5장 참고.
 
 ---
 
@@ -56,10 +56,10 @@
 디스코드 채널 잠금 + 임시 토큰 기반 웹 프론트엔드에서 퀴즈를 검색/선택하는 기능. 아키텍처 결정(마스터
 프로세스에 세션 상태, 기존 멀티플레이 IPC 브로드캐스트 패턴 재사용 등), 오마카세 퀴즈의 실제 구조(공식
 장르+유저 장르모드/바구니모드 이원 구조) 조사, UI 목업까지 전부 끝났음 — 상세는
-`docs/WEB_INTEGRATION_PLAN.md`, 승인된 화면은 `docs/WEB_UI_MOCKUP.html`(브라우저로 직접 열기).
+`docs/plans/WEB_INTEGRATION_PLAN.md`, 승인된 화면은 `docs/mockups/WEB_UI_MOCKUP.html`(브라우저로 직접 열기).
 
 **네이밍 변경 2건 처리 완료** (2026-08-08): "장바구니"→"퀴즈함", "오마카세 퀴즈"→"랜덤 퀴즈" 둘 다
-디스코드 쪽 사용자 노출 문구까지 변경(내부 변수/클래스명은 유지) — 상세는 `docs/WEB_INTEGRATION_PLAN.md`
+디스코드 쪽 사용자 노출 문구까지 변경(내부 변수/클래스명은 유지) — 상세는 `docs/plans/WEB_INTEGRATION_PLAN.md`
 해당 섹션.
 
 **Phase 0(인프라 스켈레톤) + Phase 1(공식 퀴즈 웹 선택) 완료** (2026-08-08): IPC 메시지 타입 2개,
@@ -72,11 +72,11 @@
 "퀴즈 실제 시작"/"UIHolder 소멸"로 옮기고 `DevQuizInfoUI`가 직접 웹 신호를 받도록 재설계해서, **확정
 후에도 웹에서 계속 재선택 가능**하게 만듦(`web_session_manager.ts`의 `apply`/`release` 액션 분리 +
 `UIHolder.free()`/`handleStartQuiz`의 조용한 정리 훅 — 고아 토큰 방지까지 포함). 상세 설계는
-`docs/WEB_INTEGRATION_PLAN.md` 5-1 "토큰 생명주기".
+`docs/plans/WEB_INTEGRATION_PLAN.md` 5-1 "토큰 생명주기".
 
 **재설계 직후 순환 require 크래시 발견 → 수정 완료** (2026-08-08, 같은 날): 실사용 테스트로 퀴즈1 확정
 → 퀴즈2로 재선택 시 `dev-quiz-select-ui.ts`↔`dev-quiz-info-ui.ts` 순환 require 때문에 크래시(자세한
-내용은 `docs/WEB_INTEGRATION_PLAN.md`의 `dev-quiz-info-ui.ts` 항목). require를 함수 안으로 미뤄서
+내용은 `docs/plans/WEB_INTEGRATION_PLAN.md`의 `dev-quiz-info-ui.ts` 항목). require를 함수 안으로 미뤄서
 수정, 회귀 테스트(`test/quiz_ui/dev_quiz_web_reapply.test.js`) 추가 — fix를 일부러 되돌려서 같은 에러가
 재현되는 것까지 확인 후 커밋.
 
@@ -95,7 +95,7 @@ pass)/`npm run build`(백엔드+프론트엔드 둘 다) 전부 통과.
 웹 연동 이전과 100% 동일(`select-quiz-type-ui.ts`의 '공식 퀴즈' 분기도 `DevQuizSelectUI`로 원복), 웹
 선택 시 `MainUI`/`SelectQuizTypeUI`를 건너뛰고 `WebHandoffUI('dev')`로 바로 진입. mode는 여전히 'dev'
 고정(사용자 확인: "DEV모드 하나만 동작하는게 맞음") — 세션을 dev/user/omakase 자유 전환 가능하게 만드는
-재설계는 Phase 2/3 착수 시 실제 백엔드가 붙을 때 같이 함. 상세는 `docs/WEB_INTEGRATION_PLAN.md` "8.
+재설계는 Phase 2/3 착수 시 실제 백엔드가 붙을 때 같이 함. 상세는 `docs/plans/WEB_INTEGRATION_PLAN.md` "8.
 투트랙 진입점 분리". `docs/TEST_CHECKLIST.md` O 섹션에 진입점 변경으로 재검증 필요한 항목 표시함(우선
 순위 낮음 — `WebHandoffUI` 내부 로직 자체는 안 바뀜). 검증: `npx tsc --noEmit`/`npm run lint`/`npm test`
 전부 통과(component export 개수 63→64 갱신 포함), **아직 실제 봇으로 두 트랙 수동 테스트 안 함**.
@@ -109,7 +109,7 @@ pass)/`npm run build`(백엔드+프론트엔드 둘 다) 전부 통과.
 `UserQuizInfoUI.onReceivedWebSessionSignal`(dev와 동일 패턴, DB 조회 때문에 비동기),
 프론트엔드 `UserQuizTab.jsx`(검색+태그 AND 필터+인증 토글+정렬+카드 그리드, 목업 디자인 그대로 이식) +
 `App.jsx`(탭 잠금을 `session.mode` 비교에서 `AVAILABLE_MODES` 상수로 변경, user 탭 활성화). 상세는
-`docs/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 4번. 검증: `npx tsc --noEmit`/`npm run lint`(0
+`docs/plans/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 4번. 검증: `npx tsc --noEmit`/`npm run lint`(0
 error)/`npm test`(260 pass)/`npm run build`(백엔드+프론트엔드) 전부 통과. **미검증**: 투트랙 진입점
 분리 + Phase 2 전체를 아직 실제 Discord+브라우저로 안 돌려봄 — `docs/TEST_CHECKLIST.md` O/P 섹션
 참고, 다음 세션 최우선.
@@ -137,7 +137,7 @@ applyWebPayloadToQuizInfo`/`static buildOmakaseQuizInfoFromWebPayload`(dev-quiz-
 user-quizzes` 재사용) + 🍱 FAB+드로워(퀴즈함 25개 제한 없이 자유롭게 담기 가능함을 안내) + 우측
 "설정 요약" 카드. `UserQuizTab.jsx`와 공유하는 카드 헬퍼는 `quizCardUtils.js`로 분리. `App.jsx`의
 `AVAILABLE_MODES.omakase`를 `true`로 변경 — 세션 mode 개념은 Phase 2에서 이미 일반화해둬서 추가
-설계 변경 없이 바로 적용 가능했음. 상세는 `docs/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 5번.
+설계 변경 없이 바로 적용 가능했음. 상세는 `docs/plans/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 5번.
 검증: `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(267 pass, omakase 신규 테스트 21건
 포함)/`npm run build`(백엔드+프론트엔드) 전부 통과. **미검증**: 아직 실제 Discord+브라우저로 안
 돌려봄 — `docs/TEST_CHECKLIST.md` Q 섹션 참고, 다음 세션 최우선.
@@ -156,7 +156,7 @@ user-quizzes` 재사용) + 🍱 FAB+드로워(퀴즈함 25개 제한 없이 자�
 `web-handoff-ui.ts`를 직접 require하는 다른 mode 테스트를 ts-node에서 깨뜨리는 걸 발견해 지연 require로
 수정(회귀 없음, 267 pass 유지). `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(267 pass)/
 `npm run build`(백엔드+프론트엔드) 전부 통과. **알려진 한계**(다음 세션 참고, 상세는
-`docs/WEB_INTEGRATION_PLAN.md` Phase 4 "알려진 한계"): 확정 응답이 실제 성공 여부와 무관하게 항상
+`docs/plans/WEB_INTEGRATION_PLAN.md` Phase 4 "알려진 한계"): 확정 응답이 실제 성공 여부와 무관하게 항상
 `{success:true}`(비동기 처리라 실패는 디스코드 채널에서만 안내됨), 생성 폼은 실시간 미리보기 없이
 확정 시에만 반영. **미검증** — 아직 실제 Discord+브라우저로 안 돌려봄(참가/생성/음성채널 체크/재확정/
 2클러스터 이상 IPC 왕복 전부), 다음 세션 최우선.
@@ -169,7 +169,7 @@ user-quizzes` 재사용) + 🍱 FAB+드로워(퀴즈함 25개 제한 없이 자�
 (1회성 폴링 채널) 신설. 로비 생성 후에도 웹에서 계속 설정을 바꿔 재확정 가능하도록 프론트엔드 수정(백엔드
 `onReceivedWebSessionSignal`은 이미 지원 중이었음, 프론트가 활용을 안 하고 있었을 뿐). 새로고침 버튼/
 방 제목 입력칸 스타일도 앱 디자인 시스템에 맞춤. 상세는 `docs/COMPLETED_WORK_LOG.md`, 알려진 잔여
-한계는 `docs/WEB_INTEGRATION_PLAN.md` Phase 4. 검증(`tsc`/`lint`/`test` 267 pass/`build` 백엔드+
+한계는 `docs/plans/WEB_INTEGRATION_PLAN.md` Phase 4. 검증(`tsc`/`lint`/`test` 267 pass/`build` 백엔드+
 프론트엔드) 전부 통과. **여전히 미검증** — 이번 수정 자체를 포함해 실제 Discord+브라우저 테스트 전무,
 특히 "실패 후 재시도" 케이스가 다음 세션 최우선(`docs/TEST_CHECKLIST.md` R 섹션).
 
@@ -178,7 +178,7 @@ user-quizzes` 재사용) + 🍱 FAB+드로워(퀴즈함 25개 제한 없이 자�
 색상 변경은 4개 탭 전부에 영향 — `docs/TEST_CHECKLIST.md` S 섹션(신설) 참고. 검증 전부 통과, 실사용
 재검증은 여전히 안 함.
 
-**Cloudflare Tunnel 배포**는 `docs/WEB_INTEGRATION_PLAN.md`에서 여전히 "추후 논의"로 남겨둔 상태(사용자가
+**Cloudflare Tunnel 배포**는 `docs/plans/WEB_INTEGRATION_PLAN.md`에서 여전히 "추후 논의"로 남겨둔 상태(사용자가
 명시적으로 지시하기 전까지 착수 금지는 아니지만, 별도 논의 없이 진행하지 않음).
 
 **✅ 2026-08-09 UX 피드백 6건 반영** (프론트엔드만, 백엔드 변경 없음): (1) 랜덤 퀴즈 퀴즈함 브라우징
@@ -216,7 +216,7 @@ raw HTML을 꽂지 않아 유저가 입력한 설명에 악성 스크립트가 �
 ### B-5. 퀴즈 만들기 웹 UI 제공 (2026-08-11 설계 시작, 2026-08-12 Phase 0~5 전체 완료)
 
 `/퀴즈만들기`(`createQuizToolUIHolder` 이하 전체 — `UserQuizListUI`→`UserQuizInfoUI`→
-`UserQuestionInfoUI`)를 웹으로 옮기는 작업. `docs/WEB_QUIZ_CREATION_HANDOFF.md`(인수인계, 완료)의
+`UserQuestionInfoUI`)를 웹으로 옮기는 작업. `docs/plans/WEB_QUIZ_CREATION_HANDOFF.md`(인수인계, 완료)의
 후속 세션에서 핵심 설계 결정 전부 확정 → Phase 0(UI 목업) → Phase 1~4(코드 구현) → Phase 5(폴리시+
 통합 검증)까지 **전부 완료**. 잔여 작업은 `B-6`(아래) 참고.
 
@@ -227,13 +227,13 @@ raw HTML을 꽂지 않아 유저가 입력한 설명에 악성 스크립트가 �
 없음), 오디오 미리듣기는 ffmpeg 클립 대신 유튜브 `?t=` 타임스탬프 링크로 대체, REST는
 `/api/my-quizzes`(신규 네임스페이스, 기존 `/api/user-quizzes`와 별개), 문제 CRUD는 디스코드 3-모달과
 달리 단일 PUT/POST로 통합. 상세 배경/근거는 아래 두 플랜 파일에 전부 기록돼 있음(레포 바깥,
-`C:\Users\wjswo\.claude\plans\`) — **Phase 1 착수 시 가장 먼저 이 내용을 `docs/WEB_QUIZ_CREATION_PLAN.md`로
-옮겨적을 것**(레포 안에 영구 보존, `docs/WEB_INTEGRATION_PLAN.md`와 대칭되는 문서):
+`C:\Users\wjswo\.claude\plans\`) — **Phase 1 착수 시 가장 먼저 이 내용을 `docs/plans/WEB_QUIZ_CREATION_PLAN.md`로
+옮겨적을 것**(레포 안에 영구 보존, `docs/plans/WEB_INTEGRATION_PLAN.md`와 대칭되는 문서):
   - `gleaming-foraging-planet.md` — Phase 0~5 전체 상세 설계(조사에서 확정된 핵심 사실 6가지, 사용자
     확정 설계 결정 10가지, Phase별 구현 계획, Critical Files).
   - `elegant-plotting-crystal.md` — 위 내용을 옮겨적은 뒤 Phase 0 실행에 쓴 버전(이번 세션에서 승인받음).
 
-**Phase 0(UI 목업) 완료**: `docs/WEB_QUIZ_CREATION_UI_MOCKUP.html`(신규, `docs/WEB_UI_MOCKUP.html`과
+**Phase 0(UI 목업) 완료**: `docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html`(신규, `docs/mockups/WEB_UI_MOCKUP.html`과
 대칭) — 퀴즈 목록(유저 퀴즈 선택 화면과 동일한 그리드 카드 언어로 통일)/퀴즈 상세(썸네일 미리보기,
 태그, 공개 토글)/문제 편집(디스코드 3모달과 동일하게 기본정보·힌트설정·정답공개 3탭 분리) 3화면 +
 "실제 디스코드에선 이렇게 보여요" 미리보기(문제 출제 중/힌트 화면/정답 공개 3상태, 탭 전환과 연동)를
@@ -244,7 +244,7 @@ raw HTML을 꽂지 않아 유저가 입력한 설명에 악성 스크립트가 �
 안 건드림(승인 전 되돌리기 비용 없는 정적 데모).
 
 **✅ 2026-08-11 Phase 1(세션 스코프 일반화 + 진입점 스켈레톤 + 구조 문서화) 완료, 같은 세션**:
-`docs/WEB_QUIZ_CREATION_PLAN.md` 신설(설계 원본 이관, `docs/WEB_INTEGRATION_PLAN.md`와 대칭).
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` 신설(설계 원본 이관, `docs/plans/WEB_INTEGRATION_PLAN.md`와 대칭).
 `web_session_manager.ts`가 guild/owner 두 스코프를 다루도록 일반화(`scope`/`scope_id` 필드,
 `broadcast(guild_id,...)`→`broadcast(scope_id,...)` 리네임, `owner_token_map` +
 `createOwnerScopedSession`/`releaseOwnerScopedSession`, `runGC`의 scope별 분기, `handleRequest`에
@@ -315,7 +315,7 @@ POST `.../duplicate`) — `quiz_editor_validation.ts`(Phase 2)의 `parseAudioRan
 `correct_answer.ts`/`text_contents.json`) 대조 후 신규 공유 모듈
 `web-frontend/src/editor/questionDisplay.jsx`(칩 표시 로직 + 3가지 디스코드 임베드 상태 시뮬레이션)로
 이식, `QuizDetailPage.jsx`/`QuestionEditPage.jsx`/`styles.css`에 반영. 상세는
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 4 섹션 하단. 검증: 양쪽 `npm run build` 통과(프론트엔드 전용).
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 4 섹션 하단. 검증: 양쪽 `npm run build` 통과(프론트엔드 전용).
 
 **✅ 2026-08-12 Phase 4 UI 피드백 2차 9건 반영, 같은 세션**: 오디오 미리듣기를 새 탭 링크에서 지정
 시작지점부터 바로 재생되는 유튜브 인라인 임베드로 교체, 문제 목록 행을 답/이미지/오디오 요약 한
@@ -323,7 +323,7 @@ POST `.../duplicate`) — `quiz_editor_validation.ts`(Phase 2)의 `parseAudioRan
 선택 UI와 동일한 인증 뱃지를 목록 카드/상세 카드(공유 컴포넌트라 양쪽 동시 적용) 양쪽에 추가,
 정답 유형 전환 시 값이 사라지던 버그 수정(유형별 draft 보관), 저장해도 화면에 머물도록 변경(새
 문제는 URL만 조용히 전환), breadcrumb에 문제 위치 표시, 이전/다음 문제 버튼 추가. 상세는
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 4 섹션 최하단. 검증: 양쪽 `npm run build` 통과(프론트엔드
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 4 섹션 최하단. 검증: 양쪽 `npm run build` 통과(프론트엔드
 전용, 백엔드 무변경).
 
 **✅ 2026-08-12 Phase 4 UI 피드백 3차 1건 반영, 같은 세션**: 문제 목록 행에서 "문제: 텍스트,이미지"
@@ -334,14 +334,14 @@ POST `.../duplicate`) — `quiz_editor_validation.ts`(Phase 2)의 `parseAudioRan
 **✅ 2026-08-12 Phase 3/4 실사용 검증 완료 (다음 세션)**: `docs/TEST_CHECKLIST.md` U/V 섹션 전체를
 실제 Discord+브라우저로 확인 완료(전부 `[x]`). 검증 중 발견한 버그 1건(OX/객관식 정답 미선택 시 서버
 `invalid_answers`가 raw로 노출)은 같은 세션에서 수정+재검증 완료 — 상세는
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 4 하단 "2026-08-12 Phase 3/4 실사용 검증 완료" 항목.
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 4 하단 "2026-08-12 Phase 3/4 실사용 검증 완료" 항목.
 
 **✅ 2026-08-12 Phase 5(폴리시 + 통합 검증) 완료, 별도 세션**: 전체 회귀(`tsc`/`lint`/`test` 324
 pass/양쪽 `build`) + 2클러스터 이상 강제 실행 환경에서 owner_id 기반 relay 검증(디버그 로그로
 REACT/DROP 분기 실측 확인 후 로그 제거, `index.js` 임시 설정 원복) + GC 세션 만료 시나리오(15분 대기,
 DM 잠금 자동 해제 확인) 전부 실사용 검증 완료. `close_owner_session`/"편집 중" 실시간 표시는 사용자
 결정으로 이번엔 스킵(선택 항목, 필요해지면 별도 착수). "퀴즈 만들기 웹 UI" 전체(Phase 0~5)가 이걸로
-마무리됨. 상세는 `docs/WEB_QUIZ_CREATION_PLAN.md` Phase 5 섹션.
+마무리됨. 상세는 `docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 5 섹션.
 
 **✅ 2026-08-12 Phase 5 검증 중 사용자 피드백 2건 추가 반영, 같은 세션**: (1) 투트랙 선택 버튼(`/퀴즈`,
 `/퀴즈만들기` 최초 화면)의 라벨이 그냥 숫자 `'1'`/`'2'`였던 걸 `'디스코드 UI'`/`'웹 UI'`로 변경(공유
@@ -350,7 +350,7 @@ DM 잠금 자동 해제 확인) 전부 실사용 검증 완료. `close_owner_ses
 실제 레이스 버그 발견 — 권한을 가져온 직후 예전 소유자의 UIHolder가 `free()`되며 보내는 `release`
 IPC가 guild_id만으로 토큰을 지워서, 방금 발급된 새 소유자의 토큰을 즉시 무효화할 수 있었음.
 `web_session_manager.ts`의 `releaseSession(guild_id, expected_token?)`에 토큰 일치 검사를 추가해
-수정(회귀 테스트 2건 포함, `docs/WEB_INTEGRATION_PLAN.md` 참고).
+수정(회귀 테스트 2건 포함, `docs/plans/WEB_INTEGRATION_PLAN.md` 참고).
 
 ### B-6. 퀴즈 만들기 웹 UI 이후 추가 요청 3건 (신규, 2026-08-12)
 
@@ -366,7 +366,7 @@ Phase 5 마무리 중 사용자가 준 추가 요청 3건 — 위 두 건(투트
   여부와 무관하게 항상 `success:true`를 반환) 수정 + 성공/실패 배너 UI 추가, 메뉴 발견성 개선(아이콘
   전용 버튼 → "☰ 더보기" 라벨 + 공지사항 안 읽음 배지)까지 전부 사용자가 직접 실제 봇으로 확인
   완료(`docs/TEST_CHECKLIST.md` X 섹션 전체 `[x]`). 상세는 `docs/COMPLETED_WORK_LOG.md` 2026-08-12
-  항목, 설계 배경은 `docs/WEB_UI_REMAINING_SCREENS_PLAN.md`.
+  항목, 설계 배경은 `docs/plans/WEB_UI_REMAINING_SCREENS_PLAN.md`.
 
 ### B-7. 문제 미리보기 마크다운 지원 + 웹 API 보안 점검 — ✅ 완료 (2026-08-12, 별도 세션)
 
@@ -384,7 +384,7 @@ my-quizzes`) 밖까지 웹에서 도달 가능한 모든 라우트를 데이터�
 ($1::int[])` 파라미터화 + 호출부 정수 필터링으로 수정) + 미검증 텍스트가 공유 Discord embed에
 반영되던 경미한 문제 1건도 수정(`POST /api/session/select`의 `title` 길이 제한 없이 그대로
 반영되던 것, 60자로 자름). Rate limit 수치도 사용자 피드백으로 완화(조회 1초당 4→10회, 쓰기
-1초당 3→8회). 상세는 `docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md` 상단 추가 배너 참고.
+1초당 3→8회). 상세는 `docs/plans/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md` 상단 추가 배너 참고.
 
 상세는 `docs/COMPLETED_WORK_LOG.md` 2026-08-12 B-7 항목 참고. 검증: `tsc --noEmit`/`lint`(0 error)/
 `test`(345 pass, rate limit 유닛테스트 4건 + IDOR 라이브 검증 테스트 2건 + basket SQL 파라미터화
@@ -403,14 +403,14 @@ ANY($1::int[])`뿐이라 `is_private` 필터도 소유권 체크도 없던 문�
 
 ### B-1. 문제 일괄 등록 (Export/Import)
 
-`docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md`의 B-1. 파일 첨부 방식으로 설계는 끝났지만, 착수 전
+`docs/plans/TS_MIGRATION_AND_CONVENIENCE_PLAN.md`의 B-1. 파일 첨부 방식으로 설계는 끝났지만, 착수 전
 3가지 결정 보류 중(JSON 필드명 / Import 시 추가·교체 정책 / 검증 실패 메시지 상세도) —
-`docs/B1_BULK_IMPORT_EXPORT_TODO.md`에 옵션별 추천안과 함께 정리돼 있음. 착수 시 그 문서부터 열어서
+`docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md`에 옵션별 추천안과 함께 정리돼 있음. 착수 시 그 문서부터 열어서
 사용자와 확정할 것.
 
 ### B-2. A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건 — 10/12 완료(사용자 실제 검증까지 끝남)
 
-2026-08-07 멀티플레이 포함 전수 테스트 중 발견. `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 코드
+2026-08-07 멀티플레이 포함 전수 테스트 중 발견. `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 코드
 위치/원인까지 정리돼 있음. **1/4/5번(실동작 버그), 2/3/6/9/10번(UX·텍스트), 7/8번(webm seek 부정확 —
 7번 실제 재생 경로/8번 미리듣기 경로)은 2026-08-08 수정 + 사용자 실제 봇 재생 검증까지 완료** — 상세는
 `docs/COMPLETED_WORK_LOG.md` 참고.
@@ -435,7 +435,7 @@ ANY($1::int[])`뿐이라 `is_private` 필터도 소유권 체크도 없던 문�
 
 ### B-3. UI_IMPROVEMENT_PROPOSAL.md 잔여 2건 (1라운드)
 
-거의 완료됐고 아래 2개만 이월됨 — 상세는 `docs/UI_IMPROVEMENT_PROPOSAL.md` 1번/4번 항목.
+거의 완료됐고 아래 2개만 이월됨 — 상세는 `docs/plans/UI_IMPROVEMENT_PROPOSAL.md` 1번/4번 항목.
 
 - "옵션 설명 비대칭" — 태그 select 메뉴(QUIZ_TAG/DEV_QUIZ_TAG)마다 옵션 설명 문구를 새로 써야 하는
   콘텐츠 작업, 코드 변경은 없음.
@@ -445,7 +445,7 @@ ANY($1::int[])`뿐이라 `is_private` 필터도 소유권 체크도 없던 문�
 ### B-4. UI_IMPROVEMENT_PLAN_ROUND2.md 잔여 (2라운드 B번)
 
 A번(실제 버그 7건)과 B번 일부(B-2/B-4/B-5/B-6의 [P1] 다수/B-10)는 완료. 나머지는 전부
-`docs/UI_IMPROVEMENT_PLAN_ROUND2.md`에 [P1]/[P2]/[P3] 우선순위 태그와 함께 섹션별로 정리돼 있음 —
+`docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md`에 [P1]/[P2]/[P3] 우선순위 태그와 함께 섹션별로 정리돼 있음 —
 화면/기능 단위가 크거나 설계가 더 필요해서 아직 손 안 댐.
 
 **✅ 마지막 [P1] 항목도 완료 (2026-08-12)** — B-5의 밴 메시지 문구("당신 또는 이 서버가..."로 시작해

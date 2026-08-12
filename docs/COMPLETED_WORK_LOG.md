@@ -10,29 +10,29 @@
 
 5,959줄 `quiz_system.js`를 포함해 여러 대형 파일을 도메인/클래스 경계로 분리(facade 패턴 반복 적용:
 `db_manager.js`, `utility.js`, `quiz_ui/components.js`, `report_manager.js`). `node:test` 스캐폴딩,
-`eslint.config.js` 도입도 이 기간에 완료. 상세: `docs/REFACTOR_PLAN.md`(전체 계획), `docs/BUGS_FOUND.md`
-(발견 버그), `docs/DEPRECATED_CODE_REMOVED.md`/`docs/RELOCATED_COMMENTS.md`(삭제 코드/주석 보존),
-`docs/DUPLICATE_UI_PATTERNS.md`(중복 패턴, 통합은 보류 결정).
+`eslint.config.js` 도입도 이 기간에 완료. 상세: `docs/plans/REFACTOR_PLAN.md`(전체 계획), `docs/archive/BUGS_FOUND.md`
+(발견 버그), `docs/archive/DEPRECATED_CODE_REMOVED.md`/`docs/archive/RELOCATED_COMMENTS.md`(삭제 코드/주석 보존),
+`docs/archive/DUPLICATE_UI_PATTERNS.md`(중복 패턴, 통합은 보류 결정).
 
 ## 2026-08-04 — 성능 관찰 로그 정리
 
 리팩터 중 발견한 성능/메모리 포인트 기록만 해두고 수정은 보류(사용자 확인). `main-ui.js`의 죽은
 `loadVersionInfo()`, `banned_user.txt` 반복 동기 읽기(`multiplayer_ban_manager.js`로 통합)는 이후
-수정 완료. 상세: `docs/PERFORMANCE_NOTES.md`.
+수정 완료. 상세: `docs/archive/PERFORMANCE_NOTES.md`.
 
-## 2026-08-05 — UI 개선 1라운드 (`docs/UI_IMPROVEMENT_PROPOSAL.md`)
+## 2026-08-05 — UI 개선 1라운드 (`docs/plans/UI_IMPROVEMENT_PROPOSAL.md`)
 
 퀴즈만들기 중심 UX 검토. 오타 3건, 파괴적 동작 안전장치 불균형(문제 삭제 2클릭 확인 추가), 임베드 구조화
 (fields 분리), 주간 1위 데이터 오류(`played_count` vs `played_count_of_week` 혼용 버그) 등 0~5번 항목
 대부분 완료. 잔여 2건은 `docs/ACTIVE_PLAN.md` B-3 참고.
 
-## 2026-08-06 — UI 개선 2라운드 (`docs/UI_IMPROVEMENT_PLAN_ROUND2.md`)
+## 2026-08-06 — UI 개선 2라운드 (`docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md`)
 
 봇 전역으로 조사 범위 확대. **A번(실제 버그 7건) 전부 수정**(스코어보드 무한 로딩, 새로고침 순서 버그,
 좋아요 실패 시 무응답, 전역 `unhandledRejection` 핸들러 부재, 죽은 버튼 3종 등). B번(UX 개선 후보)은
 [P1] 다수 + B-2/B-4/B-10 일부 완료, 나머지는 `docs/ACTIVE_PLAN.md` B-4에 잔여 목록.
 
-## 2026-08-07 — TS 전환 A-1~A-5 완료 (`docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md`)
+## 2026-08-07 — TS 전환 A-1~A-5 완료 (`docs/plans/TS_MIGRATION_AND_CONVENIENCE_PLAN.md`)
 
 CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌드 파이프라인 구축(자원 경로,
 `'use strict'` 자동삽입, `.ts`/`.js` 완전 분리 빌드 등 실제 구현하며 발견한 이슈 다수 해결) 후,
@@ -50,7 +50,7 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
   직접 검증 후 확정). 화면 레이아웃도 재배치(이미지 재로드+미리듣기 2개를 한 행에, 문제유형 선택은 맨
   아래로).
 
-전수 테스트(멀티플레이 포함) 진행, 발견된 피드백 12건은 미착수 상태로 `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에
+전수 테스트(멀티플레이 포함) 진행, 발견된 피드백 12건은 미착수 상태로 `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에
 정리(`docs/ACTIVE_PLAN.md` B-2 참고).
 
 ## 2026-08-08 — B-2 전수테스트 피드백 12건 중 실동작 버그 3건 수정 (1/4/5번)
@@ -69,7 +69,7 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
   "퀴즈만들기 전체 화면 ephemeral 통일" 중 발견된 실제 버그 케이스는 이걸로 마무리, 나머지(단순 누락 없는
   화면)는 별도 조치 불필요로 판단.
 
-남은 9건(2/3/6/7/8/9/10/11/12번, UX 개선 후보 + 조사 필요 TODO)은 `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에
+남은 9건(2/3/6/7/8/9/10/11/12번, UX 개선 후보 + 조사 필요 TODO)은 `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에
 계속 남아있음 — 다음 세션에서 우선순위 논의 후 진행.
 
 ## 2026-08-08 — B-2 전수테스트 피드백 UX/텍스트 5건 수정 (2/3/6/9/10번)
@@ -80,7 +80,7 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
   재생되는 경우, `convertAudioRangeToString()`의 "[랜덤 구간 재생]" 톤에 맞춘 안내 문구를 미리듣기
   응답에 추가.
 - **9번**: 멀티플레이 로비 문제 수 모달 라벨 "최대 50" → 실제 상한(60)에 맞춰 수정
-  (`multiplayer_components.js`, 생성/설정 모달 둘 다). `docs/UI_IMPROVEMENT_PLAN_ROUND2.md` B-6의
+  (`multiplayer_components.js`, 생성/설정 모달 둘 다). `docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md` B-6의
   [P3] 동일 건도 같이 완료 표시.
 - **10번**: 멀티플레이 로비 설명 문구에 "채팅이 밀려 화면이 안 보이면 '/퀴즈'를 다시 입력해 UI를 새로 받을
   수 있다"는 안내 추가(`multiplayer-quiz-lobby-ui.js`). `createMainUIHolder()`가 멀티플레이 로비
@@ -89,7 +89,7 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
   사용자 피드백(수식어 방식이 항목마다 제각각) 확인 후 "전체 추천순"→"추천순", "최신 퀴즈순"→"최신순",
   "오래된 퀴즈순"→"오래된순"으로 정리(주간/전체 구분이 실제로 필요한 인기순만 수식어 유지).
 
-남은 4건(7/8/11/12번, 전부 조사·논의 필요 TODO)만 `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 남음.
+남은 4건(7/8/11/12번, 전부 조사·논의 필요 TODO)만 `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 남음.
 
 ## 2026-08-08 — B-2 피드백 7번(webm seek 부정확) 원인 규명 + 수정, 8번 원인도 상당 부분 규명
 
@@ -114,7 +114,7 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
   검증은 못 함**(도구로 라이브 재생 불가) — `docs/TEST_CHECKLIST.md` I번 섹션에 검증 항목 추가, 문제
   있으면 `this.accurate_start_point` 관련 코드만 되돌리면 기존 동작으로 즉시 롤백 가능.
 
-남은 2건(11/12번, MMR·추첨 알고리즘 — 둘 다 논의부터 필요)만 `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 남음.
+남은 2건(11/12번, MMR·추첨 알고리즘 — 둘 다 논의부터 필요)만 `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md`에 남음.
 
 ## 2026-08-08 — B-2 피드백 7번 실사용자 검증 완료 + 8번(미리듣기 구간 불일치) 수정 완료
 
@@ -140,9 +140,9 @@ CommonJS 유지 + TypeScript 점진 도입(`allowJs`로 `.js`/`.ts` 공존). 빌
 `discord-hybrid-sharding`)에 맞게 보정 — 마스터 프로세스에 세션 상태를 두고 기존 멀티플레이 IPC
 브로드캐스트+로컬필터링 패턴을 재사용하는 방향으로 확정. 오마카세 퀴즈의 실제 코드 구조(공식 퀴즈
 장르선택 + 유저 퀴즈 장르모드/바구니모드 이원 구조, `DEV_QUIZ_TAG`/`QUIZ_TAG` 비트플래그 태그 체계)를
-조사해 반영. 사용자 피드백을 여러 차례 받아가며 UI 목업(`docs/WEB_UI_MOCKUP.html`, 자체완결 HTML, 다크모드
+조사해 반영. 사용자 피드백을 여러 차례 받아가며 UI 목업(`docs/mockups/WEB_UI_MOCKUP.html`, 자체완결 HTML, 다크모드
 지원)까지 완성해 최종 승인받음. 코드 구현은 착수 전(다음 세션부터) — 상세 설계/파일 목록/단계별 순서는
-`docs/WEB_INTEGRATION_PLAN.md`, 미착수 상태 요약은 `docs/ACTIVE_PLAN.md` B-0.
+`docs/plans/WEB_INTEGRATION_PLAN.md`, 미착수 상태 요약은 `docs/ACTIVE_PLAN.md` B-0.
 
 ## 2026-08-08 — 퀴즈 선택 웹 연동 네이밍 변경 + Phase 0(인프라 스켈레톤) 착수
 
@@ -189,7 +189,7 @@ Tailwind 재작성이 승인된 CSS 대비 드리프트 위험)으로 사용자�
   진짜 `resources/quizdata` 트리를 반환하는 것까지 fetch로 실측. **실제 Discord 클라이언트 검증은 아직
   안 함** - 다음 세션에서 봇 재시작 후 우선 확인.
 
-상세: `docs/WEB_INTEGRATION_PLAN.md`(신규/변경 파일 전체 목록, Phase 2/3 착수 시 필요한 아키텍처 메모).
+상세: `docs/plans/WEB_INTEGRATION_PLAN.md`(신규/변경 파일 전체 목록, Phase 2/3 착수 시 필요한 아키텍처 메모).
 
 ## 2026-08-08 — 웹 연동 Phase 1 1차 실사용 테스트 버그 3건 수정
 
@@ -201,7 +201,7 @@ Tailwind 재작성이 승인된 CSS 대비 드리프트 위험)으로 사용자�
 명확한 종료 화면, 더 이상 트리/스테퍼 조작 불가)와 `App.jsx`(모든 401을 공통 "세션 만료" 화면으로
 통일 + 하트비트가 무효화 감지 시 자동 정지)로 수정. 확정 후 재선택 자체가 불가능한 건 의도된 제약으로
 남겨둠(문제 수만 바꾸려면 디스코드의 기존 "퀴즈 설정" 버튼 사용, 다른 퀴즈는 `[/퀴즈]` 재입력) —
-`docs/WEB_INTEGRATION_PLAN.md` Phase 1 항목에 상세 기록. `docs/TEST_CHECKLIST.md` O 섹션에 재검증
+`docs/plans/WEB_INTEGRATION_PLAN.md` Phase 1 항목에 상세 기록. `docs/TEST_CHECKLIST.md` O 섹션에 재검증
 목록 갱신(기본 흐름은 실사용 확인 완료로 체크됨, 이번 수정분은 미검증 상태로 추가).
 
 ## 2026-08-08 — 웹 연동 Phase 1 토큰 생명주기 재설계 (응급 수정 대신 근본 원인 해결)
@@ -257,7 +257,7 @@ confirm 연속 2회 재선택 테스트 추가, 8건) — 백엔드 전체 244 p
 체크 완료, 남은 미확인 항목(문제 수만 재변경/뒤로가기 스택/퀴즈 시작 후 세션 종료/하이재킹/GC 만료/
 고아 토큰 방지/다크모드)은 급하지 않은 걸로 분류해서 다음 세션으로 이월. Phase 1은 핵심 흐름 기준으로
 안정화된 것으로 판단, 다음 세션은 Phase 2(유저 퀴즈 웹 선택)부터 — `docs/ACTIVE_PLAN.md` B-0,
-`docs/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 3번 참고.
+`docs/plans/WEB_INTEGRATION_PLAN.md` "단계별 구현 순서" 3번 참고.
 
 ## 2026-08-10 — 퀴즈 선택 웹 연동 Phase 4(멀티플레이 퀴즈) 설계+구현 완료, 같은 세션
 
@@ -296,7 +296,7 @@ top-level에서 require하게 되면서 `web-handoff-ui.ts`를 직접 require하
 (267 pass)/`npm run build`(백엔드+프론트엔드) 전부 통과. **미검증**: 실제 Discord+브라우저 테스트
 전무(참가/생성/음성채널 체크/재확정/2클러스터 이상 IPC 왕복) - 다음 세션 최우선. 알려진 설계상 한계
 2가지(확정 응답이 항상 성공으로 보임 - 실제 실패는 디스코드 채널에서만 안내됨, 생성 폼에 실시간
-미리보기 없음)는 `docs/WEB_INTEGRATION_PLAN.md` Phase 4 "알려진 한계" 참고.
+미리보기 없음)는 `docs/plans/WEB_INTEGRATION_PLAN.md` Phase 4 "알려진 한계" 참고.
 
 ## 2026-08-10 — 퀴즈 선택 웹 연동 Phase 4 실사용 피드백 6건 수정 (같은 세션)
 
@@ -357,7 +357,7 @@ pass)/`npm run build`(백엔드+프론트엔드) 전부 통과. **아직 실제 
   자동 갱신이 없어서, 15분 넘게 아무 조작 없이 방치하면 `UIHolder`가 정리되며 웹 세션도 같이
   끊긴다** - Phase 4 신규 이슈가 아니라 Dev/User/Omakase 포함 웹 연동 전체에 공통된 기존 동작.
 - **퀴즈 만들기 웹 UI 제공 - 인수인계 문서만 작성**: 상세 설계는 사용자가 다음 세션에서 진행하기로
-  해서, 이번엔 설계 없이 `docs/WEB_QUIZ_CREATION_HANDOFF.md` 신설 — 재사용 가능한 기존 인프라(토큰
+  해서, 이번엔 설계 없이 `docs/plans/WEB_QUIZ_CREATION_HANDOFF.md` 신설 — 재사용 가능한 기존 인프라(토큰
   락/하트비트/GC, 하이재킹 방어, "payload 직접 대입" 어댑터 패턴, 결과 폴링 채널), 근본적으로 다른 점
   (자유 텍스트/이미지/오디오 대량 입력, 문제 CRUD API 부재, `user-question-info-ui.ts`의 자체 경고
   주석), 착수 전 결정해야 할 질문 6개(진입점/락 UX 적합성/CRUD API 설계/미디어 입력 방식/B-1과의
@@ -408,16 +408,16 @@ pass)/`npm run build`(백엔드+프론트엔드) 전부 통과. `docs/TEST_CHECK
 
 ## 2026-08-11 — 퀴즈 만들기 웹 UI 설계 확정 + Phase 0(UI 목업) 완료
 
-`docs/WEB_QUIZ_CREATION_HANDOFF.md`(2026-08-10 작성)의 후속 세션. 인수인계 문서에 정리해둔 질문
+`docs/plans/WEB_QUIZ_CREATION_HANDOFF.md`(2026-08-10 작성)의 후속 세션. 인수인계 문서에 정리해둔 질문
 6가지를 사용자와 논의해 전부 확정(진입점 투트랙 분리, 유저 스코프 세션 일반화, `user-question-info-ui.ts`
 실제 리팩터, URL 입력만, 유튜브 타임스탬프 링크로 미리듣기 대체, `/api/my-quizzes` 신규 네임스페이스 등)
 — Phase 0~5 전체 계획이 나옴. 플랜모드로 재확인 후 승인받고 Phase 0(UI 목업)만 이번 세션 범위로 진행.
 
-**Phase 0 목업** (`docs/WEB_QUIZ_CREATION_UI_MOCKUP.html`, `docs/WEB_UI_MOCKUP.html`과 대칭 신규 파일):
+**Phase 0 목업** (`docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html`, `docs/mockups/WEB_UI_MOCKUP.html`과 대칭 신규 파일):
 퀴즈 목록/상세/문제편집 3화면 + "실제 디스코드에선 이렇게 보여요" 미리보기. 사용자 피드백을 3라운드
 받으며 반복:
 
-1. **1차**: 목록 화면을 퀴즈 선택 웹 UI(`docs/WEB_UI_MOCKUP.html`)의 그리드 카드 언어로 통일 + 새
+1. **1차**: 목록 화면을 퀴즈 선택 웹 UI(`docs/mockups/WEB_UI_MOCKUP.html`)의 그리드 카드 언어로 통일 + 새
    퀴즈 추가/선택→편집 플로우 연결. 상세 화면에 썸네일 미리보기 필드 추가, 태그 선택 UI가 비어 보이던
    실제 버그(화면 전환 시 `renderDetail()` 미호출) 발견해 수정, 공개 토글 스위치 레이아웃 어긋남도
    `<button>` 기본 스타일 리셋 누락 버그로 확인 후 수정. 문제 편집 화면을 디스코드 3-모달
@@ -443,12 +443,12 @@ pass)/`npm run build`(백엔드+프론트엔드) 전부 통과. `docs/TEST_CHECK
 사용자 최종 승인("UI 설계는 이정도로 끝내고"). **코드/DB/세션 인프라는 전혀 안 건드림** — Phase 1부터는
 다음 세션에서 진행하기로 함. 검증은 육안 확인만(코드 변경 없어 자동 테스트 대상 없음). 상세 설계는
 `C:\Users\wjswo\.claude\plans\gleaming-foraging-planet.md`(전체 Phase 0~5)와
-`elegant-plotting-crystal.md`(이번 세션 실행판) — Phase 1 착수 시 `docs/WEB_QUIZ_CREATION_PLAN.md`로
+`elegant-plotting-crystal.md`(이번 세션 실행판) — Phase 1 착수 시 `docs/plans/WEB_QUIZ_CREATION_PLAN.md`로
 옮겨적을 것. `docs/ACTIVE_PLAN.md` B-5 신설.
 
 ## 2026-08-11 — 퀴즈 만들기 웹 UI Phase 1(세션 스코프 일반화 + 진입점 스켈레톤)
 
-신규 `docs/WEB_QUIZ_CREATION_PLAN.md`로 설계 원본 이관. `web_session_manager.ts`를 guild/owner
+신규 `docs/plans/WEB_QUIZ_CREATION_PLAN.md`로 설계 원본 이관. `web_session_manager.ts`를 guild/owner
 두 스코프로 일반화(`scope`/`scope_id` 필드, `broadcast(guild_id,...)`→`broadcast(scope_id,...)`
 리네임, `owner_token_map`+`createOwnerScopedSession`/`releaseOwnerScopedSession` — DM은 1:1이라
 하이재킹 개념 없이 무조건 교체). `web_express_app.ts`의 `GET /api/session`이 `scope`/`scope_id`/
@@ -484,7 +484,7 @@ system_setting.js`에 `MAX_QUESTIONS_PER_QUIZ: 50` 추가(교체는 Phase 2). �
 `sendDelayedUI`/`sendAudioPreview`/`duplicateQuestion`의 디스코드 전용 우회는 100% 유지. 신규
 `test/managers/quiz_editor_validation.test.js`(21건, 경계값 전부). 검증: `npx tsc --noEmit`/
 `npm run lint`(0 error)/`npm test`(295 pass)/`npm run build` 전부 통과. 웹 기능(REST 등)은 이 phase에
-전혀 없음. `docs/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md` B-5 갱신, 다음은 Phase 3(퀴즈 메타데이터
+전혀 없음. `docs/plans/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md` B-5 갱신, 다음은 Phase 3(퀴즈 메타데이터
 REST CRUD)부터.
 
 ## 2026-08-11 — 퀴즈 만들기 웹 UI Phase 3(퀴즈 메타데이터 REST CRUD), 같은 세션
@@ -508,7 +508,7 @@ web_quiz_editor_routes.ts`(Express Router, `web_express_app.ts`에 `requireWebSe
 마스킹, toggle-public 태그 검증), `db_manager.test.js`/`user_quiz_info_manager.test.js`에 신규 함수
 검증 추가. 검증: `npx tsc --noEmit`/`npm run lint`(0 error)/`npm test`(312 pass)/양쪽
 `npm run build` 전부 통과. **미검증** — 실제 Discord+브라우저 테스트 전무, 다음 세션 최우선
-(`docs/TEST_CHECKLIST.md` T 섹션에 항목 추가). `docs/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md`
+(`docs/TEST_CHECKLIST.md` T 섹션에 항목 추가). `docs/plans/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md`
 B-5 갱신, 다음은 Phase 4(문제 CRUD REST + 프론트 문제 편집기)부터.
 
 **✅ 2026-08-11 Phase 3 UI 피드백 3건 반영, 같은 세션**: 사용자가 코드 리뷰 중 3가지 UI 개선을 요청함.
@@ -558,11 +558,11 @@ CSS 추가 없음.
 duplicate 소유권 위반 404, 삭제/복제 데이터 검증). 검증: `npx tsc --noEmit`/`npm run lint`(0 error)/
 `npm test`(322 pass)/양쪽 `npm run build`/컴파일된 라우터 require 스모크 테스트 전부 통과. **미검증** —
 실제 Discord+브라우저 테스트 전무, 다음 세션 최우선(`docs/TEST_CHECKLIST.md`에 항목 추가).
-`docs/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md` B-5 갱신, 다음은 Phase 5(폴리시 + 통합 검증)부터.
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md`/`docs/ACTIVE_PLAN.md` B-5 갱신, 다음은 Phase 5(폴리시 + 통합 검증)부터.
 
 ## 2026-08-12 — 퀴즈 만들기 웹 UI Phase 4 UI 피드백 4건 반영, 같은 세션
 
-사용자가 문제 목록/편집 화면을 직접 보고 승인된 Phase 0 목업(`docs/WEB_QUIZ_CREATION_UI_MOCKUP.html`)의
+사용자가 문제 목록/편집 화면을 직접 보고 승인된 Phase 0 목업(`docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html`)의
 설계가 상당수 빠졌다고 지적: (1) 문제 목록 행이 단순 텍스트뿐이라 경계가 애매함, (2) 클릭으로 편집
 화면 이동은 되지만 명시적 수정 버튼이 없음, (3) "1번 문제"식 표시만으로는 문제를 구별할 수 없음(목업엔
 유형/내용 태그가 있었음 + 사용자 재확인 결과 필수 입력값인 `answers`(주관식 텍스트/OX/객관식 선택값)도
@@ -709,7 +709,7 @@ WEB_UI_REMAINING_SCREENS_PLAN.md`(신규)에 분리.
 
 ## 2026-08-12 — 나머지 디스코드 전용 화면(안내/공지사항/서버 설정) 웹 포팅 완료 (B-6, 같은 세션)
 
-`docs/WEB_UI_REMAINING_SCREENS_PLAN.md`가 정리해둔 "착수 전 결정 필요 사항" 5개를 플랜모드로 전부
+`docs/plans/WEB_UI_REMAINING_SCREENS_PLAN.md`가 정리해둔 "착수 전 결정 필요 사항" 5개를 플랜모드로 전부
 확정: **권한 체크는 추가하지 않음**(서버 설정을 아무 서버원이나 바꿀 수 있는 건 버그가 아니라 의도된
 기존 동작 — 사용자 확인, 디스코드/웹 둘 다 그대로 유지), **패치노트 탭은 스코프 아웃**(더 이상 안
 씀, 공지사항만 유지), **DB 쿼리는 웹 전용 함수를 새로 파라미터화**(기존 `db_option.ts`는 무변경),
@@ -752,7 +752,7 @@ mtime을 저장해, `GET /api/notices` 응답의 최신 mtime과 비교해 트�
 
 ## 2026-08-12 — 문제 미리보기 마크다운 지원 + 웹 API 보안 점검 완료 (B-7, 별도 세션)
 
-인수인계 문서(`docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`)의 조사 결과를 재조사 없이 바로
+인수인계 문서(`docs/plans/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`)의 조사 결과를 재조사 없이 바로
 착수. 착수 전 rate limit 스코프(전체 API vs 쓰기 전용, 토큰 vs IP)와 작업 순서만 사용자에게 확인
 (계층형 - 조회 느슨/쓰기 빡빡, 토큰 우선+세션 없는 요청은 IP 폴백, 마크다운 먼저).
 
@@ -936,7 +936,7 @@ Fisher-Yates `shuffleArray` 헬퍼를 추가해 3곳 전부 교체.
 ## 2026-08-12 — `auto_script/` 운영 스크립트 조사 완료 (인수인계용, 코드 미수정)
 
 같은 세션 마지막에 사용자가 "다음 세션에서 봇 자동 설치/실행/중지 스크립트를 개선할 것"이라고
-예고, 코드 수정 없이 현재 상태만 조사해서 `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`로 정리해둠.
+예고, 코드 수정 없이 현재 상태만 조사해서 `docs/plans/SERVER_SCRIPT_IMPROVEMENT_PLAN.md`로 정리해둠.
 `auto_script/` 전체 파일 지도, cron 등록 스케줄(봇이 하루 2번 9시/21시에 의도적으로 재시작되는
 운영 방식), 발견한 문제 8건(가장 심각한 건 `install_quizbot3.sh`가 클론하는 저장소 주소
 `OtterBK/Quizbot3`가 이 저장소의 실제 origin `OtterBK/discord-quizbot-v2`와 다르다는 것 — 새 서버

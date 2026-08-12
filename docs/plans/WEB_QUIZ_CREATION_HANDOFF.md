@@ -2,7 +2,7 @@
 
 > **✅ 설계 완료 + Phase 0(UI 목업) 완료 (2026-08-11).** 이 문서가 정리해둔 질문들은 후속 세션에서
 > 전부 확정됐고, Phase 0~5 상세 계획과 승인된 UI 목업까지 나왔다. 상세는
-> `docs/ACTIVE_PLAN.md` B-5, 목업은 `docs/WEB_QUIZ_CREATION_UI_MOCKUP.html`, 전체 설계 원본은
+> `docs/ACTIVE_PLAN.md` B-5, 목업은 `docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html`, 전체 설계 원본은
 > `C:\Users\wjswo\.claude\plans\gleaming-foraging-planet.md`. **다음 세션은 Phase 1(코드 착수)부터** —
 > 이 문서는 그 이전 단계(질문 정리)의 기록으로 아래 남겨둠.
 >
@@ -13,7 +13,7 @@
 
 ## 요청 배경
 
-지금까지 완료된 `docs/WEB_INTEGRATION_PLAN.md`(Phase 1~4)는 전부 **"퀴즈 선택"**(이미 존재하는
+지금까지 완료된 `docs/plans/WEB_INTEGRATION_PLAN.md`(Phase 1~4)는 전부 **"퀴즈 선택"**(이미 존재하는
 퀴즈를 고르는 것)의 웹 연동이었다. 이번에 요청받은 건 **"퀴즈 만들기"**(문제를 새로 작성/편집하는
 것)를 웹에서 제공하는 것 — 디스코드로 치면 `/퀴즈만들기`(`createQuizToolUIHolder`) 이하의 흐름
 전체(`UserQuizListUI` → `UserQuizInfoUI` → `UserQuestionInfoUI`)에 해당한다.
@@ -71,7 +71,7 @@ Phase 1~4는 전부 "읽기 전용 탐색 + 최종 확정 버튼 1번"에 가까
    개수(현재 50개) 등 기존 제약을 API 레벨에서 어떻게 재검증할지.
 4. **이미지/오디오 입력 방식**: URL만 받을지, 실제 파일 업로드도 지원할지, 미리듣기를 웹에서 어떻게
    재생시킬지.
-5. **B-1(문제 일괄 등록 Export/Import)과의 관계**: `docs/B1_BULK_IMPORT_EXPORT_TODO.md`에 이미
+5. **B-1(문제 일괄 등록 Export/Import)과의 관계**: `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md`에 이미
    미결정 상태로 대기 중인, 성격이 겹치는 기능(파일 첨부로 문제 일괄 등록). 같이 설계할지, 완전히
    별도로 갈지 먼저 정해야 함 — 착수 전 그 문서도 같이 열어볼 것.
 6. **`user-question-info-ui.ts` 리팩터 여부**: 웹 API로 로직을 옮기는 김에 이 파일을 정리할지,
@@ -79,9 +79,9 @@ Phase 1~4는 전부 "읽기 전용 탐색 + 최종 확정 버튼 1번"에 가까
 
 ## 참고 문서
 
-- `docs/WEB_INTEGRATION_PLAN.md` — 퀴즈 선택 웹 연동 전체(Phase 1~4), 재사용 가능한 아키텍처
+- `docs/plans/WEB_INTEGRATION_PLAN.md` — 퀴즈 선택 웹 연동 전체(Phase 1~4), 재사용 가능한 아키텍처
   패턴 전부 여기 기록돼 있음.
-- `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 성격이 겹치는 미결정 기능.
+- `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md` — 성격이 겹치는 미결정 기능.
 - `quizbot/quiz_ui/CLAUDE.md` — `user-quiz-list-ui.js`/`user-quiz-info.ui.js`/
   `user-question-info-ui.js` 각 파일 요약.
 - `quizbot/managers/CLAUDE.md` — "퀴즈 선택 웹 연동" 섹션(마스터 vs 클러스터 책임 분리 기준).

@@ -13,7 +13,7 @@
 ## 파일별 요약
 
 - **`report_state.js`** — 원본에서 모듈 최상위 변수였던 `bot_client`를 여러 파일이 공유해야 해서 뺀 것. `setClient(client)`/`getClient()`만 있음. `bot.js`에서 `report_manager.initialize(client)` 호출 시 채워짐.
-- **`chat_cache.js`** — `chat_content_cache`(신고 접수 시 채팅 원문 임시 보관, 5분 TTL). `cleanUpChatCache`가 1분마다 정리. **주의**: `insertChatCache`가 이미 캐시된 chat_id에 대해 `cached_time`을 갱신 못하던 버그가 있었는데 수정됨(`docs/BUGS_FOUND.md` Phase 5 — 원본에는 없던 `'use strict'`를 실수로 붙였다가 sloppy-mode에서 조용히 무시되던 버그가 표면화되며 발견함).
+- **`chat_cache.js`** — `chat_content_cache`(신고 접수 시 채팅 원문 임시 보관, 5분 TTL). `cleanUpChatCache`가 1분마다 정리. **주의**: `insertChatCache`가 이미 캐시된 chat_id에 대해 `cached_time`을 갱신 못하던 버그가 있었는데 수정됨(`docs/archive/BUGS_FOUND.md` Phase 5 — 원본에는 없던 `'use strict'`를 실수로 붙였다가 sloppy-mode에서 조용히 무시되던 버그가 표면화되며 발견함).
 - **`report_chat_info.js`** — `getChatId`/`extractChatInfo`(chat_id 포맷은 `"guild_id-user_id-timestamp"`), `CHAT_INFO_COLUMN`/`REPORT_INFO_COLUMN`(DB 컬럼 목록), `REPORT_PROCESSED_RESULT_TYPE`(`IN_PROGRESS`/`BANNED`/`DENY`)/`FOLLOWUP_PROCESSED_RESULT_TYPE`(`IN_PROGRESS`/`UNBANNED`/`BANNED`/`GUILD_BANNED`) enum.
 - **`report_submission.js`** — 유저가 신고 버튼을 누르는 흐름(`requestReportChatModal`/`submitReportChatModal`).
 - **`report_processing_core.js`** — 신고 처리 핵심(밴 적용, DB 반영, 알림 발송). 수동/자동 양쪽의 공통 의존.

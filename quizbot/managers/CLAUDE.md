@@ -4,7 +4,7 @@
 
 ## 오디오/캐시
 
-- **`audio_cache_manager.js`** — 노래 맞추기 퀴즈용 yt-dlp 다운로드 + 캐시 파이프라인. 캐시는 `video_id` 첫 글자로 해싱된 하위 폴더(`getHashedPath`)에 저장, 성공하면 webm으로 변환(`convertToWebm`). 함수들이 서로 강하게 얽혀있는 단일 파이프라인이라 **구조 분리를 의도적으로 하지 않음**(`docs/REFACTOR_PLAN.md` Phase 5 결정). 순수 함수 4개(`getHashedPath`/`getDownloadResultType`/`getExpectedErrorType`/`executeDownloadProcess`)는 유닛테스트를 위해 추가로 export됨. `forceCaching`은 대량 사전 캐싱용 CLI성 함수. **주의**: `docs/BUGS_FOUND.md`에 이 파일 관련 미수정 버그 2건 기록됨 (convertToWebm의 unlink 에러 로그 조건이 반대로 보임, reWriteCacheInfo의 fs.writeFileSync에 죽은 콜백 인자) — 둘 다 저위험 판단으로 보류 중. `generatePreviewClipStream(cache_file_path, audio_start_point, audio_length_sec)`(B-2, 2026-08-07 신설) — 캐시 파일에서 구간을 `-c copy`(재인코딩 없음)로 잘라 `PassThrough` 스트림으로 반환, 문제 미리듣기용(`user-question-info-ui.js`의 `sendAudioPreview`가 호출). `downloadAudioCache`는 `downloading_promises`(video_id → Promise) 맵으로 감싸져 있어(2026-08-08 수정) 같은 video_id를 동시에 여러 번 호출해도(미리듣기 연타 등) yt-dlp 프로세스를 중복 스폰하지 않고 진행 중인 Promise를 재사용함 — 실제 다운로드 로직은 `executeDownloadAudioCache`로 분리돼 있음.
+- **`audio_cache_manager.js`** — 노래 맞추기 퀴즈용 yt-dlp 다운로드 + 캐시 파이프라인. 캐시는 `video_id` 첫 글자로 해싱된 하위 폴더(`getHashedPath`)에 저장, 성공하면 webm으로 변환(`convertToWebm`). 함수들이 서로 강하게 얽혀있는 단일 파이프라인이라 **구조 분리를 의도적으로 하지 않음**(`docs/plans/REFACTOR_PLAN.md` Phase 5 결정). 순수 함수 4개(`getHashedPath`/`getDownloadResultType`/`getExpectedErrorType`/`executeDownloadProcess`)는 유닛테스트를 위해 추가로 export됨. `forceCaching`은 대량 사전 캐싱용 CLI성 함수. **주의**: `docs/archive/BUGS_FOUND.md`에 이 파일 관련 미수정 버그 2건 기록됨 (convertToWebm의 unlink 에러 로그 조건이 반대로 보임, reWriteCacheInfo의 fs.writeFileSync에 죽은 콜백 인자) — 둘 다 저위험 판단으로 보류 중. `generatePreviewClipStream(cache_file_path, audio_start_point, audio_length_sec)`(B-2, 2026-08-07 신설) — 캐시 파일에서 구간을 `-c copy`(재인코딩 없음)로 잘라 `PassThrough` 스트림으로 반환, 문제 미리듣기용(`user-question-info-ui.js`의 `sendAudioPreview`가 호출). `downloadAudioCache`는 `downloading_promises`(video_id → Promise) 맵으로 감싸져 있어(2026-08-08 수정) 같은 video_id를 동시에 여러 번 호출해도(미리듣기 연타 등) yt-dlp 프로세스를 중복 스폰하지 않고 진행 중인 Promise를 재사용함 — 실제 다운로드 로직은 `executeDownloadAudioCache`로 분리돼 있음.
 
 ## 공지사항
 
@@ -24,7 +24,7 @@
 
 ## 신고/피드백
 
-- **`feedback_manager.js`** — 퀴즈 👍 추천. `addQuizLike`/`addQuizLikeAuto`/`checkAlreadyLike`. 추천 수가 `SYSTEM_CONFIG.CERTIFY_LIKE_CRITERIA`를 넘으면 자동으로 `db_manager.certifyQuiz` 호출(인증 마크). 예전에 있던 `@Deprecated` 죽은 코드(`createDynamicQuizFeedbackComponent`/`do_event`)는 삭제됨(`docs/DEPRECATED_CODE_REMOVED.md` 참고).
+- **`feedback_manager.js`** — 퀴즈 👍 추천. `addQuizLike`/`addQuizLikeAuto`/`checkAlreadyLike`. 추천 수가 `SYSTEM_CONFIG.CERTIFY_LIKE_CRITERIA`를 넘으면 자동으로 `db_manager.certifyQuiz` 호출(인증 마크). 예전에 있던 `@Deprecated` 죽은 코드(`createDynamicQuizFeedbackComponent`/`do_event`)는 삭제됨(`docs/archive/DEPRECATED_CODE_REMOVED.md` 참고).
 - **`report_manager.js`** — 신고 처리 전체의 얇은 facade. 상세: `report/CLAUDE.md`.
 
 ## 멀티플레이 (서버 간 대결)
@@ -35,30 +35,30 @@
 - **`multiplayer_session_registry.js`** — `multiplayer_sessions` 레지스트리 객체 + `cluster_manager`(discord-hybrid-sharding 참조) + `broadcast(signal)` + `sendMultiplayerLobbyCount()`.
 - **`multiplayer_mmr.js`** — MMR 계산 순수 함수(`calcWinnerMMR`/`calcLoserMMR`), 부수효과 없어 테스트하기 쉬움. **상대 길드의 MMR/전적은 전혀 참조하지 않음**(Elo류 상대평가 아님, 각자 자기 승률/점수만 봄) — 의도된 설계, 실력차 비교가 필요하면 별도 재설계 필요. `calcLoserMMR`의 `question_ratio`(2026-08-12, MMR 비대칭 보정)는 원래 `Math.min(0.5, ...)`로 캡이 걸려있어서 `calcWinnerMMR`의 캡 없는 `question_ratio`와 비대칭이었음(풀게임 패배가 최대 -40점, 승리는 최대 120점) — 사용자 피드백("점수 변동폭 부적절")으로 캡 제거, 승자와 동일 구조로 맞춤. 승률 보너스(이미 승률 높은 길드가 이기면 더 받는 부분)는 안 건드림.
 - **`multiplayer_guild_info.js`** — `MultiplayerGuildInfo` 클래스, 대결에 참가한 개별 길드의 상태(참가자, 점수, 동기화 여부 등).
-- **`multiplayer_session.js`** — `MultiplayerSession` 클래스(~1000줄) + `SESSION_STATE` enum. 대결 세션의 생명주기 전체(로비 생성 → 시작 → 진행 → 종료/정리). `changeHost()`에 방장 교체 시 레지스트리 재등록 누락 버그가 있었는데 수정됨(`docs/BUGS_FOUND.md` Phase 3).
+- **`multiplayer_session.js`** — `MultiplayerSession` 클래스(~1000줄) + `SESSION_STATE` enum. 대결 세션의 생명주기 전체(로비 생성 → 시작 → 진행 → 종료/정리). `changeHost()`에 방장 교체 시 레지스트리 재등록 누락 버그가 있었는데 수정됨(`docs/archive/BUGS_FOUND.md` Phase 3).
 - **`multiplayer_signal.js`** — `CLIENT_SIGNAL`(0x00~0x12)/`SERVER_SIGNAL`(0x80~0x94, 최상위 비트 set) enum. IPC 메시지 방향 구분용.
-- **`multiplayer_signal_handlers.js`** — `onSignalReceived` 디스패치 + `CLIENT_SIGNAL`별 `handle*` 함수 18개. **주의**: `isClientSignal(signal)`이 `signal.signal_type`이 아니라 `signal` 객체 전체를 넘겨받아 비트 검증이 사실상 무력화된 버그가 있음(`docs/BUGS_FOUND.md` Phase 3) — IPC 신호 검증 영역이라 검증 없이 고치지 않고 기록만 해둔 상태.
+- **`multiplayer_signal_handlers.js`** — `onSignalReceived` 디스패치 + `CLIENT_SIGNAL`별 `handle*` 함수 18개. **주의**: `isClientSignal(signal)`이 `signal.signal_type`이 아니라 `signal` 객체 전체를 넘겨받아 비트 검증이 사실상 무력화된 버그가 있음(`docs/archive/BUGS_FOUND.md` Phase 3) — IPC 신호 검증 영역이라 검증 없이 고치지 않고 기록만 해둔 상태.
 - **`multiplayer_chat_manager.js`** — 멀티플레이 중 전체 채팅(`/챗`, `/채팅전환`).
 
 ## 퀴즈 만들기 웹 연동 (`quiz_editor_validation.ts` + `web/web_quiz_editor_routes.ts`, 신규 2026-08-11)
 
-- **`quiz_editor_validation.ts`** — `docs/WEB_QUIZ_CREATION_PLAN.md` Phase 2. `quiz_ui/user-question-info-ui.ts`/`user-quiz-info.ui.ts`에 흩어져 있던 인터랙션-비의존 검증/파싱 로직을 순수 함수 7개로 추출(`multiplayer_mmr.js`와 동일하게 "부수효과 없는 순수 함수는 managers/에 바로 둔다" 관례, `web/` 하위가 아니라 `managers/` 바로 밑에 있음에 주의). 디스코드 UI가 지금 이 함수들을 호출하고, Phase 3의 REST 핸들러(아래)도 `isValidAudioUrl`/`isValidImageUrl`/`isDiscordCdnLink`/`canGoPublic`을 재사용한다.
-- **`web/web_quiz_editor_routes.ts`**(Phase 3, Phase 4로 문제 CRUD 추가) — 퀴즈+문제 REST CRUD 본체(`/api/my-quizzes`, Express Router). `web_express_app.ts`에 `requireWebSession`(그 파일 소속) + 이 파일이 노출하는 `requireOwnerScopedSession`으로 감싸 마운트됨. `requireQuizOwnership`(내부 미들웨어)이 `user_quiz_info_manager.loadOwnedUserQuizInfoById`로 소유권을 DB 레벨에서 검증 — 통과하면 `req.owned_quiz`에 담아 재조회 없이 재사용. 문제(question) CRUD 4개(`POST`/`PUT`/`DELETE .../questions[/:question_id]`, `POST .../duplicate`)는 DB에 문제 단건 조회 함수가 없어 매번 `owned_quiz.loadQuestionListFromDB()`로 전체를 로드해 개수 체크(최대 50개)/소속 확인(다른 퀴즈 소속이면 404)에 씀. 신규 헬퍼 `applyQuestionFields`/`validateQuestionFields`가 `quiz_ui/user-question-info-ui.ts`의 3개 모달 핸들러(`applyQuestionInfo`/`applyQuestionAdditionalInfo`/`applyQuestionAnsweringInfo`)를 단일 함수로 합침 — `is_partial` 플래그로 `POST`(전체 필드 반영)/`PUT`(body에 실린 필드만 반영)을 분기하고, `quiz_editor_validation.parseAudioRangePoints`/`redefineRepeatCount`를 그대로 재사용한다. **웹 API 보안 점검(2026-08-12, `docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`)**: `validateQuizMetadata`/`validateQuestionFields`가 기존엔 `typeof === 'string'`일 때만 길이를 검사해서 비문자열(객체/배열/숫자) 입력이 검증을 통째로 건너뛰고 그대로 저장 시도됐음(`answers` 필드는 타입 체크 없이 바로 `.trim()`을 호출해 TypeError로 요청이 죽을 수도 있었던 가장 심각한 구멍) — 공용 헬퍼 `checkOptionalStringField`로 타입 체크를 길이 체크보다 먼저 수행하도록 수정. `answer_type`도 `VALID_ANSWER_TYPES` 화이트리스트 체크 추가(기존엔 `ANSWER_TYPE` enum 외의 임의 값도 그대로 저장 가능했음). IDOR는 이미 SQL 레벨(`requireQuizOwnership`)에서 안전했음이 코드 리뷰로 확인됐고, 서로 다른 두 세션(owner_A/owner_B)이 실제로 교차 접근을 시도하는 라이브형 회귀 테스트(`test/managers/web/web_quiz_editor_routes.test.js`의 PUT/DELETE "라이브 IDOR 검증" 테스트)로 보강됨.
+- **`quiz_editor_validation.ts`** — `docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 2. `quiz_ui/user-question-info-ui.ts`/`user-quiz-info.ui.ts`에 흩어져 있던 인터랙션-비의존 검증/파싱 로직을 순수 함수 7개로 추출(`multiplayer_mmr.js`와 동일하게 "부수효과 없는 순수 함수는 managers/에 바로 둔다" 관례, `web/` 하위가 아니라 `managers/` 바로 밑에 있음에 주의). 디스코드 UI가 지금 이 함수들을 호출하고, Phase 3의 REST 핸들러(아래)도 `isValidAudioUrl`/`isValidImageUrl`/`isDiscordCdnLink`/`canGoPublic`을 재사용한다.
+- **`web/web_quiz_editor_routes.ts`**(Phase 3, Phase 4로 문제 CRUD 추가) — 퀴즈+문제 REST CRUD 본체(`/api/my-quizzes`, Express Router). `web_express_app.ts`에 `requireWebSession`(그 파일 소속) + 이 파일이 노출하는 `requireOwnerScopedSession`으로 감싸 마운트됨. `requireQuizOwnership`(내부 미들웨어)이 `user_quiz_info_manager.loadOwnedUserQuizInfoById`로 소유권을 DB 레벨에서 검증 — 통과하면 `req.owned_quiz`에 담아 재조회 없이 재사용. 문제(question) CRUD 4개(`POST`/`PUT`/`DELETE .../questions[/:question_id]`, `POST .../duplicate`)는 DB에 문제 단건 조회 함수가 없어 매번 `owned_quiz.loadQuestionListFromDB()`로 전체를 로드해 개수 체크(최대 50개)/소속 확인(다른 퀴즈 소속이면 404)에 씀. 신규 헬퍼 `applyQuestionFields`/`validateQuestionFields`가 `quiz_ui/user-question-info-ui.ts`의 3개 모달 핸들러(`applyQuestionInfo`/`applyQuestionAdditionalInfo`/`applyQuestionAnsweringInfo`)를 단일 함수로 합침 — `is_partial` 플래그로 `POST`(전체 필드 반영)/`PUT`(body에 실린 필드만 반영)을 분기하고, `quiz_editor_validation.parseAudioRangePoints`/`redefineRepeatCount`를 그대로 재사용한다. **웹 API 보안 점검(2026-08-12, `docs/plans/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`)**: `validateQuizMetadata`/`validateQuestionFields`가 기존엔 `typeof === 'string'`일 때만 길이를 검사해서 비문자열(객체/배열/숫자) 입력이 검증을 통째로 건너뛰고 그대로 저장 시도됐음(`answers` 필드는 타입 체크 없이 바로 `.trim()`을 호출해 TypeError로 요청이 죽을 수도 있었던 가장 심각한 구멍) — 공용 헬퍼 `checkOptionalStringField`로 타입 체크를 길이 체크보다 먼저 수행하도록 수정. `answer_type`도 `VALID_ANSWER_TYPES` 화이트리스트 체크 추가(기존엔 `ANSWER_TYPE` enum 외의 임의 값도 그대로 저장 가능했음). IDOR는 이미 SQL 레벨(`requireQuizOwnership`)에서 안전했음이 코드 리뷰로 확인됐고, 서로 다른 두 세션(owner_A/owner_B)이 실제로 교차 접근을 시도하는 라이브형 회귀 테스트(`test/managers/web/web_quiz_editor_routes.test.js`의 PUT/DELETE "라이브 IDOR 검증" 테스트)로 보강됨.
 - **`web/web_rate_limit.ts`**(2026-08-12 신설, 웹 API 보안 점검) — `apiRateLimiter` 미들웨어 하나만 노출, `web_express_app.ts`가 `/api/*`+`/health`에 건다(정적 자산은 제외 - 브라우저가 여러 파일을 동시에 요청하는 게 정상). `express-rate-limit` 기반, 조회(GET/HEAD)는 느슨하게/쓰기(그 외)는 그보다 빡빡하게 계층형 적용 — 고정 윈도우를 250ms/1000ms처럼 짧게 잡으면 "목록 조회 직후 상세 조회", "확정 후 바로 재선택" 같은 정상적인 연속 호출까지 막혀버려서(실제로 기존 통합 테스트 3건이 이 방식으로 깨진 걸 발견), 평균 처리량은 유지하되 1초 윈도우 안에서 짧은 버스트를 허용하는 값으로 조정됨. 최초엔 조회 1초당 4회/쓰기 1초당 3회로 시작했다가 사용자가 실사용 기준 너무 빡빡하다고 판단해 같은 날 조회 1초당 10회/쓰기 1초당 8회로 완화(수치가 또 바뀔 수 있으니 정확한 값은 코드의 `readLimiter`/`writeLimiter` 참고). 키는 `Authorization: Bearer` 토큰 우선(같은 길드/네트워크의 여러 유저가 IP 기준으로 서로를 막는 걸 방지) — 토큰이 없거나 무효해도 그 값 자체를 키로 써서 세션 발급 전 요청/토큰 무차별 대입 시도까지 독립적으로 제한하고, 토큰이 정말 없으면 `ipKeyGenerator`(IPv6 정규화)로 IP 폴백. `MemoryStore`를 직접 생성해 들고 있어 `__resetForTest()`로 테스트 간 카운터를 초기화할 수 있음(`test/managers/web/web_rate_limit.test.js`).
 
 ## 퀴즈 선택 웹 연동 (`web/`, 신규 2026-08-08)
 
-`docs/WEB_INTEGRATION_PLAN.md`의 임시 토큰 기반 리모트 컨트롤 기능. 멀티플레이와 같은 이유로 상태를
+`docs/plans/WEB_INTEGRATION_PLAN.md`의 임시 토큰 기반 리모트 컨트롤 기능. 멀티플레이와 같은 이유로 상태를
 마스터 프로세스(`index.js`)에 둔다(`multiplayer_session_registry.js`와 동일 패턴). Phase 1(공식
 퀴즈)/Phase 2(유저 퀴즈)/Phase 3(랜덤 퀴즈)/Phase 4(멀티플레이 퀴즈)까지 전부 완료 —
-`docs/WEB_INTEGRATION_PLAN.md`의 "단계별 구현 순서" 참고. **진입점은 `/퀴즈` 직후 `SelectUIModeUI`
+`docs/plans/WEB_INTEGRATION_PLAN.md`의 "단계별 구현 순서" 참고. **진입점은 `/퀴즈` 직후 `SelectUIModeUI`
 (디스코드 UI/웹 UI 투트랙 분기)** — 디스코드 쪽 `quiz_ui/CLAUDE.md` 참고, 여기 매니저들은 어느
 진입점에서 왔는지와 무관하게 동일하게 동작. **Phase 4(멀티플레이)만 예외**: 실제 로비 생성/참가
 로직은 마스터가 아니라 그 길드를 담당하는 클러스터의 `WebHandoffUI.buildMultiplayerUI`가 처리한다
 (음성채널 체크에 실제 `GuildMember`가 필요해서) — 상세는 `quiz_ui/CLAUDE.md`의 `web-handoff-ui.js`/
 `multiplayer-quiz-lobby-ui.js` 항목 참고.
 
-**퀴즈 만들기 웹 연동(`docs/WEB_QUIZ_CREATION_PLAN.md`) Phase 1, 2026-08-11**: `web_session_manager.ts`가
+**퀴즈 만들기 웹 연동(`docs/plans/WEB_QUIZ_CREATION_PLAN.md`) Phase 1, 2026-08-11**: `web_session_manager.ts`가
 guild(길드)/owner(유저) 두 스코프를 다루도록 일반화됨 — 세션 객체에 `scope`/`scope_id`(브로드캐스트
 키로 통일, guild 세션이면 guild_id, owner 세션이면 owner_id와 동일값) 필드가 추가되고, 브로드캐스트
 함수도 `broadcast(guild_id,...)`→`broadcast(scope_id,...)`로 리네임됨(시그널 필드도 `signal.guild_id`→

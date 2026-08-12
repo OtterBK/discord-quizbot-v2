@@ -44,14 +44,14 @@
   Question(+8개 하위클래스)/TimeOver/CorrectAnswer/Clearing/Ending/Finish/HOLD, `QuizSession`/
   `MultiplayerSession` 계열).
 - 리팩터 원칙: **"리팩토링(이동/분리) 커밋과 버그 수정 커밋은 절대 섞지 않는다"**(`docs/
-  CONTRIBUTING_REFACTOR.md`) — 이동 중 버그를 발견해도 즉시 고치지 않고 `docs/BUGS_FOUND.md`에
+  CONTRIBUTING_REFACTOR.md`) — 이동 중 버그를 발견해도 즉시 고치지 않고 `docs/archive/BUGS_FOUND.md`에
   기록만 하고 넘어감(위험도가 낮다고 판단된 것들). 개발자가 직접 쓴 주석은 삭제 금지 —
-  코드가 옮겨지면 주석도 같이 옮기고, 코드 자체가 없어지면 `docs/DEPRECATED_CODE_REMOVED.md`/
-  `docs/RELOCATED_COMMENTS.md`에 원문 보존.
+  코드가 옮겨지면 주석도 같이 옮기고, 코드 자체가 없어지면 `docs/archive/DEPRECATED_CODE_REMOVED.md`/
+  `docs/archive/RELOCATED_COMMENTS.md`에 원문 보존.
 - `node:test` 스캐폴딩, `eslint.config.js`(기존 코드 관행을 규칙으로 고정한 것) 이 시기에 도입.
 
 **리스크/확인 포인트**: 이 작업 자체는 "동작 변경 없음"이 원칙이라 위험도가 낮고, 그 이후 10일간
-문제 없이 안정적으로 운영됐습니다. `docs/DUPLICATE_UI_PATTERNS.md`에 발견된 UI 빌더 중복 10건은
+문제 없이 안정적으로 운영됐습니다. `docs/archive/DUPLICATE_UI_PATTERNS.md`에 발견된 UI 빌더 중복 10건은
 **의도적으로 통합 안 함**(discord.js 빌더 싱글턴을 `cloneDeep`으로 공유하는 기존 패턴이 있어서,
 성급하게 합치면 그 패턴이 깨질 위험 — 사용자 결정 사항).
 

@@ -36,7 +36,7 @@
 
 ## 배경
 
-퀴즈 만들기 웹 UI(`docs/WEB_QUIZ_CREATION_PLAN.md`)와 나머지 화면 웹 포팅(`docs/
+퀴즈 만들기 웹 UI(`docs/plans/WEB_QUIZ_CREATION_PLAN.md`)와 나머지 화면 웹 포팅(`docs/
 WEB_UI_REMAINING_SCREENS_PLAN.md`)까지 끝난 뒤, 사용자가 이어서 요청한 두 가지 작업. 둘 다 "새
 세션에서 진행"하기로 하고, 이번 세션엔 인수인계 준비(조사)만 완료했다.
 

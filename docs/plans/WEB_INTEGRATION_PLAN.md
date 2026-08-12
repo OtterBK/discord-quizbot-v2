@@ -137,7 +137,7 @@ quiz_info 조립, `WebHandoffUI`와 공유하는 헬퍼)로 자기 자신의 `qu
 쌓여서 "뒤로가기"가 이전 웹 재선택 내역을 하나씩 되짚는 부작용이 생김). 즉 확정 후에도 웹에서 계속
 다른 퀴즈를 고르거나 문제 수를 바꿔서 디스코드 화면에 실시간 반영할 수 있다.
 
-### 5-2. `force_take` 레이스 버그 수정 (2026-08-12, `docs/WEB_QUIZ_CREATION_PLAN.md` Phase 5 검증 중 발견)
+### 5-2. `force_take` 레이스 버그 수정 (2026-08-12, `docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 5 검증 중 발견)
 
 "권한 가져오기"는 기존에도 토큰을 뺏는 게 아니라 완전히 새 토큰을 발급하고 있었다(`forceTakeSession`이
 예전 토큰을 지우고 `createSession`으로 새 토큰 생성 — 원래 설계 그대로, 테스트로도 고정돼 있었음).
@@ -226,7 +226,7 @@ Express API/프론트엔드는 변경 없음(진입 지점만 이동).
 
 ## UI 목업 (승인 완료)
 
-**`docs/WEB_UI_MOCKUP.html`** — 이 저장소에 커밋된 자체완결 HTML 파일. 브라우저로 직접 열면 더미
+**`docs/mockups/WEB_UI_MOCKUP.html`** — 이 저장소에 커밋된 자체완결 HTML 파일. 브라우저로 직접 열면 더미
 데이터로 3개 탭(공식/유저/랜덤 퀴즈) 전체 흐름을 확인할 수 있음(다크모드 토글 포함). **다음 세션이 실제
 `web-frontend/` 프로젝트를 만들 때 이 파일의 디자인 토큰(색상/타이포/레이아웃)과 인터랙션 구조를 그대로
 가져가면 됨** — 사용자가 최종 승인한 디자인.
@@ -330,7 +330,7 @@ Phase 0~1에서 실제로 만들어진 파일(2026-08-08 토큰 생명주기 재
 - `config/system_setting.js` (수정) — `WEB_SERVER_PORT`/`WEB_BASE_URL`/`WEB_SESSION_EXPIRE_SEC`/
   `WEB_SESSION_GC_INTERVAL_SEC`/`WEB_FRONTEND_DIST_PATH`(PROJECT_ROOT 기준, dist/ 빌드 후에도 안전) +
   `CUSTOM_EVENT_TYPE.receivedWebSessionSignal` 추가.
-- `web-frontend/` (신규, 루트) — **React+Vite, Tailwind 없이 승인된 CSS(`docs/WEB_UI_MOCKUP.html`의
+- `web-frontend/` (신규, 루트) — **React+Vite, Tailwind 없이 승인된 CSS(`docs/mockups/WEB_UI_MOCKUP.html`의
   `<style>` 전체)를 `src/styles.css`로 그대로 이식**(원래 계획은 Tailwind였으나, 승인된 목업이 처음부터
   순수 CSS라 Tailwind로 재작성하면 시각적 드리프트 위험만 있고 얻는 게 없어 2026-08-08 착수 시점에
   변경 — 체크포인트 1 진행 전 사용자 승인받음). `src/api.js`(토큰 추출+마스킹+fetch 래퍼),
@@ -378,7 +378,7 @@ Phase 2(유저 퀴즈)에서 실제로 만들어진/바뀐 파일(2026-08-08):
 - `web-frontend/src/UserQuizTab.jsx` (신규) — 검색(제목/한줄소개/제작자)+태그 AND 필터(칩, `QUIZ_TAG`
   비트마스크)+인증 필터 토글+정렬(업데이트순/추천순/인기순/이름순, 전부 클라이언트 사이드 - dev 탭의
   "한 번에 불러와서 브라우저에서 필터"와 동일 관행)+카드 그리드+상세 패널(문제 수 스테퍼+확정),
-  `docs/WEB_UI_MOCKUP.html`의 유저 퀴즈 탭 마크업/인터랙션을 그대로 이식.
+  `docs/mockups/WEB_UI_MOCKUP.html`의 유저 퀴즈 탭 마크업/인터랙션을 그대로 이식.
 - `web-frontend/src/App.jsx` (수정) — 탭 활성화 판단을 `session.mode`(세션 고정값) 비교에서
   `AVAILABLE_MODES = {dev:true, user:true, omakase:false}` 상수 조회로 변경. `UserQuizTab` 렌더 분기 추가.
 - `test/managers/db_manager.test.js` (수정) — `selectQuizInfoById` 쿼리 검증 테스트 추가, 재수출
@@ -454,7 +454,7 @@ Phase 3 직후 사용자 UX 피드백 6건 반영(2026-08-09, 프론트엔드만
 
 ## 단계별 구현 순서
 
-0. ~~**Phase -1 — UI 목업**~~ **완료** (`docs/WEB_UI_MOCKUP.html`, 2026-08-08 사용자 승인).
+0. ~~**Phase -1 — UI 목업**~~ **완료** (`docs/mockups/WEB_UI_MOCKUP.html`, 2026-08-08 사용자 승인).
 1. ~~**Phase 0 — 인프라 스켈레톤**~~ **완료** (2026-08-08): IPC 메시지 타입 2개, 마스터
    `web_session_manager.ts`(토큰 발급/force_take/close/heartbeat/GC), `web_express_app.ts`(Express
    최소 골격, `/health` + 정적 파일 서빙), `web_token_utility.ts`, 설정값 추가. UI 변경 없음.
@@ -496,7 +496,7 @@ Phase 3 직후 사용자 UX 피드백 6건 반영(2026-08-09, 프론트엔드만
    `QUIZ_TAG` 태그 목록, `quiz_size`는 목록에 없으니 카드에 노출 안 함) + `GET /api/user-quizzes/:quiz_id`
    (상세, `selectQuestionInfo`로 실제 문제 수 계산 — confirm 시에도 이 값으로 재검증해 프론트엔드
    캐시값을 신뢰하지 않음). 프론트엔드 `UserQuizTab.jsx` 신설(검색+태그 AND 필터+인증 토글+정렬+
-   카드 그리드+상세/스테퍼/확정, `docs/WEB_UI_MOCKUP.html`의 유저 퀴즈 탭 디자인을 그대로 이식),
+   카드 그리드+상세/스테퍼/확정, `docs/mockups/WEB_UI_MOCKUP.html`의 유저 퀴즈 탭 디자인을 그대로 이식),
    `App.jsx`는 세션 `mode` 락을 제거하고 `AVAILABLE_MODES`(dev/user는 true, omakase는 아직 false)로
    탭 활성화 여부만 판단하도록 변경.
    - 검증: `npx tsc --noEmit`(0 error) / `npm run lint`(0 error, 58 warning 기존 수준 유지) /

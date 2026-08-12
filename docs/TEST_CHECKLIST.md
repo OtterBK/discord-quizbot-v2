@@ -235,7 +235,7 @@
 > "invalid_or_expired_token 에러" 3건이 나왔음. 원인은 "선택 완료"가 서버 쪽에서 토큰을 즉시 파기하던
 > 것 하나였음. 응급 수정(종료 화면으로 막기) 대신 근본 원인을 고쳐서, **토큰 파기 시점을 "퀴즈 실제
 > 시작" 또는 "그 길드의 화면이 다른 이유로 사라질 때"로 옮기고**, `DevQuizInfoUI`가 직접 웹 신호에
-> 반응하도록 만들어 확정 후에도 계속 재선택이 되게 바꿨음(`docs/WEB_INTEGRATION_PLAN.md` 5-1 참고).
+> 반응하도록 만들어 확정 후에도 계속 재선택이 되게 바꿨음(`docs/plans/WEB_INTEGRATION_PLAN.md` 5-1 참고).
 > 재설계 직후 순환 require 크래시가 하나 더 나왔고(퀴즈1 확정 → 퀴즈2로 재선택 시
 > `Cannot read properties of undefined` 에러) 이것도 수정 완료.
 >
@@ -468,7 +468,7 @@
 
 ## T. 퀴즈 만들기 웹 연동 — Phase 1 세션 스코프 일반화 + 진입점 스켈레톤 (2026-08-11, 핵심 흐름 확인됨)
 
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 1. 이 섹션 자체는 DM 투트랙 진입 화면과 잠금 화면만 확인(퀴즈
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 1. 이 섹션 자체는 DM 투트랙 진입 화면과 잠금 화면만 확인(퀴즈
 메타데이터 CRUD는 Phase 3 완료 - U 섹션 참고, 문제 CRUD는 Phase 4 완료 - V 섹션 참고). 사전 준비는 O
 섹션과 동일(`npm run build` 백엔드+`web-frontend` 후 재시작 필요).
 
@@ -496,7 +496,7 @@
 
 ## U. 퀴즈 만들기 웹 연동 — Phase 3 퀴즈 메타데이터 REST CRUD (2026-08-11 구현, 2026-08-12 실사용 검증 완료)
 
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 3. 문제(question) 자체의 추가/수정/삭제는 아직 안 됨(Phase 4) —
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 3. 문제(question) 자체의 추가/수정/삭제는 아직 안 됨(Phase 4) —
 이 섹션은 퀴즈 목록/생성/메타데이터/태그/공개토글/삭제만 확인. `/editor` 링크로 들어가면 이제 T 섹션의
 플레이스홀더 대신 실제 목록 화면이 떠야 한다.
 
@@ -542,7 +542,7 @@
 
 ## V. 퀴즈 만들기 웹 연동 — Phase 4 문제(Question) CRUD (2026-08-11 구현, 2026-08-12 실사용 검증 완료)
 
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 4. 사전 준비는 O 섹션과 동일 + 비공개 퀴즈 1개를 미리 만들어둘
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 4. 사전 준비는 O 섹션과 동일 + 비공개 퀴즈 1개를 미리 만들어둘
 것(문제 최대 50개 테스트를 위해 문제가 몇 개 있는 퀴즈면 더 좋음). U 섹션 완료 후 이어서 진행.
 
 **문제 추가**
@@ -623,7 +623,7 @@
 
 ## W. 퀴즈 만들기 웹 연동 — Phase 5 폴리시 + 통합 검증 (2026-08-12, 검증 완료)
 
-`docs/WEB_QUIZ_CREATION_PLAN.md` Phase 5. U/V 섹션과 달리 특정 화면이 아니라 인프라/엣지케이스
+`docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 5. U/V 섹션과 달리 특정 화면이 아니라 인프라/엣지케이스
 검증 항목.
 
 - [x] 투트랙 선택 버튼(`/퀴즈`, `/퀴즈만들기`)의 라벨이 숫자가 아니라 "디스코드 UI"/"웹 UI" 텍스트로
@@ -639,7 +639,7 @@
 
 ## X. 나머지 디스코드 전용 화면 웹 포팅 — 안내/공지사항/서버 설정 (2026-08-12 구현, 실사용 검증 완료)
 
-`docs/WEB_UI_REMAINING_SCREENS_PLAN.md`. "퀴즈 선택 웹"(`/퀴즈` → 웹 UI, App.jsx) 헤더의 "☰ 더보기"
+`docs/plans/WEB_UI_REMAINING_SCREENS_PLAN.md`. "퀴즈 선택 웹"(`/퀴즈` → 웹 UI, App.jsx) 헤더의 "☰ 더보기"
 드롭다운 메뉴로 진입. 권한 체크는 의도적으로 없음(디스코드와 동일 동작).
 
 - [x] 헤더의 "☰ 더보기" 버튼을 누르면 "🛠 퀴즈 만들기 안내"/"📢 공지사항"/"⚙️ 서버 설정" 3항목
@@ -665,7 +665,7 @@
 
 ## Y. 문제 미리보기 마크다운 지원 + 웹 API 보안 점검 (2026-08-12 구현, 코드/테스트 레벨만 검증 — 실사용 미검증)
 
-`docs/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`. 보안 점검은 코드 리뷰+자동 테스트(`tsc`/`lint`/
+`docs/plans/QUESTION_PREVIEW_AND_SECURITY_REVIEW_PLAN.md`. 보안 점검은 코드 리뷰+자동 테스트(`tsc`/`lint`/
 `test` 343 pass)로 검증됨 — 아래 항목은 실제 Discord+브라우저로 아직 확인 안 함.
 
 - [ ] 퀴즈 만들기 웹(`/퀴즈만들기` → 웹 UI)에서 문제 텍스트/힌트/정답 공개 문구에 `**굵게**`, `*기울임*`,
@@ -702,7 +702,7 @@
 
 ## Z. MMR 비대칭 보정 + 랜덤 추첨 셔플 버그 수정 (2026-08-12 구현, 코드/테스트 레벨만 검증 — 실사용 미검증)
 
-`docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` 11/12번. 자동 테스트(`tsc`/`lint`/`test` 347 pass)로만
+`docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md` 11/12번. 자동 테스트(`tsc`/`lint`/`test` 347 pass)로만
 검증됨 — 아래는 실제 Discord 멀티플레이로 아직 확인 안 함.
 
 - [ ] 실제 멀티플레이 대결을 몇 판 진행해서 MMR 변동폭이 승/패 모두 체감상 자연스러운지(패배 시
@@ -717,7 +717,7 @@
 
 ## AA. 멀티플레이 밴 메시지 문구 개선 (2026-08-12 구현, 코드 레벨만 검증 — 실사용 미검증)
 
-`docs/UI_IMPROVEMENT_PLAN_ROUND2.md` B-5 마지막 [P1] 항목. `tsc`/`lint`/`test`(347 pass)로만 검증됨.
+`docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md` B-5 마지막 [P1] 항목. `tsc`/`lint`/`test`(347 pass)로만 검증됨.
 
 - [ ] 밴된 유저 계정으로 로비 생성/참가를 시도해서 "회원님이 ... 위반하여..." 메시지(+문의처)가 뜨는지
 - [ ] 밴된 서버(길드ID)에서 로비 생성/참가를 시도해서 "이 서버가 ... 위반하여..." 메시지(+문의처)가
@@ -726,7 +726,7 @@
 
 ## AB. UI 개선 2라운드 [P2]/[P3] 일부 (2026-08-12 구현, 코드/테스트 레벨만 검증 — 실사용 미검증)
 
-`docs/UI_IMPROVEMENT_PLAN_ROUND2.md` B-1 전체 4항목 + B-4 2항목 + B-7 1항목. `tsc`/`lint`/`test`
+`docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md` B-1 전체 4항목 + B-4 2항목 + B-7 1항목. `tsc`/`lint`/`test`
 (349 pass)로만 검증됨.
 
 - [ ] `/도움말` 입력 시 안내 메시지가 정상적으로 뜨는지(ephemeral)

@@ -1,15 +1,15 @@
 # 퀴즈 만들기 웹 UI 제공 — 구현 계획
 
-> `docs/WEB_INTEGRATION_PLAN.md`(퀴즈 *선택* 웹 연동)와 대칭되는 문서. 그쪽은 "이미 있는 퀴즈를
+> `docs/plans/WEB_INTEGRATION_PLAN.md`(퀴즈 *선택* 웹 연동)와 대칭되는 문서. 그쪽은 "이미 있는 퀴즈를
 > 고르는" 흐름을 웹으로 옮겼고, 이 문서는 "퀴즈를 새로 만들고 편집하는" 흐름(`/퀴즈만들기` →
 > `createQuizToolUIHolder` → `UserQuizListUI` → `UserQuizInfoUI` → `UserQuestionInfoUI`)을 웹으로
-> 옮기는 작업을 다룬다. 인수인계 배경은 `docs/WEB_QUIZ_CREATION_HANDOFF.md` 참고.
+> 옮기는 작업을 다룬다. 인수인계 배경은 `docs/plans/WEB_QUIZ_CREATION_HANDOFF.md` 참고.
 
 ## Context
 
-기존 "퀴즈 선택" 웹 연동(`docs/WEB_INTEGRATION_PLAN.md`, Phase 1~4, 완료·운영 중)은 "이미 있는 퀴즈를
+기존 "퀴즈 선택" 웹 연동(`docs/plans/WEB_INTEGRATION_PLAN.md`, Phase 1~4, 완료·운영 중)은 "이미 있는 퀴즈를
 고르는" 흐름만 웹으로 옮겼다. 이번 요청은 "퀴즈를 새로 만들고 편집하는" 흐름을 웹으로 옮기는 것 —
-`docs/WEB_QUIZ_CREATION_HANDOFF.md`(설계 착수 전 인수인계 문서)의 후속 세션 산출물이다. 설계 세션에서
+`docs/plans/WEB_QUIZ_CREATION_HANDOFF.md`(설계 착수 전 인수인계 문서)의 후속 세션 산출물이다. 설계 세션에서
 핵심 설계 결정을 사용자와 확정했고, 아래는 그 결정들을 반영한 구체적 구현 계획이다.
 
 ## 조사에서 확정된 핵심 사실 (설계 전제)
@@ -46,7 +46,7 @@
 
 ## 사용자가 확정한 설계 결정
 
-1. **범위**: B-1(문제 일괄 등록 Export/Import, `docs/B1_BULK_IMPORT_EXPORT_TODO.md`)은 완전히 별도 —
+1. **범위**: B-1(문제 일괄 등록 Export/Import, `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md`)은 완전히 별도 —
    이번 계획에 포함 안 함.
 2. **락 UX**: 기존 토큰/락/하트비트/GC 패턴 재사용(단, 길드가 아니라 유저 단위로 스코프 일반화).
 3. **진입점**: `/퀴즈만들기`에도 `SelectUIModeUI`와 동일한 "디스코드 UI/웹 UI" 2트랙 분기 추가.
@@ -82,7 +82,7 @@
 
 ## Phase 0 — UI 목업 ✅ 완료 (2026-08-11)
 
-`docs/WEB_QUIZ_CREATION_UI_MOCKUP.html` — 퀴즈 목록/퀴즈 상세/문제 편집 3화면 + "실제 디스코드에선
+`docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html` — 퀴즈 목록/퀴즈 상세/문제 편집 3화면 + "실제 디스코드에선
 이렇게 보여요" 미리보기(문제 출제 중/힌트/정답 공개 3상태)를 정적 HTML로 구현, 사용자 승인 완료.
 코드/DB/세션 인프라는 전혀 안 건드림.
 
@@ -282,7 +282,7 @@ OX/객관식 정답 유형에서 값을 선택하지 않고 저장하면 주관�
      먼저 읽어야 의미가 파악되던 문제 — 라벨을 `'디스코드 UI'`/`'웹 UI'`로 변경(공유 컴포넌트라 두
      화면 다 자동 반영), description의 중복 "1️⃣)/2️⃣)" 안내도 간소화. `customId`는 그대로 유지해
      `onInteractionCreate` 분기 로직은 무변경.
-  2. "권한 가져오기"(force_take, `docs/WEB_INTEGRATION_PLAN.md` 하이재킹 방어) 조사 중 발견한 레이스
+  2. "권한 가져오기"(force_take, `docs/plans/WEB_INTEGRATION_PLAN.md` 하이재킹 방어) 조사 중 발견한 레이스
      버그 — force_take가 새 토큰을 발급한 직후, 예전 소유자의 `UIHolder.free()`가 보내는 `{action:
      'release', guild_id}`가 토큰을 구분하지 않고 "그 길드에 지금 매핑된 토큰"을 지워서, 막 발급된
      새 소유자의 토큰을 즉시 무효화할 수 있었음. `web_session_manager.ts`의
@@ -303,4 +303,4 @@ OX/객관식 정답 유형에서 값을 선택하지 않고 저장하면 주관�
 - `quizbot/quiz_ui/user-question-info-ui.ts` — 리팩터 대상(가장 예민한 파일).
 - `quizbot/managers/db/db_quiz.ts` / `quizbot/managers/user_quiz_info_manager.ts` — 소유권 기반 신규
   조회 함수.
-- `docs/WEB_QUIZ_CREATION_UI_MOCKUP.html` — 착수 전 UI/인게임 미리보기 목업.
+- `docs/mockups/WEB_QUIZ_CREATION_UI_MOCKUP.html` — 착수 전 UI/인게임 미리보기 목업.

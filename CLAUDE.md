@@ -1,6 +1,6 @@
 # discord-quizbot-v2
 
-한국어 Discord 퀴즈봇. 수년째 혼자 개발/운영 중인 프로덕션 봇으로, 최근 무중단 안정 운영 중. 2026-08에 대규모 구조 리팩터(`docs/REFACTOR_PLAN.md`)를 거쳤다.
+한국어 Discord 퀴즈봇. 수년째 혼자 개발/운영 중인 프로덕션 봇으로, 최근 무중단 안정 운영 중. 2026-08에 대규모 구조 리팩터(`docs/plans/REFACTOR_PLAN.md`)를 거쳤다.
 
 ## 기술 스택
 
@@ -31,7 +31,7 @@ config/                      공개 설정 + 비밀 설정 → config/CLAUDE.md
 test/                        quizbot/utility 구조를 그대로 미러링한 node:test 스위트
 resources/                   퀴즈 데이터, 오디오 캐시, BGM, banned_user.txt 등 런타임 리소스
 web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite, 독립 프로젝트, 별도 package.json) →
-                              docs/WEB_INTEGRATION_PLAN.md. tsconfig/copy-js-assets 빌드 파이프라인 및
+                              docs/plans/WEB_INTEGRATION_PLAN.md. tsconfig/copy-js-assets 빌드 파이프라인 및
                               루트 eslint.config.js 대상 밖(독립 ESM/JSX). quizbot/managers/web/web_express_app.js가
                               빌드 산출물(web-frontend/dist/)을 정적 서빙.
 ```
@@ -54,7 +54,7 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 - 응답은 전부 DM으로만 (`UI_HOLDER_TYPE.PRIVATE`) — 다른 유저 인터랙션이 애초에 그 홀더로 라우팅될 수 없음(Discord DM은 1:1).
 - 밴 목록(`resources/banned_user.txt`)은 길드ID(멀티플레이 밴)와 유저ID(퀴즈 생성 영구밴)를 **같은 파일/캐시**로 관리 (`ban_manager.js`, 의도된 동작).
 
-**IPC / 멀티 클러스터**: `discord-hybrid-sharding` 기반. `multiplayer_signal.js`의 `CLIENT_SIGNAL`/`SERVER_SIGNAL` 비트 태그(서버 시그널은 최상위 비트 set, `0x80` 이상)로 방향 구분. 이 영역은 배포 중 롤링 재시작 시 신·구 버전이 잠시 공존할 수 있어 특히 조심스럽게 다뤄야 함 — `docs/BUGS_FOUND.md`에 이 영역의 알려진(수정 안 한) 이슈가 기록돼 있음.
+**IPC / 멀티 클러스터**: `discord-hybrid-sharding` 기반. `multiplayer_signal.js`의 `CLIENT_SIGNAL`/`SERVER_SIGNAL` 비트 태그(서버 시그널은 최상위 비트 set, `0x80` 이상)로 방향 구분. 이 영역은 배포 중 롤링 재시작 시 신·구 버전이 잠시 공존할 수 있어 특히 조심스럽게 다뤄야 함 — `docs/archive/BUGS_FOUND.md`에 이 영역의 알려진(수정 안 한) 이슈가 기록돼 있음.
 
 **이름 충돌 주의**: `quizbot/managers/multiplayer_session.js`(cross-서버 대결의 `MultiplayerSession` 클래스, IPC로 동기화되는 길드 단위 대결 세션)와 `quizbot/quiz_system/session/multiplayer_session.js`(같은 길드 안에서 진행되는 State 패턴 퀴즈 세션의 `MultiplayerLobbySession`/`MultiplayerQuizSession`)는 **이름은 비슷해도 완전히 다른 클래스**. 헷갈리기 쉬우니 import 경로를 항상 확인할 것.
 
@@ -62,7 +62,7 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 
 - 세미콜론 사용, 함수 선언부 다음 줄에 여는 중괄호(`function foo()\n{`)
 - `snake_case` 변수/함수명 혼용, 클래스는 `PascalCase`
-- 개발자가 직접 쓴 주석은 **삭제 금지** — 코드가 이동하면 주석도 같이 이동, 코드 자체가 없어지면 `docs/RELOCATED_COMMENTS.md`/`docs/DEPRECATED_CODE_REMOVED.md`에 원문 보존
+- 개발자가 직접 쓴 주석은 **삭제 금지** — 코드가 이동하면 주석도 같이 이동, 코드 자체가 없어지면 `docs/archive/RELOCATED_COMMENTS.md`/`docs/archive/DEPRECATED_CODE_REMOVED.md`에 원문 보존
 - 새 기능을 짤 때도 이 스타일 그대로 따를 것 (TypeScript 전환 등 큰 방향 전환 전까지)
 
 ## 테스트 원칙
@@ -78,7 +78,11 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 - `auto_script/install_quizbot3.sh`가 설치 마지막 단계에 `npm run build`를 실행하고 `auto_script/systemd/quizbot3.service.template`으로 systemd 유닛(`quizbot3.service`, `ExecStart=node dist/index.js`)을 생성/enable함. `auto_script/server_script/quizbot_start.sh`/`quizbot_stop.sh`는 `systemctl start/stop quizbot3` 래퍼임 — 자세한 흐름은 `auto_script/정석 사용법.txt`.
 - Windows PowerShell 기본 실행 정책이 `npm run build`(`npm.ps1`)를 막을 수 있음 — `npm.cmd run build`로 우회하거나 `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`로 영구 해결.
 
-## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동)
+## 알아두면 좋은 문서 (전부 `docs/` 디렉터리, 2026-08-07 루트에서 이동, 2026-08-13 하위 폴더로 재정리)
+
+`docs/` 하위는 `ACTIVE_PLAN.md`/`COMPLETED_WORK_LOG.md`/`TEST_CHECKLIST.md`(자주 참조하는 진입점 3개)만
+루트에 남기고, 나머지는 `docs/plans/`(작업계획서·설계 문서), `docs/archive/`(완료된 로그성 기록·보존용),
+`docs/mockups/`(정적 HTML 목업)로 분류해뒀다.
 
 > **새 세션은 아래 두 문서부터 읽을 것** — 나머지 문서에 흩어진 완료/미완료 상태를 요약해서
 > 가리키는 진입점: `docs/ACTIVE_PLAN.md`(뭐가 아직 안 끝났는지), `docs/COMPLETED_WORK_LOG.md`
@@ -89,29 +93,29 @@ web-frontend/                퀴즈 선택 웹 연동 프론트엔드(React+Vite
 > `docs/COMPLETED_WORK_LOG.md`, (3) 관련 있으면 `docs/TEST_CHECKLIST.md`.
 
 **진행 기록/컨벤션 (로그성 기록, 계속 개별 문서로 유지)**
-- `docs/REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)
-- `docs/CONTRIBUTING_REFACTOR.md` — 브랜치/커밋 컨벤션 (`refactor:`/`fix:`/`feat:`/`test:`/`docs:` prefix 분리 원칙)
-- `docs/BUGS_FOUND.md` — 리팩터 중 발견한 버그 로그 (수정 완료/보류 상태 포함, 보류 항목은 왜 지금 안 고쳤는지 이유도 적혀있음)
-- `docs/PERFORMANCE_NOTES.md` — 성능 관찰 로그
-- `docs/DEPRECATED_CODE_REMOVED.md` — 삭제된 죽은 코드 원문 보존
-- `docs/RELOCATED_COMMENTS.md` — 코드 이동 중 자리를 못 찾은 주석 원문 보존
-- `docs/DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
+- `docs/plans/REFACTOR_PLAN.md` — 구조 개편 전체 계획/진행 기록 (Phase 0~6, 뭘 왜 이렇게 나눴는지)
+- `docs/plans/CONTRIBUTING_REFACTOR.md` — 브랜치/커밋 컨벤션 (`refactor:`/`fix:`/`feat:`/`test:`/`docs:` prefix 분리 원칙)
+- `docs/archive/BUGS_FOUND.md` — 리팩터 중 발견한 버그 로그 (수정 완료/보류 상태 포함, 보류 항목은 왜 지금 안 고쳤는지 이유도 적혀있음)
+- `docs/archive/PERFORMANCE_NOTES.md` — 성능 관찰 로그
+- `docs/archive/DEPRECATED_CODE_REMOVED.md` — 삭제된 죽은 코드 원문 보존
+- `docs/archive/RELOCATED_COMMENTS.md` — 코드 이동 중 자리를 못 찾은 주석 원문 보존
+- `docs/archive/DUPLICATE_UI_PATTERNS.md` — 중복 UI 생성 로직 후보 (통합은 의도적으로 보류 중)
 
 **작업계획서 (완료/미완료 요약은 ACTIVE_PLAN/COMPLETED_WORK_LOG에, 상세는 여기)**
-- `docs/WEB_INTEGRATION_PLAN.md` — 퀴즈 선택 웹 연동(임시 토큰 기반 리모트 컨트롤) 작업계획서. 설계+UI
-  목업(`docs/WEB_UI_MOCKUP.html`)까지 완료, 코드 구현은 다음 세션부터 — Phase 0(인프라 스켈레톤)부터 시작.
-- `docs/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함.
-- `docs/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
-- `docs/POST_B_ROUND_TEST_FEEDBACK_TODO.md` — A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건(미착수).
-- `docs/SERVER_SCRIPT_IMPROVEMENT_PLAN.md` — `auto_script/`(설치/실행/중지 스크립트) 개선 작업계획서.
+- `docs/plans/WEB_INTEGRATION_PLAN.md` — 퀴즈 선택 웹 연동(임시 토큰 기반 리모트 컨트롤) 작업계획서. 설계+UI
+  목업(`docs/mockups/WEB_UI_MOCKUP.html`)까지 완료, 코드 구현은 다음 세션부터 — Phase 0(인프라 스켈레톤)부터 시작.
+- `docs/plans/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` — TypeScript 점진 전환 + 편의 기능(B단계) 작업계획서. 세션 인수인계 체크포인트 포함.
+- `docs/plans/B1_BULK_IMPORT_EXPORT_TODO.md` — 위 계획서의 B-1(문제 일괄 등록) 착수 전 결정 보류 중인 항목 3개.
+- `docs/plans/POST_B_ROUND_TEST_FEEDBACK_TODO.md` — A-5/B-2/B-3'/B-4 전수 테스트 피드백 12건(미착수).
+- `docs/plans/SERVER_SCRIPT_IMPROVEMENT_PLAN.md` — `auto_script/`(설치/실행/중지 스크립트) 개선 작업계획서.
   2026-08-12 조사+구현 완료(저장소 주소 수정, 브랜치 선택, `npm run build`+systemd 데몬화 등) — 상세는
   문서 참고.
 - `docs/TEST_CHECKLIST.md` — 수동 테스트 체크리스트. 기능 추가/수정 시 관련 항목을 갱신(추가 또는 `[ ]`로 되돌리기)할 것.
 
 **UI/UX 개선 (별도 라운드, 상태 제각각)**
-- `docs/UI_IMPROVEMENT_PROPOSAL.md` — 1라운드(퀴즈만들기 중심), 대부분 완료.
-- `docs/UI_IMPROVEMENT_PLAN_ROUND2.md` — 2라운드(봇 전역), 실제 버그 파트 완료·UX 개선 후보 파트 일부 진행 중.
-- `docs/I18N_ARCHITECTURE_PLAN.md` — 다국어 지원 아키텍처 조사/설계 문서. **코드 미수정, 사용자가 명시적으로 지시하기 전까지 착수 금지.**
+- `docs/plans/UI_IMPROVEMENT_PROPOSAL.md` — 1라운드(퀴즈만들기 중심), 대부분 완료.
+- `docs/plans/UI_IMPROVEMENT_PLAN_ROUND2.md` — 2라운드(봇 전역), 실제 버그 파트 완료·UX 개선 후보 파트 일부 진행 중.
+- `docs/plans/I18N_ARCHITECTURE_PLAN.md` — 다국어 지원 아키텍처 조사/설계 문서. **코드 미수정, 사용자가 명시적으로 지시하기 전까지 착수 금지.**
 
 ## 브랜치 상태 (참고용, 시점에 따라 달라질 수 있음)
 
