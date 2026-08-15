@@ -44,7 +44,7 @@ exports.SYSTEM_CONFIG = {
   MAX_QUESTION_AUDIO_REPEAT: 5, //문제용 오디오 최대 반복 가능 횟수
   MAX_QUESTION_TOTAL_AUDIO_PLAY_TIME: 70, //반복 재생 포함하여 진짜 최대 길이
 
-  MAX_CHECK_PREPARED_QUEUE: 120, //prepared queue 최대 확인 횟수
+  MAX_CHECK_PREPARED_QUEUE: 150, //prepared queue 최대 확인 횟수
   PREPARED_QUEUE_CHECK_INTERVAL: 250, //prepared queue 체크 간격
 
   UI_HOLDER_AGING_MANAGER_CRITERIA: 900, //얼마나 오래된 holder를 삭제할 지(s)
@@ -57,8 +57,8 @@ exports.SYSTEM_CONFIG = {
   GRACEFUL_TIMEOVER_MAX_TRY: 0, //타임오버 시, 부드러운 타임 오버를 위한 최대 시도 수
   GRACEFUL_TIMEOVER_INTERVAL: 500, //부드러운 타임 오버 체크 간격 (ms)
 
-  EXPLAIN_WAIT: 3000, //퀴즈 설명 단계에서 각 설명 텀
-  ENDING_WAIT: 3500, //순위 발표 단계에서 각 순위 표시 텀
+  EXPLAIN_WAIT: 2000, //퀴즈 설명 단계에서 각 설명 텀
+  ENDING_WAIT: 3000, //순위 발표 단계에서 각 순위 표시 텀
 
   BGM_PATH: `${PROJECT_ROOT}/resources/bgm`, //BGM 파일 위치
   DEV_QUIZ_PATH: `${PROJECT_ROOT}/resources/quizdata`, //Dev퀴즈 파일 위치
@@ -96,7 +96,7 @@ exports.SYSTEM_CONFIG = {
   CERTIFY_LIKE_CRITERIA: 10, //인증된 퀴즈 전환을 위한 추천 수 기준
   CERTIFY_PLAYED_COUNT_CRITERIA: 50, //인증된 퀴즈 전환을 위한 플레이 수 기준
 
-  CHECK_KOREAN_BOT_VOTE: false, //챗 기능 사용 시, KOREAN BOT 추천해야지만 사용할 수 있는지 여부
+  CHECK_KOREAN_BOT_VOTE: true, //챗 기능 사용 시, KOREAN BOT 추천해야지만 사용할 수 있는지 여부
 
   //Monitoring service
   MONITORING_CHECK_INTERVAL: 30000, // 리소스 모니터링 주기
@@ -113,6 +113,10 @@ exports.SYSTEM_CONFIG = {
   //퀴즈 만들기 웹 연동 (docs/WEB_QUIZ_CREATION_PLAN.md) - user-question-info-ui.ts에 매직넘버 50으로
   //3곳 하드코딩돼 있던 걸 여기로 승격(Phase 2에서 실제 교체)
   MAX_QUESTIONS_PER_QUIZ: 50,
+
+  //봇 지원센터(문의/버그 제보용 디스코드 서포트 서버) 초대 링크. 디스코드 투트랙 화면/MainUI, 웹 UI
+  //헤더에서 공통으로 사용(2026-08-15 신설). 예시값 - 실제 서포트 서버 초대 링크로 교체할 것.
+  SUPPORT_SERVER_URL: 'https://discord.gg/Xjrq8ZZcd7',
 };
 
 exports.CUSTOM_EVENT_TYPE = {

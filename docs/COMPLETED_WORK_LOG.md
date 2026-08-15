@@ -1297,3 +1297,50 @@ stop 완료 전에 겹칠 위험이 있었음.
 이미 설치된 서버는 서비스 파일을 수동으로 다시 설치해야 이번 개선이 적용됨(명령어는
 `auto_script/정석 사용법.txt`의 "systemd 서비스 동작 방식" 항목 참고). 셸 스크립트라 `bash -n`으로
 문법만 검증, 실제 서버 반영/재설치 테스트는 사용자가 직접 진행 예정.
+
+## 2026-08-15 — 봇 지원센터 링크 옵션 신설 + 3곳 연결 (디스코드 투트랙/MainUI, 웹 UI)
+
+`SYSTEM_CONFIG.SUPPORT_SERVER_URL`(공개 설정, `system_setting.js`) 신설 — 사용자가 실제 값은 직접
+채워 넣기로 해서 예시값(`https://discord.gg/YOUR_INVITE_CODE`)만 넣어둠. 이 값을 3곳에 연결:
+
+1. **투트랙 화면(`select_ui_mode_btn_component`, `SelectUIModeUI`/`QuizEditSelectUIModeUI` 공유
+   컴포넌트)** — 기존 "디스코드 UI"/"웹 UI" 2버튼 옆에 3번째로 "❓ 지원센터" Link 버튼 추가(customId
+   없이 바로 외부 URL 이동, 인터랙션 핸들러 수정 불필요). 공유 싱글턴이라 `/퀴즈`/`/퀴즈만들기` 두
+   진입점 모두에 자동 적용.
+2. **`MainUI`(`main_ui_component`)** — 기존 "개인 정보 보호 정책" Link 버튼의 라벨/URL을 지원센터로
+   교체(자리 재활용, "봇 공유" 버튼은 그대로 유지).
+3. **웹 UI 헤더** — 신규 `GET /api/support-link`(`requireWebSession`, `SYSTEM_CONFIG.SUPPORT_SERVER_URL`
+   그대로 반환) + `App.jsx`에 세션 로드 후 fetch → 헤더 `.topbar-actions`에 항상 보이는 pill
+   (`.support-link`, violet 톤)로 노출. 기존 "봇 공유하기"처럼 "☰ 더보기" 드롭다운 안에 넣으면 눈에
+   안 띈다는 사용자 피드백으로, 드롭다운을 거치지 않는 상시 노출 버튼으로 별도 설계.
+
+검증: `test/managers/web/web_express_app.test.js`에 `/api/support-link` 테스트 추가, `npm test`
+(371 pass)/`npm run lint`(0 error)/`web-frontend npm run build` 통과, 디스코드 쪽은 컴포넌트
+require 스모크 테스트로 버튼 3개/URL 반영 확인. 관련 CLAUDE.md(`managers/`, `quiz_ui/components/`)
++ `docs/TEST_CHECKLIST.md`(3개 항목, 실제 URL 설정 후 실사용 확인 필요해 `[ ]`로 남김) 갱신.
+
+## 2026-08-15 — 지원센터 링크 기능 후속 2건 (헤더 색상 통일 + 신규 서버 환영 메시지)
+
+같은 날 지원센터 링크 기능(위 항목)에 이은 사용자 피드백 2건:
+
+1. **웹 UI 헤더 색상 통일** — "☰ 더보기" 버튼(`.menu-trigger`)이 기존 중립 톤(`--surface-sunken`/
+   `--ink-dim`, 사각형)이었던 걸 지원센터 pill(`.support-link`)과 동일한 violet 톤 + pill 모양으로
+   맞춤(`styles.css`). 라이트/다크 모드 둘 다 기존 CSS 변수(`--violet`/`--violet-bg`)를 그대로 쓰므로
+   추가 분기 없이 적용됨.
+2. **`guildCreate` 환영 메시지에 지원센터 버튼 추가** — `bot.js`의 봇이 새 서버에 들어갔을 때 보내는
+   안내 메시지(2026-08-12 UI 개선 2라운드 B-1에서 신설된 기능)가 지금까지 텍스트 전용이었는데,
+   `SYSTEM_CONFIG.SUPPORT_SERVER_URL`로 연결되는 "❓ 지원센터" Link 버튼(`welcome_support_link_component`,
+   `bot.js`에 직접 정의)을 같이 붙임.
+
+검증: `npm test`(371 pass, 회귀 없음)/`npm run lint`(0 error)/`web-frontend npm run build` 통과.
+`bot.js`는 알려진 사전 존재 이슈(`select-quiz-type-ui.ts`가 `.js` 확장자로 `.ts` 파일을 require하는
+경로라 `ts-node/register` 단독 실행 시 MODULE_NOT_FOUND — `npm test`/실제 `dist/` 빌드 실행 경로에서는
+문제 없음, 이 세션 이전부터 있던 무관한 현상)로 직접 require 스모크 테스트는 안 됐고 lint 통과로 문법만
+확인. `docs/TEST_CHECKLIST.md`의 관련 항목(헤더 색상, 환영 메시지 버튼)을 `[ ]`로 갱신.
+
+## 2026-08-15 — 헤더 pill 3종 크기/색상 최종 정리 (같은 날 후속)
+
+지원센터 pill(`.support-link`)/"☰ 더보기"(`.menu-trigger`)/테마 토글(`.theme-toggle`) 셋의 높이가
+제각각이라 정렬이 안 맞아 보인다는 피드백 — 셋 다 `height: 38px`로 통일(`.theme-toggle`은 컨테이너에
+`height:38px`+`padding:4px`, 내부 버튼은 `height:100%`로 남는 공간을 채우는 방식). 색상은
+`.menu-trigger`만 이미 `.support-link`와 같은 violet 톤으로 맞춰뒀던 상태 그대로 유지.

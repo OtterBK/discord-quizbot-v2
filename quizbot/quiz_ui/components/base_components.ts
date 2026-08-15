@@ -43,7 +43,8 @@ const select_btn_component = new ActionRowBuilder()
 //select-ui-mode-ui.js 전용 (디스코드 UI/웹 UI 2버튼, WEB_INTEGRATION_PLAN.md 참고)
 //customId는 기존 그대로 '1'/'2' 유지(onInteractionCreate 분기 로직과 무관하게 라벨만 바꿔도 안전) -
 //라벨을 의미가 드러나는 텍스트로 바꿔서, description의 안내문을 먼저 읽고 숫자에 매핑해야 했던 문제를
-//해결(2026-08-12 피드백)
+//해결(2026-08-12 피드백). 3번째 버튼(지원센터)은 Link 스타일이라 customId 없이 바로 외부 URL로
+//이동함(2026-08-15 신설) - quiz-edit-select-ui-mode-ui.ts와 공유되는 컴포넌트라 두 화면 모두에 적용됨.
 const select_ui_mode_btn_component = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -54,6 +55,10 @@ const select_ui_mode_btn_component = new ActionRowBuilder()
       .setCustomId('2')
       .setLabel('웹 UI')
       .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setLabel('❓ 지원센터')
+      .setURL(SYSTEM_CONFIG.SUPPORT_SERVER_URL)
+      .setStyle(ButtonStyle.Link),
   );
 
 //select-quiz-type-ui.js 전용 (옵션이 3개뿐인데 select_btn_component(1~5)를 그대로 쓰면
@@ -184,11 +189,12 @@ const control_btn_component = new ActionRowBuilder()
       .setStyle(ButtonStyle.Secondary),
   );
 
+//"개인 정보 보호 정책" 버튼 자리를 지원센터 링크로 교체(2026-08-15 피드백 - 자리 재활용, "봇 공유"는 그대로)
 const main_ui_component = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
-      .setLabel('개인 정보 보호 정책')
-      .setURL('http://quizbot2.kro.kr')
+      .setLabel('❓ 지원센터')
+      .setURL(SYSTEM_CONFIG.SUPPORT_SERVER_URL)
       .setStyle(ButtonStyle.Link),
     new ButtonBuilder()
       .setLabel('봇 공유')

@@ -533,6 +533,13 @@ exports.start = (): any =>
     res.json({ title: guide.title, description: guide.description, fields: [guide.fields1] });
   });
 
+  //봇 지원센터 링크 - 디스코드 쪽(select_ui_mode_btn_component/main_ui_component)과 동일하게
+  //SYSTEM_CONFIG.SUPPORT_SERVER_URL을 그대로 내려준다(정적, DB 없음, 2026-08-15 신설).
+  app.get('/api/support-link', requireWebSession, (req: any, res: any) =>
+  {
+    res.json({ url: SYSTEM_CONFIG.SUPPORT_SERVER_URL });
+  });
+
   //공지사항 목록/상세 - quiz_ui/note-select-ui.ts, note-ui.ts와 동일한 notice_manager.ts 함수 재사용.
   app.get('/api/notices', requireWebSession, async (req: any, res: any) =>
   {

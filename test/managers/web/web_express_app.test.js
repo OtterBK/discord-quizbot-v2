@@ -481,6 +481,17 @@ test('GET /api/quiz-tool-guide: 안내 페이지 정적 콘텐츠를 반환한�
   assert.equal(body.fields.length, 1); //예시 영상 필드는 2026-08-15 제거됨(더 이상 제공 안 함)
 });
 
+test('GET /api/support-link: SYSTEM_CONFIG.SUPPORT_SERVER_URL을 그대로 반환한다', async () =>
+{
+  const session = createDevSession();
+
+  const res = await fetch(`${BASE_URL}/api/support-link`, { headers: { Authorization: `Bearer ${session.token}` } });
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.url, SYSTEM_CONFIG.SUPPORT_SERVER_URL);
+});
+
 test('GET /api/notices: 실제 resources/notices 폴더의 공지 목록을 반환한다', async () =>
 {
   const session = createDevSession();

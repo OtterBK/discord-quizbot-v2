@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { token, getSession, heartbeat, getNotices } from './api.js';
+import { token, getSession, heartbeat, getNotices, getSupportLink } from './api.js';
 import DevQuizTab from './DevQuizTab.jsx';
 import UserQuizTab from './UserQuizTab.jsx';
 import OmakaseTab from './OmakaseTab.jsx';
@@ -44,6 +44,7 @@ export default function App() {
   const [latestNoticeMtime, setLatestNoticeMtime] = useState(null);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [supportUrl, setSupportUrl] = useState(null);
   // 랜덤 퀴즈 탭의 "직접 담기" 퀴즈함(quiz_id 목록) - 탭을 전환하면 OmakaseTab이 통째로 언마운트돼
   // 로컬 state가 날아가던 문제(2026-08-15 피드백)로, 이 값만 부모(App)로 끌어올려 탭을 오가도 유지되게 함.
   const [omakaseBasketItems, setOmakaseBasketItems] = useState({});
@@ -102,6 +103,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, error]);
 
+  // 지원센터 링크(2026-08-15 신설) - 헤더 pill 하나 띄우자고 세션을 깨뜨릴 순 없으니 실패해도 조용히 무시.
+  useEffect(() => {
+    if (session === null) return;
+
+    getSupportLink()
+      .then(({ url }) => setSupportUrl(url))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
   // 안 읽은 공지 배지 - 배지 하나 띄우자고 세션을 깨뜨릴 순 없으니 실패해도 조용히 무시한다.
   useEffect(() => {
     if (session === null) return;
@@ -156,6 +167,11 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions">
+          {supportUrl && (
+            <a href={supportUrl} target="_blank" rel="noopener noreferrer" className="support-link">
+              ❓ 지원센터
+            </a>
+          )}
           <div className="utility-menu">
             <button type="button" className="menu-trigger" onClick={() => setMenuOpen((v) => !v)}>
               ☰ 더보기

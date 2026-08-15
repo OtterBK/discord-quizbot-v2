@@ -133,7 +133,10 @@ DM은 봇-유저 1:1이라 하이재킹 개념이 없어 기존 세션이 있어
   폴링해서 실제 성공/실패(+사유)를 읽어간다(`quiz_ui/CLAUDE.md`의 `web-handoff-ui.js` 항목 참고).
   **나머지 화면 웹 포팅(2026-08-12)**: `requireGuildScopedSession` 미들웨어(`requireOwnerScopedSession`과
   대칭, `req.web_session.scope !== 'guild'`면 403) + 신규 라우트 5개 — `GET /api/quiz-tool-guide`(정적),
-  `GET /api/notices`/`GET /api/notices/:name`(`notice_manager.ts` 재사용), `GET`/`PUT /api/server-option`
+  `GET /api/notices`/`GET /api/notices/:name`(`notice_manager.ts` 재사용), `GET /api/support-link`
+  (봇 지원센터 링크, `SYSTEM_CONFIG.SUPPORT_SERVER_URL`을 그대로 반환 - 디스코드 쪽
+  `select_ui_mode_btn_component`/`main_ui_component`와 동일 값 공유, 2026-08-15 신설),
+  `GET`/`PUT /api/server-option`
   (서버 옵션 - `quiz_option.js`의 `OptionStorage`를 디스코드 `server-setting-ui.ts`와 그대로 공유, 저장은
   `db_option.updateOptionParameterized`로 영속화, 값 검증은 `text_contents.json`의
   `server_setting_ui.select_menu.option_values` 화이트리스트 기준). 권한 체크는 의도적으로 없음(서버

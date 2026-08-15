@@ -127,13 +127,27 @@ button { cursor: pointer; }
 .brand-text p { margin: 1px 0 0; font-size: 12px; color: var(--ink-dim); }
 .brand-text .guild-chip { color: var(--violet); font-weight: 600; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+/* 지원센터 링크(2026-08-15 신설) - 헤더에 항상 보이는 pill. "☰ 더보기" 드롭다운 안에 넣으면
+   눈에 잘 안 띈다는 요청이라, 클릭 한 번으로 바로 이동하는 상시 노출 버튼으로 분리했다.
+   violet 톤(주요 액션인 primary와 구분되는 보조 강조색)으로 존재감은 주되 튀지 않게. */
+.support-link {
+  height: 38px; padding: 0 12px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--violet-bg); color: var(--violet);
+  font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  text-decoration: none; transition: filter .15s ease;
+}
+.support-link:hover { filter: brightness(1.08); }
+/* 헤더의 다른 두 pill(.menu-trigger/.support-link, 둘 다 height:38px)과 높이를 맞춤(2026-08-15 피드백) */
 .theme-toggle {
-  display: flex; border: 1px solid var(--border); border-radius: 999px;
-  background: var(--surface); padding: 3px; gap: 2px; box-shadow: var(--shadow);
+  height: 38px; padding: 4px; display: flex; align-items: center;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); gap: 2px; box-shadow: var(--shadow);
 }
 .theme-toggle button {
   border: none; background: transparent; color: var(--ink-faint);
-  border-radius: 999px; width: 30px; height: 26px; font-size: 13px;
+  border-radius: 999px; width: 30px; height: 100%; font-size: 13px;
   display: flex; align-items: center; justify-content: center;
   transition: background .15s ease, color .15s ease;
 }
@@ -732,13 +746,15 @@ select.sort-select {
 
 /* 아이콘 전용 .icon-btn 대신 라벨을 붙인 트리거(2026-08-12 피드백 - 아이콘만으로는 메뉴 존재 자체를
    알아채기 힘들다는 지적, 발견성 개선안 중 가장 저비용인 "라벨 추가"를 채택) */
+/* 지원센터 pill(.support-link)과 톤을 맞춤(2026-08-15 피드백) - 헤더의 두 상시 노출 버튼이 같은
+   violet 계열로 통일되게. */
 .menu-trigger {
-  height: 38px; padding: 0 12px; border-radius: 10px; position: relative;
-  border: 1px solid var(--border); background: var(--surface-sunken); color: var(--ink-dim);
+  height: 38px; padding: 0 12px; border-radius: 999px; position: relative;
+  border: 1px solid transparent; background: var(--violet-bg); color: var(--violet);
   display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700;
-  transition: all .15s ease; white-space: nowrap;
+  transition: filter .15s ease; white-space: nowrap;
 }
-.menu-trigger:hover { border-color: var(--violet); color: var(--ink); }
+.menu-trigger:hover { filter: brightness(1.08); }
 
 /* 안 읽은 공지 배지 - 트리거 버튼에서는 우상단에 겹쳐 뜨는 점, 드롭다운 항목 안에서는 텍스트 옆
    인라인 점(.inline)으로 구분해서 표시 */
