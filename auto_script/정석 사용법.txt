@@ -23,7 +23,16 @@
    - QUIZBOT_PATH를 /etc/profile.d/quizbot_path.sh 에 전역 등록
    - 최신 yt-dlp 다운로드 (update_yt-dlp.sh, 2026-08-15 추가 - npm install로 받은 번들 버전이
      오래됐을 수 있어서 설치 직후 한 번 바로 갱신. cron을 등록해도 다음 스케줄 9시/21시까지는
-     기다려야 하므로)
+     기다려야 하므로). **standalone 바이너리(yt-dlp_linux)를 받도록 변경됨(같은 날 후속)** - 원래
+     받던 "yt-dlp" 자산은 시스템 python3를 shebang으로 호출하는 zipapp이라, yt-dlp가 요구하는
+     Python 버전(수시로 올라감, 최근 3.11+)이 OS 기본 python3보다 낮으면(예: Ubuntu 22.04 기본
+     3.10) 노래 퀴즈 자체가 안 됨 - standalone 바이너리는 자체 Python 런타임을 내장해서 시스템
+     python3 버전과 완전히 무관함. 저장 경로/파일명은 그대로 "yt-dlp"라 다른 코드 변경은 불필요.
+     **npm install이 돌 때마다(quizbot_update.sh 포함) youtube-dl-exec 자체 postinstall이 이
+     python 의존 버전을 다시 받아써서 되돌려놓으므로, quizbot_update.sh가 npm install 직후 매번
+     update_yt-dlp.sh를 다시 호출해 즉시 재보정함(2026-08-15 추가)** - 이미 설치된 서버에서 노래
+     퀴즈가 python 버전 문제로 안 되면, 다음 quizbot_update.sh 실행이나 9시/21시 크론까지 기다리지
+     말고 `sudo sh $QUIZBOT_PATH/auto_script/server_script/update_yt-dlp.sh`를 한 번 수동 실행할 것.
    - quizbot3 systemd 서비스 생성 + enable (아직 시작은 안 함)
 
 3. 1번에서 백업해둔 config 폴더를 그대로 덮어쓰기

@@ -92,6 +92,13 @@ fi
 echo "🩹 Reapplying custom_node_modules patches..."
 sudo cp -R custom_node_modules/* node_modules/
 
+# npm install이 방금 youtube-dl-exec의 자체 postinstall로 python 의존 zipapp("yt-dlp" 자산)을 다시
+# 받아써서, update_yt-dlp.sh(standalone yt-dlp_linux로 덮어쓰는 크론 작업)가 고쳐둔 걸 매번 되돌려
+# 놓음 - 다음 크론 실행(9시/21시)까지 최대 12시간 동안 시스템 python 버전에 따라 노래 퀴즈가 깨질 수
+# 있어서, 여기서 바로 한 번 더 받아 최신 상태로 맞춘다.
+echo "🎵 Re-fetching standalone yt-dlp (npm install just restored the python-dependent build)..."
+sudo sh "$QUIZBOT_PATH/auto_script/server_script/update_yt-dlp.sh"
+
 # TS로 전환된 소스는 dist/ 로 빌드해야 node가 바로 require할 수 있음(.ts는 직접 못 읽음) - 이 단계를
 # 건너뛰면 낡은 dist/가 그대로 남아 업데이트가 반영 안 된 것처럼 보이거나, 최악의 경우 require 시점에
 # 크래시할 수 있음(전환된 매니저는 원본 .js가 이미 삭제돼 있음)
