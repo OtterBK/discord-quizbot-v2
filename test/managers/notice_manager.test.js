@@ -10,7 +10,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 
-const { loadNoticeList, readNoticeFile, writeNoticeFile, updateNoticeFile, deleteNoticeFile } = require('../../quizbot/managers/notice_manager');
+const {
+  loadNoticeList, readNoticeFile, writeNoticeFile, updateNoticeFile, deleteNoticeFile,
+  readCurrentNotice, writeCurrentNotice,
+} = require('../../quizbot/managers/notice_manager');
 
 test('loadNoticeList: 파일명 타임스탬프 접두사 기준 최신순으로 정렬된 목록을 반환한다', async (t) =>
 {
@@ -136,4 +139,29 @@ test('deleteNoticeFile: 지정한 경로의 파일을 삭제한다', (t) =>
   deleteNoticeFile('/notices/20260101000000_공지.txt');
 
   assert.deepEqual(unlinked, ['/notices/20260101000000_공지.txt']);
+});
+
+test('readCurrentNotice: 파일이 없으면 빈 문자열을 반환한다', (t) =>
+{
+  t.mock.method(fs, 'existsSync', () => false);
+
+  assert.equal(readCurrentNotice('/resources/current_notice.txt'), '');
+});
+
+test('readCurrentNotice: 파일 내용을 앞뒤 공백 제거해서 반환한다', (t) =>
+{
+  t.mock.method(fs, 'existsSync', () => true);
+  t.mock.method(fs, 'readFileSync', () => '  🔹 공지 내용  \n');
+
+  assert.equal(readCurrentNotice('/resources/current_notice.txt'), '🔹 공지 내용');
+});
+
+test('writeCurrentNotice: 내용을 파일에 쓴다', (t) =>
+{
+  const writes = [];
+  t.mock.method(fs, 'writeFileSync', (path, content) => writes.push({ path, content }));
+
+  writeCurrentNotice('/resources/current_notice.txt', '🔹 새 공지 내용');
+
+  assert.deepEqual(writes, [{ path: '/resources/current_notice.txt', content: '🔹 새 공지 내용' }]);
 });

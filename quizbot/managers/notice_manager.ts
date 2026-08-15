@@ -126,3 +126,21 @@ exports.deleteNoticeFile = (note_path: string): void =>
 {
   fs.unlinkSync(note_path);
 };
+
+//실시간 공지(resources/current_notice.txt, /퀴즈 최초 진입 화면(select-ui-mode-ui.ts)에서만 노출) -
+//위 공지 게시판(notices/)과는 완전히 별개인 단일 파일. 기존엔 서버 파일을 직접 편집하는 방식뿐이었음 -
+//quizmgr 관리자 패널(admin-panel-ui.ts)에서 읽기/쓰기 가능하도록 순수 함수로 추출(2026-08-15 신설).
+exports.readCurrentNotice = (current_notice_path: string): string =>
+{
+  if(fs.existsSync(current_notice_path) === false)
+  {
+    return '';
+  }
+
+  return fs.readFileSync(current_notice_path, { encoding: 'utf8', flag: 'r' }).trim();
+};
+
+exports.writeCurrentNotice = (current_notice_path: string, content: string): void =>
+{
+  fs.writeFileSync(current_notice_path, content, { encoding: 'utf8' });
+};
