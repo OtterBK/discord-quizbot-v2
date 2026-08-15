@@ -4,6 +4,7 @@ quizdata
 bgm_bak
 /config/private_config.json
 cache
+resources/notices/
 log
 dist
 *.tsbuildinfo
