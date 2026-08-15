@@ -241,6 +241,95 @@ const modal_notice_create = new ModalBuilder()
 const modal_notice_edit = cloneDeep(modal_notice_create);
 modal_notice_edit.setCustomId('modal_notice_edit');
 
+//관리자 패널 2번째 줄 - 점검 모드/실시간 공지 수정 진입 버튼(2026-08-15 신설)
+const admin_panel_row2_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_maintenance')
+      .setLabel('🔧 점검 모드')
+      .setStyle(ButtonStyle.Danger),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_current_notice_edit')
+      .setLabel('📢 실시간 공지 수정')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+//관리자 패널 - 점검 모드 꺼짐 상태의 "켜기" 버튼
+const admin_maintenance_enable_btn_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_maintenance_enable_request')
+      .setLabel('🔧 점검 모드 켜기')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 점검 모드 켜짐 상태의 문구 수정/끄기 버튼
+const admin_maintenance_manage_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_maintenance_edit_request')
+      .setLabel('✏ 문구 수정')
+      .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_maintenance_disable_request')
+      .setLabel('🟢 점검 모드 끄기')
+      .setStyle(ButtonStyle.Success),
+  );
+
+//관리자 패널 - 점검 모드 끄기 확인 절차 (오클릭 방지, admin_ban_unban_confirm_comp와 동일 패턴)
+const admin_maintenance_disable_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_maintenance_disable_cancel')
+      .setLabel('아니요, 끄지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_maintenance_disable_confirmed')
+      .setLabel('네, 점검 모드를 끕니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 점검 모드 안내 문구 입력 (켜기/문구 수정 공용, 둘 다 파일에 그대로 덮어쓰면 되는 동작이라 하나로 공유)
+const modal_maintenance_notice = new ModalBuilder()
+  .setCustomId('modal_maintenance_notice')
+  .setTitle('점검 모드 안내 문구')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_maintenance_notice')
+          .setLabel('점검 모드 중 유저에게 보여줄 문구를 입력해주세요.')
+          .setStyle(TextInputStyle.Paragraph)
+          .setMinLength(1)
+          .setMaxLength(500)
+          .setRequired(true)
+          .setPlaceholder('예시) 서버 점검 중입니다. 잠시 후 다시 이용해주세요!')
+      )
+  );
+
+//관리자 패널 - 실시간 공지(current_notice.txt) 수정 (공지 게시판과 별개 - 제목 없이 본문만)
+const modal_current_notice_edit = new ModalBuilder()
+  .setCustomId('modal_current_notice_edit')
+  .setTitle('실시간 공지 수정')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_current_notice')
+          .setLabel('실시간 공지 내용 (비우면 표시 안 됨, 최대 1000자)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setMaxLength(1000)
+          .setRequired(false)
+          .setPlaceholder('예시) 🔹 오전/오후 9시마다 서버를 재시작합니다.')
+      )
+  );
+
 //퀴즈 만들기
 const modal_quiz_info = new ModalBuilder()
   .setCustomId('modal_quiz_info')
@@ -599,6 +688,12 @@ module.exports = {
   admin_notice_delete_confirm_comp,
   modal_notice_create,
   modal_notice_edit,
+  admin_panel_row2_comp,
+  admin_maintenance_enable_btn_comp,
+  admin_maintenance_manage_comp,
+  admin_maintenance_disable_confirm_comp,
+  modal_maintenance_notice,
+  modal_current_notice_edit,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,

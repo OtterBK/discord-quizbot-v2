@@ -26,6 +26,20 @@
   **`resources/notices/`는 2026-08-15부터 `.gitignore` 대상**(quizmgr에서 만드는 공지는 서버별 운영
   데이터라 커밋 대상이 아님) — 기존에 이미 커밋돼있던 공지 2개는 계속 git이 추적함(gitignore는 이미
   추적 중인 파일엔 소급 적용 안 됨), 새로 만드는 공지만 추적 대상에서 빠짐.
+  **실시간 공지(2026-08-15 신설)**: `readCurrentNotice`/`writeCurrentNotice` 2개 추가 —
+  `resources/current_notice.txt`(위 게시판형 공지(`notices/`)와는 완전히 별개인 단일 파일, `/퀴즈`
+  최초 진입 화면(`quiz_ui/select-ui-mode-ui.ts`의 `buildNoticeFields()`)에서만 노출) 읽기/쓰기.
+  `quiz_ui/admin-panel-ui.ts`가 목록/상세 화면 없이 관리자 패널에서 바로 모달로 편집하는 데 사용 —
+  기존엔 서버 파일을 직접 편집하는 방식뿐이었음.
+- **`maintenance_mode_manager.ts`**(quizmgr 점검 모드 관리, 2026-08-15 신설) —
+  `isMaintenanceModeOn`/`getMaintenanceNotice`/`enableMaintenanceMode`/`disableMaintenanceMode` 4개
+  순수 함수. `resources/maintenance_notice.txt`(공지사항 게시판/실시간 공지와 무관한 별도 파일) 존재
+  여부로 점검 모드를 판단 — 이 파일이 있으면 `bot.js`의 전역 `interactionCreate` 핸들러 최상단에서
+  관리자(`PRIVATE_CONFIG.ADMIN_ID`) 외 전 유저의 인터랙션(슬래시커맨드/버튼/모달 전부)을 차단하고
+  파일 내용을 안내 문구로 보여준다(코드 주석엔 원래 "임시로 잠시 해둠"이라고 적혀 있던 기능). 기존엔
+  서버 파일을 SSH로 직접 만들고 지우는 방식뿐이었음 — `quiz_ui/admin-maintenance-ui.ts`에서 켜기/문구
+  수정/끄기 가능(관리자 본인은 점검 모드 중에도 이 체크를 그대로 통과하므로 자기 자신을 잠글 걱정
+  없음).
 
 ## 밴 관리
 

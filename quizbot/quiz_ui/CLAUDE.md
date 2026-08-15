@@ -30,7 +30,7 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
   공유 모듈 — `multiplayer_mmr.js`와 동일 관례. 디스코드 UI가 지금 이 함수들을 호출하고, Phase 3~4의
   REST 핸들러(`web_quiz_editor_routes.ts`)도 같은 함수를 재사용할 예정.
 - **`multiplayer-quiz-select-ui.js`** — 멀티플레이 로비 생성/참가 진입점. `checkMultiplayerBanMessage(interaction)`(2026-08-12, UI 개선 2라운드 B-5 — 원래 이름 `checkMultiplayerBan(list)`)이 `ban_manager.isBanned(...)`로 위임하되, 유저ID/길드ID를 따로 검사해서 어느 쪽이 밴됐는지 구분하는 메시지(+문의처 안내)를 반환한다 — 예전엔 `[guild.id, user.id]`를 한 배열로 묶어 검사해서 "당신 또는 이 서버가..."로 뭉뚱그려 안내했음. 같은 증상이 있는 `web-handoff-ui.ts`의 `buildMultiplayerUI`(웹 경로)는 아직 안 고침.
-- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리/공지 관리). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고).
+- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리/공지 관리/점검 모드/실시간 공지 수정, 2번째 줄 2버튼은 2026-08-15 추가). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고). `AdminPanelUI` 자체가 "실시간 공지 수정" 버튼→모달 흐름을 직접 처리함(별도 화면 전환 없음, `managers/notice_manager.ts`의 `readCurrentNotice`/`writeCurrentNotice` 위임).
 - **`admin-notice-list-ui.ts`**/**`admin-notice-detail-ui.ts`**(quizmgr 공지 관리, 2026-08-15 신설) —
   `AdminPanelUI`의 "공지 관리" 버튼(`admin_panel_notice_manage`)에서 진입. `AdminNoticeListUI`는
   `AdminBanListUI`와 동일 패턴(select 메뉴, 최대 25개)으로 `notice_manager.loadNoticeList` 목록을
@@ -40,6 +40,14 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
   `AdminNoticeListUI.onAwaked()`가 뒤로가기 시점마다 목록을 다시 불러와 최신 상태를 반영한다(작성/수정/
   삭제 어느 경로로 돌아와도 동일하게 동작). 파일 I/O 자체는 `managers/notice_manager.ts`의
   `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile`에 위임(그 파일 CLAUDE.md 참고).
+- **`admin-maintenance-ui.ts`**(quizmgr 점검 모드 관리, 2026-08-15 신설) — `AdminPanelUI`의 "🔧 점검
+  모드" 버튼에서 진입. 켜짐/꺼짐 상태를 embed로 보여주고(꺼짐: 초록, 켜짐: 빨강 + 현재 안내 문구
+  표시), 버튼 구성이 상태에 따라 갈림 — 꺼짐이면 "켜기"(모달로 안내 문구 입력) 1개, 켜짐이면 "문구
+  수정"(모달, 기존 값 프리필)/"끄기"(밴 해제와 동일한 확인 절차) 2개. "켜기"와 "문구 수정"은 같은
+  모달(`modal_maintenance_notice`)과 같은 제출 핸들러를 공유함(둘 다 파일에 덮어쓰기만 하면 되는 동일
+  동작이라). 파일 I/O는 `managers/maintenance_mode_manager.ts`에 위임 — **주의**: 점검 모드가 켜지면
+  `bot.js` 전역 핸들러가 관리자 외 전 유저의 인터랙션을 차단하지만, 관리자 본인은 그 체크를 그대로
+  통과하므로 점검 모드 중에도 `/quizmgr`로 들어와 끌 수 있음(자기 자신을 잠글 걱정 없음).
 
 ## 그 외 화면 (탐색 결과 요약)
 

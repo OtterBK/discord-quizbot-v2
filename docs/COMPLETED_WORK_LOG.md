@@ -1384,3 +1384,29 @@ LC_ALL=en_US.UTF-8` 3줄을 설치 스크립트 초반(패키지 목록 갱신 �
 검증: 셸 스크립트라 `bash -n`으로 문법만 확인, 실제 서버 반영/재검증은 사용자가 직접 진행 예정. 이미
 과거에 `quizbot_update.sh`를 돌린 서버는 `sudo chown -R ubuntu:ubuntu <설치 경로>`를 한 번 수동
 실행해야 기존에 이미 root 소유가 된 파일들이 정리됨(스크립트 자체 수정은 다음 실행부터만 적용).
+
+## 2026-08-15 — quizmgr에 점검 모드 관리 + 실시간 공지 수정 기능 추가
+
+기존엔 둘 다 서버 파일(`resources/maintenance_notice.txt`/`resources/current_notice.txt`)을 SSH로
+직접 만들고 지우거나 편집하는 방식뿐이었음 - `/quizmgr` 관리자 패널에서 처리 가능하도록 신설.
+
+- **점검 모드**: 신규 `AdminMaintenanceUI`(`quiz_ui/admin-maintenance-ui.ts`) - 켜짐/꺼짐 상태를
+  색으로 구분해 보여주고(꺼짐: 초록/켜짐: 빨강 + 현재 안내 문구), 꺼짐이면 "켜기"(모달로 문구 입력),
+  켜짐이면 "문구 수정"(모달, 기존 값 프리필)/"끄기"(확인 절차 - 파급력이 큰 기능이라 오클릭 방지)
+  버튼. 파일 I/O는 신규 `maintenance_mode_manager.ts`(순수 함수 4개)로 분리. 점검 모드가 켜지면
+  `bot.js` 전역 핸들러가 관리자 외 전 유저의 인터랙션(슬래시커맨드/버튼/모달 전부)을 막는 강력한
+  기능이지만, 관리자 본인은 그 체크를 그대로 통과하므로 점검 모드 중에도 자기 자신을 잠그지 않고
+  `/quizmgr`로 계속 끌 수 있음을 확인.
+- **실시간 공지 수정**: `resources/current_notice.txt`(공지 게시판(`notices/`)과 무관, `/퀴즈` 최초
+  진입 화면에만 노출되는 단일 파일) - 별도 화면 없이 `AdminPanelUI`에서 버튼 → 모달(기존 값 프리필) →
+  즉시 저장으로 처리. `notice_manager.ts`에 `readCurrentNotice`/`writeCurrentNotice` 2개 추가.
+
+관리자 패널 컴포넌트를 2번째 `ActionRow`(`admin_panel_row2_comp`)로 확장(기존 1번째 줄 4버튼은
+그대로 유지, Discord 버튼 한도 때문에 한 줄에 다 못 넣음).
+
+검증: 신규 `test/managers/maintenance_mode_manager.test.js`(6개) +
+`test/managers/notice_manager.test.js`에 3개 추가, `test/quiz_ui/components.test.js` export 개수
+69→75 갱신. `npm test`(380 pass)/`npm run lint`(0 error) 통과. `AdminMaintenanceUI`를 실제 인스턴스화해서
+꺼짐/켜짐 두 상태의 embed가 올바르게 나오는지 직접 확인(테스트용으로 임시 생성한
+`resources/maintenance_notice.txt`는 확인 즉시 삭제). `docs/TEST_CHECKLIST.md`에 두 기능 체크리스트
+추가.
