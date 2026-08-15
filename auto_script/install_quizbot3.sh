@@ -121,6 +121,11 @@ sudo chmod 644 $PROFILE_SCRIPT
 export QUIZBOT_PATH="$INSTALL_PATH"
 print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH (system-wide)"
 
+# npm install로 받은 youtube-dl-exec 번들 yt-dlp는 오래된 버전일 수 있음 - cron을 등록해도 다음 스케줄
+# (9시/21시)까지 기다려야 하므로, 설치 직후 한 번 바로 최신으로 갱신해둔다(2026-08-15 추가).
+# update_yt-dlp.sh가 QUIZBOT_PATH를 요구하므로 반드시 위 export 이후에 실행해야 함.
+print_emphasized "Fetching latest yt-dlp..."
+sh "$INSTALL_PATH/auto_script/server_script/update_yt-dlp.sh"
 
 # Restore DB after Git clone
 if [ -z "$BACKUP_FILE" ]; then

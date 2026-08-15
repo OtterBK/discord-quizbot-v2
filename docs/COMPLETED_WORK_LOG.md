@@ -1271,3 +1271,29 @@ error)/`web-frontend` `npm run build` 전부 통과. 관련 CLAUDE.md(루트 제
 곳 없음. 랜덤 퀴즈(오마카세)/멀티플레이는 원래부터 30이 관용적 기본값(고정 상한 100/60 안에서의
 기본값 개념)이라 이번 규칙과 무관, 수정 대상에서 제외. `web-frontend` 자체 테스트는 없어(UI 미대상
 관례) `npm run build`로 스모크 확인.
+
+## 2026-08-15 — 운영 스크립트 3건 개선 (yt-dlp 자동 갱신, 프로세스 정리 강화, systemd 훅화)
+
+사용자가 GCP 서버 운영 중 겪은 3가지를 한 번에 처리:
+
+1. **설치 직후 yt-dlp 최신화** — `install_quizbot3.sh`가 QUIZBOT_PATH export 직후
+   `update_yt-dlp.sh`를 바로 실행하도록 추가. cron을 등록해도 다음 스케줄(9시/21시)까지 기다려야
+   해서, npm 번들 버전이 오래된 채로 첫 서비스가 뜨는 걸 방지.
+2. **`quizbot_stop.sh` 후에도 프로세스가 안 죽는 문제** — 신규 `auto_script/server_script/
+   kill_orphan_quizbot.sh`(`pkill -9`로 `node dist/index.js`/ffmpeg/yt-dlp 정리, drop_ffmpeg.sh와
+   동일하게 경로 접두사 없이 매칭 — ExecStart가 상대경로라 절대경로로 매칭하면 오히려 못 잡음).
+3. **`quizbot_start.sh` 중복 실행 방지** — "이미 떠 있으면 거부" 대신, 시작 직전에 위 청소 스크립트로
+   잔여 프로세스를 먼저 정리하는 "자가 치유" 방식 채택(systemd가 같은 유닛의 중복 시작 자체는 이미
+   막아주므로, 실질적 위험은 cgroup kill을 빠져나간 미추적 orphan과의 동시 실행 쪽).
+
+**세 가지 다 `quizbot3.service.template`의 `ExecStartPre`/`ExecStopPost` 훅으로 구현** — 사용자 요청("이
+기능들이 `systemctl start/stop/restart quizbot3`를 직접 써도 적용되게")에 따라 래퍼 스크립트
+(`quizbot_start.sh`/`quizbot_stop.sh`)가 아니라 서비스 유닛 자체에 박아 넣음. 추가로
+`TimeoutStopSec=90(기본)→20`, `KillMode=control-group`(명시)도 같이 설정 — 하루 2번 cron이
+stop→(1분 뒤)start로 재시작하는데 기본 90초 타임아웃이면 그 1분 간격을 거의 다 잡아먹어 start가
+stop 완료 전에 겹칠 위험이 있었음.
+
+**주의(다음 세션/사용자가 알아야 할 것)**: `quizbot_update.sh`는 서비스 파일을 재생성하지 않으므로,
+이미 설치된 서버는 서비스 파일을 수동으로 다시 설치해야 이번 개선이 적용됨(명령어는
+`auto_script/정석 사용법.txt`의 "systemd 서비스 동작 방식" 항목 참고). 셸 스크립트라 `bash -n`으로
+문법만 검증, 실제 서버 반영/재설치 테스트는 사용자가 직접 진행 예정.
