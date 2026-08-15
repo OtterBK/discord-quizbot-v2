@@ -9,3 +9,4 @@ fi
 echo "starting quizbot"
 sudo systemctl start quizbot3
 echo "quizbot3 systemd service started (logs: journalctl -u quizbot3 -f)"
+echo "(quizbot3.service의 ExecStartPre가 시작 직전 잔여 프로세스를 자동으로 정리함 - kill_orphan_quizbot.sh 참고)"

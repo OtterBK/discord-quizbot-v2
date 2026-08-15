@@ -19,6 +19,9 @@
    - web-frontend(퀴즈 선택 웹 UI, React+Vite 별도 프로젝트) npm install → npm run build
      (2026-08-15 추가 - 이 단계가 없으면 웹 UI 접속 시 "Cannot GET /"만 뜸)
    - QUIZBOT_PATH를 /etc/profile.d/quizbot_path.sh 에 전역 등록
+   - 최신 yt-dlp 다운로드 (update_yt-dlp.sh, 2026-08-15 추가 - npm install로 받은 번들 버전이
+     오래됐을 수 있어서 설치 직후 한 번 바로 갱신. cron을 등록해도 다음 스케줄 9시/21시까지는
+     기다려야 하므로)
    - quizbot3 systemd 서비스 생성 + enable (아직 시작은 안 함)
 
 3. 1번에서 백업해둔 config 폴더를 그대로 덮어쓰기
@@ -38,6 +41,31 @@
 - 상태 확인:      sudo systemctl status quizbot3
 - 실시간 로그:     journalctl -u quizbot3 -f
 - 수동 재시작:     sh auto_script/server_script/quizbot_stop.sh && sh auto_script/server_script/quizbot_start.sh
+  (또는 systemctl start/stop/restart quizbot3를 직접 써도 동일 - 아래 systemd 동작 방식 참고)
+
+[systemd 서비스(quizbot3) 동작 방식 - 2026-08-15 정리]
+
+quizbot3.service는 Type=simple이라 systemd가 ExecStart로 띄운 node dist/index.js 프로세스 하나를
+"본체"로 추적한다.
+- start: ExecStartPre(잔여 프로세스 청소, 아래 참고) → ExecStart(node dist/index.js 실행)
+- stop: 본체가 속한 cgroup 전체에 SIGTERM → TimeoutStopSec(20초, 기본 90초에서 단축) 안에 안 죽으면
+  SIGKILL → ExecStopPost(잔여 프로세스 청소)
+- restart: stop 전체 과정 후 곧바로 start 전체 과정
+
+quizbot_stop.sh 실행 후에도 ffmpeg/yt-dlp 같은 자식 프로세스가 간혹 안 죽는 문제(cgroup kill을
+빠져나가는 경우가 있는 듯) 때문에, ExecStartPre/ExecStopPost 둘 다
+auto_script/server_script/kill_orphan_quizbot.sh를 실행해서 남은 node/ffmpeg/yt-dlp 프로세스를
+pkill -9로 확실히 정리한다. 이 훅은 서비스 유닛 자체에 박혀있어서 quizbot_start.sh/quizbot_stop.sh
+같은 래퍼 스크립트를 거치지 않고 systemctl start/stop/restart quizbot3를 직접 쳐도 항상 같이
+실행된다 - start 쪽 청소가 있어서, 이전 인스턴스가 완전히 안 죽은 채 새 start가 들어와도 중복 실행
+없이 항상 깨끗한 상태에서 시작한다.
+
+**주의**: 이 훅들은 auto_script/systemd/quizbot3.service.template에 있고, install_quizbot3.sh가 설치
+시점에 한 번 /etc/systemd/system/quizbot3.service로 복사해서 생성한다. quizbot_update.sh(코드
+업데이트)는 이 서비스 파일을 다시 생성하지 않으므로, 2026-08-15 이전에 이미 설치된 서버에 이 개선을
+적용하려면 서비스 파일을 수동으로 다시 설치해야 한다:
+  sudo sh -c "sed 's|__QUIZBOT_PATH__|$QUIZBOT_PATH|g' '$QUIZBOT_PATH/auto_script/systemd/quizbot3.service.template' > /etc/systemd/system/quizbot3.service"
+  sudo systemctl daemon-reload
 
 [코드 업데이트 시 (신규 기능/버그수정 반영, develop/master 브랜치 전용)]
 

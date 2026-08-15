@@ -7,10 +7,21 @@ Wants=postgresql.service
 Type=simple
 User=ubuntu
 WorkingDirectory=__QUIZBOT_PATH__
+# 시작 직전에도 한 번 청소 - 이전 인스턴스가 완전히 안 죽은 채 남아있었다면(cgroup kill을 빠져나간
+# ffmpeg/yt-dlp 등) 여기서 정리한 뒤에 시작해서 새/구 인스턴스가 동시에 떠 있는 상황을 방지한다.
+ExecStartPre=/bin/bash __QUIZBOT_PATH__/auto_script/server_script/kill_orphan_quizbot.sh
 ExecStart=/usr/bin/node dist/index.js
+# 중지 직후 청소 - cgroup 기반 종료(SIGTERM/SIGKILL)가 놓친 ffmpeg/yt-dlp 등을 확실히 정리한다.
+ExecStopPost=/bin/bash __QUIZBOT_PATH__/auto_script/server_script/kill_orphan_quizbot.sh
 Environment=TZ=Asia/Seoul
 Restart=on-failure
 RestartSec=5
+# 명시적으로 cgroup 전체에 신호를 보내도록 고정(사실상 기본값과 동일하지만, 위 청소 스크립트와
+# 세트로 동작한다는 걸 문서화하는 의미로 명시함).
+KillMode=control-group
+# 기본 90초 대기 대신 20초 안에 정상 종료 안 되면 바로 SIGKILL - 하루 2번 cron이 stop→(1분 뒤)start로
+# 재시작하는데, 90초씩 걸리면 그 1분 간격을 거의 다 잡아먹어 start가 stop 완료 전에 겹쳐 실행될 위험이 있었음.
+TimeoutStopSec=20
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=quizbot3

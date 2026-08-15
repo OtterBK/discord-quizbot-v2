@@ -7,6 +7,7 @@
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
+const logger = require('../../utility/logger.js')('QuizUI');
 const {
   select_ui_mode_btn_component, //select-ui-mode-ui.ts와 동일한 2버튼(customId '1'/'2') 구조라 그대로 재사용
 } = require("./components");
@@ -55,11 +56,13 @@ class QuizEditSelectUIModeUI extends QuizbotUI
 
     if(interaction.customId === '1') //디스코드 UI - 기존 방식 그대로
     {
+      logger.info(`UI Mode Selected - feature: quiz_create, ui: discord, user_id: ${interaction.user.id}`); //UI 선호도 통계용(2026-08-15)
       return new UserQuizListUI(interaction.user);
     }
 
     if(interaction.customId === '2') //웹 UI - QuizEditWebHandoffUI로 곧장 진입(원격 편집)
     {
+      logger.info(`UI Mode Selected - feature: quiz_create, ui: web, user_id: ${interaction.user.id}`); //UI 선호도 통계용(2026-08-15)
       return new QuizEditWebHandoffUI(interaction);
     }
   }
