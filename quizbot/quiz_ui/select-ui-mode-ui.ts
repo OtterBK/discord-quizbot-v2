@@ -65,6 +65,10 @@ class SelectUIModeUI extends QuizbotUI
   {
     return [
       {
+        name: '​',
+        value: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+      },
+      {
         name: text_contents.main_menu.total_server,
         value: `${text_contents.icon.ICON_GUILD} ${sync_objects.get('guild_count')}`,
         inline: true,
