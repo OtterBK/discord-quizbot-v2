@@ -5,6 +5,7 @@ bgm_bak
 /config/private_config.json
 cache
 resources/notices/
+resources/maintenance_notice.txt
 log
 dist
 *.tsbuildinfo
