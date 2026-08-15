@@ -88,3 +88,6 @@ export const getNoticeDetail = (name) => apiFetch(`/api/notices/${encodeURICompo
 export const getServerOption = () => apiFetch('/api/server-option');
 export const updateServerOption = (fields) =>
   apiFetch('/api/server-option', { method: 'PUT', body: JSON.stringify({ fields }) });
+
+// 봇 지원센터 링크(2026-08-15 신설) - SYSTEM_CONFIG.SUPPORT_SERVER_URL을 그대로 내려줌.
+export const getSupportLink = () => apiFetch('/api/support-link');
