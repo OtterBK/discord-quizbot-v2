@@ -1516,13 +1516,26 @@ import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 �
 확인. `docs/TEST_CHECKLIST.md` AF섹션에 TOP50/페이지네이션 체크리스트 추가, 관련 `CLAUDE.md` 3개
 (`managers/`, `managers/db/`, `quiz_ui/`) 갱신.
 
-부수적으로 발견한 이슈(수정은 보류, 사용자에게 사실만 보고): 이 코드베이스의 관리자/파괴적 액션
-로깅이 파일마다 들쭉날쭉함 — `ban_manager.ts`류 오래된 매니저는 액션마다 로깅하지만, 오늘 새로 만든
-`notice_manager.ts`/`maintenance_mode_manager.ts`/`scoreboard_season_manager.ts`는 애초에 `logger`
-import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 — 전체 감사는 범위가 커서 별도 논의로 분리.
+## 2026-08-15 — 웹 UI 기본 탭 변경 + yt-dlp Python 3.11 요구사항 대응
 
-검증: `test/managers/db_manager.test.js`에 함수 개명 반영 + `selectTop50Scoreboard` 테스트 1개 추가
-(392 pass), `npm run lint`(0 error), 루트+`web-frontend` 양쪽 `npm run build` 통과, `ScoreboardUI`
-페이지네이션 로직은 `node -e` 스모크 테스트로 경계값(11개/37개 데이터, 4페이지 시작 랭크 등) 직접
-확인. `docs/TEST_CHECKLIST.md` AF섹션에 TOP50/페이지네이션 체크리스트 추가, 관련 `CLAUDE.md` 3개
-(`managers/`, `managers/db/`, `quiz_ui/`) 갱신.
+사용자 피드백 2건, 서로 무관한 소규모 수정:
+
+- **웹 UI 기본 탭**: `/퀴즈` → "웹 UI" 선택 시 뜨는 첫 탭이 "공식 퀴즈"였는데 "유저 퀴즈"부터 보이게
+  해달라는 요청 — `select-ui-mode-ui.ts`의 `new WebHandoffUI('dev', interaction)`을
+  `new WebHandoffUI('user', interaction)`으로 1줄 변경. `mode`는 세션 생성 시 초기 탭 값일 뿐(웹
+  프론트엔드에서 탭을 자유롭게 오갈 수 있음, 세션 자체엔 고정 안 됨) 다른 어떤 로직도 이 값에
+  의존하지 않는 걸 확인하고 안전하게 변경.
+- **yt-dlp Python 버전 문제**: yt-dlp 최신 버전이 Python 3.11+를 요구하는데, Ubuntu 22.04 기본
+  python3는 3.10이라 노래 퀴즈가 아예 안 되는 문제 발견. 근본 원인은
+  `auto_script/server_script/update_yt-dlp.sh`가 받던 GitHub 릴리즈 자산 "yt-dlp"가 시스템 python3를
+  shebang으로 호출하는 zipapp이었던 것 — standalone 바이너리 자산 "yt-dlp_linux"(PyInstaller로 만든
+  자체 Python 런타임 내장 빌드)로 다운로드 대상을 바꿔서 시스템 python3 버전과 완전히 무관하게 만듦
+  (저장 파일명은 그대로 "yt-dlp"라 다른 코드 변경 불필요). 부수적으로 `quizbot_update.sh`가
+  `npm install` 직후 `youtube-dl-exec` 자체 postinstall이 이 python 의존 버전을 다시 받아써서
+  되돌려놓는 걸 발견 — `npm install` 다음 줄에 `update_yt-dlp.sh` 재호출을 추가해 매번 즉시 재보정하게
+  함(이전엔 다음 9시/21시 크론까지 최대 12시간 방치됐음).
+
+검증: `select-ui-mode-ui.ts` 변경은 `npm test`(392 pass)/`npm run lint`(0 error)/`npm run build`로
+확인(UI 클래스라 관례상 유닛테스트 대상 아님). 셸 스크립트 2개는 `bash -n`으로 문법만 확인 — 실제
+서버 반영/재검증(다운로드된 바이너리가 실제로 python 없이 동작하는지)은 사용자가 직접 진행 예정.
+`quizbot/quiz_ui/CLAUDE.md`/`auto_script/정석 사용법.txt` 갱신.

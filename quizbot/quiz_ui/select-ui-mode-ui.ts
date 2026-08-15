@@ -140,7 +140,7 @@ class SelectUIModeUI extends QuizbotUI
     if(interaction.customId === '2') //웹 UI 눌렀을 때 - WebHandoffUI로 곧장 진입(원격 컨트롤)
     {
       logger.info(`UI Mode Selected - feature: quiz_select, ui: web, user_id: ${interaction.user.id}, guild_id: ${interaction.guild?.id}`); //UI 선호도 통계용(2026-08-15)
-      return new WebHandoffUI('dev', interaction);
+      return new WebHandoffUI('user', interaction); //웹 진입 시 기본 탭을 "유저 퀴즈"로(2026-08-15 피드백, 이전엔 "공식 퀴즈"였음)
     }
   }
 
