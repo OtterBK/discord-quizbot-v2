@@ -26,7 +26,8 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 45개 이름으�
   // 서버 설정 웹 API 전용 파라미터화 쿼리(기존 updateOption은 문자열 직접 삽입, 디스코드 경로 그대로 유지)
   // db_random_quiz_preset(5개)은 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) 구현 중 신설됨
   // selectSeasonList/selectArchivedTop50Scoreboard/selectArchivedGuildScoreboard/endCurrentSeason은
-  // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md) 구현 중 신설됨
+  // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md) 구현 중 신설됨(selectTop10Scoreboard도
+  // 이때 selectTop50Scoreboard로 개명 - TOP50 노출 요청, 2026-08-15 같은 날 후속)
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -181,7 +182,19 @@ test('selectArchivedTop50Scoreboard: season_id로 그 시즌의 상위 50개를 
 
   assert.match(captured.query_string, /FROM tb_global_scoreboard_archive/);
   assert.match(captured.query_string, /WHERE season_id = \$1 AND mmr != 0/);
+  assert.match(captured.query_string, /LIMIT 50/);
   assert.deepEqual(captured.values, [3]);
+});
+
+test('selectTop50Scoreboard: 현재 시즌 상위 50개를 조회한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectTop50Scoreboard();
+
+  assert.match(captured.query_string, /FROM tb_global_scoreboard/);
+  assert.match(captured.query_string, /LIMIT 50/);
 });
 
 test('selectArchivedGuildScoreboard: season_id/guild_id로 그 시즌의 해당 길드 기록을 조회한다', async (t) =>

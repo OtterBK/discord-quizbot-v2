@@ -627,7 +627,7 @@ exports.start = (): any =>
     if(season_id === undefined)
     {
       const my_result = await db_manager.selectGlobalScoreboard(guild_id);
-      const top_result = await db_manager.selectTop10Scoreboard();
+      const top_result = await db_manager.selectTop50Scoreboard();
 
       res.json({
         season_name: scoreboard_season_manager.getCurrentSeasonName(SYSTEM_CONFIG.CURRENT_SEASON_NAME_PATH),

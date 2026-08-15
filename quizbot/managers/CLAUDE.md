@@ -182,10 +182,14 @@ DM은 봇-유저 1:1이라 하이재킹 개념이 없어 기존 세션이 있어
   목록(`/api/user-quizzes`)과 대조해서 존재하는 항목만 퀴즈함에 채우고, 못 찾은 항목 수만큼 안내
   문구를 보여준다. **스코어보드 웹 노출(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`)**:
   `GET /api/scoreboard`(쿼리 `season_id` 없으면 현재 시즌 — `scoreboard_season_manager`+
-  `selectGlobalScoreboard`/`selectTop10Scoreboard`, 있으면 해당 시즌 아카이브 —
+  `selectGlobalScoreboard`/`selectTop50Scoreboard`, 있으면 해당 시즌 아카이브 —
   `selectArchivedGuildScoreboard`/`selectArchivedTop50Scoreboard`)/`GET /api/scoreboard/seasons`
   (종료된 시즌 목록, 드롭다운용) 둘 다 `requireGuildScopedSession` 적용. DDL 미실행 상태에서도
   `selectSeasonList()`가 `undefined`→빈 배열로 안전하게 폴백해 크래시 없이 "시즌 없음" 상태로 보인다.
+  **TOP50 노출(같은 날 후속)**: 원래 TOP10이었던 걸 사용자 요청으로 TOP50까지 확장(`selectTop10Scoreboard`→
+  `selectTop50Scoreboard` 개명 포함) — 웹은 `ScoreboardPanel.jsx`가 배열을 그대로 스크롤 목록(`max-height`+
+  `overflow-y`)으로 렌더링해서 추가 변경이 필요 없었지만, 디스코드는 embed 하나에 50줄을 다 못 욱여넣어
+  `scoreboard-ui.ts`에 자체 페이지네이션(10개씩, prev/next 버튼)이 새로 생김 — 상세는 `quiz_ui/CLAUDE.md`.
 
 ## 기타
 

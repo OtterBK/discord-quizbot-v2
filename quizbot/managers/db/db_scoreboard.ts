@@ -37,7 +37,7 @@ exports.updateGlobalScoreboard = async (guild_id: string, win_add: number, lose_
   return db_core.sendQuery(query_string, [guild_id, win_add, lose_add, play_add, mmr_add, guild_name]);
 };
 
-exports.selectTop10Scoreboard = async (): Promise<any> =>
+exports.selectTop50Scoreboard = async (): Promise<any> =>
 {
   const query_string =
   `
@@ -45,7 +45,7 @@ exports.selectTop10Scoreboard = async (): Promise<any> =>
     FROM tb_global_scoreboard
     WHERE mmr != 0
     ORDER BY mmr DESC
-    LIMIT 10;
+    LIMIT 50;
   `;
 
   return db_core.sendQuery(query_string);

@@ -457,7 +457,7 @@ select.sort-select {
 
 /* 스코어보드(순위표) 상위 랭킹 목록(2026-08-15 신설) - 클릭 불가한 순수 표시용 행이라 .tree-row(버튼)
    대신 별도 정의 */
-.scoreboard-list { display: flex; flex-direction: column; gap: 6px; }
+.scoreboard-list { display: flex; flex-direction: column; gap: 6px; max-height: 480px; overflow-y: auto; }
 .scoreboard-row {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 10px;

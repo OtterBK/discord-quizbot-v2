@@ -1484,6 +1484,38 @@ AF섹션 신설(디스코드/웹/quizmgr 3갈래 체크리스트), 관련 `CLAUD
 `quiz_ui/`, `quiz_ui/components/`) 갱신. **DDL 미실행 상태 실사용 미검증** - 사용자가 dev DB에 DDL을
 먼저 적용해야 시즌 아카이브 관련 화면들을 실제로 테스트할 수 있음.
 
+## 2026-08-15 — (같은 날 후속) 시즌 관리 모달 크래시 수정 + TOP10 → TOP50 확장
+
+바로 위 스코어보드 시즌 기능을 실서버에서 켜본 사용자가 두 가지를 발견/요청:
+
+- **버그**: quizmgr "시즌 관리" → "시즌 종료" → 새 시즌 이름 모달 제출 시 `new_ui.onReady is not a
+  function`으로 봇이 죽음. 원인은 `admin-season-ui.ts`의 `handleNewSeasonName`이 DB 호출 때문에
+  `async` 함수인데 `onInteractionCreate`가 `return this.handleNewSeasonName(interaction)`으로 그
+  결과(Promise)를 그대로 반환했던 것 — UI 프레임워크는 `onInteractionCreate`가 새 UI 인스턴스 또는
+  `undefined`를 반환한다고 가정하는데, Promise가 넘어가자 `appendNewUI`가 그걸 새 화면으로 착각해
+  `.onReady()`를 호출하려다 크래시. 다른 async 모달 핸들러들과 동일하게 fire-and-forget으로 호출만
+  하고 `onInteractionCreate`는 `undefined`를 반환하도록 수정(1줄).
+- **TOP10 → TOP50 확장**: `db_scoreboard.ts`의 `selectTop10Scoreboard`/`selectArchivedTop10Scoreboard`를
+  `selectTop50Scoreboard`/`selectArchivedTop50Scoreboard`로 개명 + `LIMIT 10`→`LIMIT 50`. 웹
+  (`ScoreboardPanel.jsx`)은 이미 배열을 그대로 렌더링하던 구조라 코드 변경 없이 `.scoreboard-list`에
+  `max-height`+`overflow-y: auto`만 추가해서 스크롤 목록으로 대응. 디스코드(`scoreboard-ui.ts`)는 embed
+  하나에 50줄을 다 못 넣어 자체 페이지네이션(10개씩, `scoreboard_top_prev`/`scoreboard_top_next` 버튼,
+  경계에서 `.setDisabled()`)을 신설 — 이미 한 번에 50개를 로드해둔 배열을 페이지 전환 시 슬라이스만
+  하므로 DB 재조회 없음. `QuizBotControlComponentUI`(번호 select 버튼 포함, 선택 가능한 목록 전용)는
+  이 화면(클릭 불가 순수 표시용 랭킹)엔 안 맞아 채택하지 않고 최소한의 자체 로직만 추가. 4위부터
+  쓰던 `ICON_NUM_` 텍스트 이모지(0~10까지만 존재)는 TOP50엔 애초에 못 써서 평범한 `"N)"` 숫자로 통일.
+
+부수적으로 발견한 이슈(수정은 보류, 사용자에게 사실만 보고): 이 코드베이스의 관리자/파괴적 액션
+로깅이 파일마다 들쭉날쭉함 — `ban_manager.ts`류 오래된 매니저는 액션마다 로깅하지만, 오늘 새로 만든
+`notice_manager.ts`/`maintenance_mode_manager.ts`/`scoreboard_season_manager.ts`는 애초에 `logger`
+import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 — 전체 감사는 범위가 커서 별도 논의로 분리.
+
+검증: `test/managers/db_manager.test.js`에 함수 개명 반영 + `selectTop50Scoreboard` 테스트 1개 추가
+(392 pass), `npm run lint`(0 error), 루트+`web-frontend` 양쪽 `npm run build` 통과, `ScoreboardUI`
+페이지네이션 로직은 `node -e` 스모크 테스트로 경계값(11개/37개 데이터, 4페이지 시작 랭크 등) 직접
+확인. `docs/TEST_CHECKLIST.md` AF섹션에 TOP50/페이지네이션 체크리스트 추가, 관련 `CLAUDE.md` 3개
+(`managers/`, `managers/db/`, `quiz_ui/`) 갱신.
+
 부수적으로 발견한 이슈(수정은 보류, 사용자에게 사실만 보고): 이 코드베이스의 관리자/파괴적 액션
 로깅이 파일마다 들쭉날쭉함 — `ban_manager.ts`류 오래된 매니저는 액션마다 로깅하지만, 오늘 새로 만든
 `notice_manager.ts`/`maintenance_mode_manager.ts`/`scoreboard_season_manager.ts`는 애초에 `logger`
