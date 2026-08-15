@@ -56,6 +56,23 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# web-frontend/는 루트와 별개의 독립 프로젝트(React+Vite, 별도 package.json)라 위 루트 npm run build로는
+# 안 만들어짐 - 건너뛰면 웹 UI가 이전 빌드 그대로 남거나(신규 설치 직후엔 아예 없어서) "Cannot GET /"만
+# 뜨게 됨(2026-08-15 발견)
+echo "🔨 Building web-frontend (React+Vite)..."
+cd "$QUIZBOT_PATH/web-frontend" || { echo "❌ Failed to cd into web-frontend"; exit 1; }
+sudo npm install
+if [ $? -ne 0 ]; then
+    echo "❌ web-frontend npm install failed. 서비스를 시작하지 않고 종료합니다."
+    exit 1
+fi
+sudo npm run build
+if [ $? -ne 0 ]; then
+    echo "❌ web-frontend npm run build failed. 서비스를 시작하지 않고 종료합니다 - web-frontend/dist/는 이전 빌드 상태로 남아있으니, 빌드 에러를 고친 뒤 이 스크립트를 다시 실행하세요."
+    exit 1
+fi
+cd "$QUIZBOT_PATH" || { echo "❌ Failed to cd back into $QUIZBOT_PATH"; exit 1; }
+
 echo "▶️  Starting quizbot3 service..."
 sudo systemctl start quizbot3
 
