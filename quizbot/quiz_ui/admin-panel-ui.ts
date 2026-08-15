@@ -12,6 +12,7 @@ const {
 const report_manual_processing = require('../managers/report/report_manual_processing');
 const { UserQuizListUI } = require("./user-quiz-list-ui");
 const { AdminBanListUI } = require("./admin-ban-list-ui");
+const { AdminNoticeListUI } = require("./admin-notice-list-ui");
 
 //#endregion
 
@@ -61,6 +62,11 @@ class AdminPanelUI extends QuizbotUI
     if(interaction.customId === 'admin_panel_quiz_manage')
     {
       return new UserQuizListUI(interaction.user, true); //전체 유저 퀴즈 조회 모드
+    }
+
+    if(interaction.customId === 'admin_panel_notice_manage')
+    {
+      return new AdminNoticeListUI();
     }
   }
 }

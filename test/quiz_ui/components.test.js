@@ -18,7 +18,7 @@ const multiplayer_components = require('../../quizbot/quiz_ui/components/multipl
 const report_components = require('../../quizbot/quiz_ui/components/report_components');
 const web_handoff_components = require('../../quizbot/quiz_ui/components/web_handoff_components');
 
-test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 64개)', () =>
+test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 69개)', () =>
 {
   // 죽은 export였던 note_ui_component는 Phase 6에서 삭제됨 (DEPRECATED_CODE_REMOVED.md 참고)
   // quiz_delete_confirm_admin_comp/admin_panel_comp는 관리자 기능 추가로 신설됨
@@ -28,6 +28,8 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
   // question_preview_comp는 B-2(문제 미리듣기) 구현으로 신설됨(이미지 재로드 버튼도 question_edit_comp에서 이쪽으로 이동)
   // force_take_comp(2026-08-13 이전 이름: web_handoff_force_take_comp)는 하이재킹 방어(Phase 1)로 신설됨
   // select_ui_mode_btn_component는 퀴즈 선택 웹 연동 투트랙 진입(SelectUIModeUI) 신설로 추가됨
+  // admin_notice_create_btn_comp/admin_notice_manage_comp/admin_notice_delete_confirm_comp/
+  // modal_notice_create/modal_notice_edit는 quizmgr 공지 관리 기능(2026-08-15) 신설로 추가됨
   const expected_names = [
     ...Object.keys(base_components),
     ...Object.keys(custom_quiz_components),
@@ -39,7 +41,7 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
 
   const actual_names = Object.keys(components).sort();
 
-  assert.equal(actual_names.length, 64);
+  assert.equal(actual_names.length, 69);
   assert.deepEqual(actual_names, expected_names);
 });
 

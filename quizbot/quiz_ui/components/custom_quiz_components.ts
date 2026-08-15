@@ -144,6 +144,12 @@ const admin_panel_comp = new ActionRowBuilder()
       .setCustomId('admin_panel_quiz_manage')
       .setLabel('퀴즈 관리')
       .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_notice_manage')
+      .setLabel('공지 관리')
+      .setStyle(ButtonStyle.Primary),
   );
 
 //관리자 밴 목록 - 밴 해제 확인 절차 (오클릭 방지)
@@ -160,6 +166,80 @@ const admin_ban_unban_confirm_comp = new ActionRowBuilder()
       .setLabel('네, 밴을 해제합니다.')
       .setStyle(ButtonStyle.Danger),
   );
+
+//관리자 패널 - 공지 관리(quizmgr, 2026-08-15 신설) 목록 화면의 "새 공지 작성" 버튼
+const admin_notice_create_btn_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_notice_create_request')
+      .setLabel('➕ 새 공지 작성')
+      .setStyle(ButtonStyle.Success),
+  );
+
+//관리자 패널 - 공지 상세 화면의 수정/삭제 버튼
+const admin_notice_manage_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_notice_edit_request')
+      .setLabel('✏ 수정')
+      .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_notice_delete_request')
+      .setLabel('🗑 삭제')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 공지 삭제 확인 절차 (오클릭 방지, admin_ban_unban_confirm_comp와 동일 패턴)
+const admin_notice_delete_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_notice_delete_cancel')
+      .setLabel('아니요, 삭제하지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_notice_delete_confirmed')
+      .setLabel('네, 삭제합니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 공지 작성 (제목 + 본문, 마크다운 서식 그대로 입력받아 저장)
+const modal_notice_create = new ModalBuilder()
+  .setCustomId('modal_notice_create')
+  .setTitle('공지 작성')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_notice_title')
+          .setLabel('공지 제목을 입력해주세요.')
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(1)
+          .setMaxLength(60)
+          .setRequired(true)
+          .setPlaceholder('예시) 3.0.2 업데이트 안내')
+      )
+  )
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_notice_content')
+          .setLabel('공지 내용을 입력해주세요. (마크다운 서식 사용 가능)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setMinLength(1)
+          .setMaxLength(4000)
+          .setRequired(true)
+          .setPlaceholder('예시: **안녕하세요!**\n오늘 업데이트 내용을 안내드립니다...')
+      )
+  );
+
+//관리자 패널 - 공지 수정 (modal_notice_create와 동일 구조, customId만 분리 - modal_question_info_edit와 동일 관례)
+const modal_notice_edit = cloneDeep(modal_notice_create);
+modal_notice_edit.setCustomId('modal_notice_edit');
 
 //퀴즈 만들기
 const modal_quiz_info = new ModalBuilder()
@@ -514,6 +594,11 @@ module.exports = {
   quiz_delete_confirm_admin_comp,
   admin_panel_comp,
   admin_ban_unban_confirm_comp,
+  admin_notice_create_btn_comp,
+  admin_notice_manage_comp,
+  admin_notice_delete_confirm_comp,
+  modal_notice_create,
+  modal_notice_edit,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,
