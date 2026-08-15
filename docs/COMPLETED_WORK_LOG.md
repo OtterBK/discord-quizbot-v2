@@ -1439,3 +1439,58 @@ git으로 추적되면서 봇이 런타임에 직접 쓰는 파일이 예상보�
 (0 error)로 검증(회귀 없음 - 컴포넌트 개명은 참조 2곳만 바꾸는 단순 리네임). 문서(정석 사용법.txt,
 루트/managers `CLAUDE.md`, `docs/TEST_CHECKLIST.md`) 갱신. 실제 서버 반영/재검증은 사용자가 직접
 진행 예정.
+
+## 2026-08-15 — 스코어보드 시즌 아카이브 + 웹 UI 노출 (`docs/plans/SCOREBOARD_SEASON_PLAN.md`)
+
+사용자 요청: (1) 디스코드 전용이던 순위표(스코어보드)를 웹 UI에서도 볼 수 있게, (2) 과거 시즌
+스코어보드도 조회 가능하게. 착수 전 조사에서 "시즌"이 `text_contents.json`의 고정 텍스트
+(`scoreboard.season_label`, "[베타 시즌]")일 뿐 실제 데이터 모델이 전혀 없었다는 사실을 발견 -
+이 기능 이전 과거 시즌 기록은 복구 불가능함을 사용자에게 알리고, 구조 개선안(신규 DB 테이블로
+시즌 종료 시점 스냅샷 아카이빙 + Discord/웹 양쪽 시즌 브라우징 + 관리자 시즌 종료 액션)을 제안,
+"둘 다 진행(추천)"으로 스코프 확정.
+
+- **DB 설계**: 핫패스 테이블(`tb_global_scoreboard`, 매 대결 종료마다 갱신)은 건드리지 않고 완전히
+  분리된 아카이브 구조 채택 - `tb_scoreboard_season`(시즌 메타)/`tb_global_scoreboard_archive`
+  (시즌 종료 시점 `tb_global_scoreboard` 스냅샷, `season_id`+`guild_id` PK). 마이그레이션 프레임워크가
+  없어(`RANDOM_QUIZ_PRESET_PLAN.md`와 동일 관행) DDL은 `docs/plans/SCOREBOARD_SEASON_PLAN.md`에 psql로
+  수동 실행할 스크립트로 적어두고 `auto_script/db_backup/base.sql`에도 반영 - **사용자가 dev/prod DB에
+  직접 실행하기 전까지는 새 함수 4개가 전부 조용히 `undefined`를 반환**(`db_core.sendQuery`의 에러
+  흡수 동작 그대로 활용), 상위 계층은 이를 "시즌 없음"으로 취급해 기존 동작(현재 시즌만 표시)으로
+  안전하게 폴백함.
+- **`db/db_scoreboard.ts`**: `selectSeasonList`/`selectArchivedTop10Scoreboard`/
+  `selectArchivedGuildScoreboard`/`endCurrentSeason` 4개 추가. 이 코드베이스에 트랜잭션 헬퍼가 없어
+  `endCurrentSeason`은 "시즌 행 INSERT → 스냅샷 INSERT...SELECT → 라이브 테이블 DELETE" 순서로
+  진행하고, 스냅샷 단계가 실패하면 방금 만든 시즌 행을 보상 DELETE로 정리하는 애플리케이션 레벨
+  보상 패턴(`db_random_quiz_preset.ts`의 기존 관행)을 그대로 적용.
+- **`managers/scoreboard_season_manager.ts`**(신규): 현재 시즌 이름을 `resources/current_season_name.txt`
+  (재배포 없이 quizmgr에서 바로 수정, `current_notice.txt`/`maintenance_notice.txt`와 동일 패턴)로
+  관리. `endSeasonAndStartNew`는 "시즌 종료" 버튼 한 번으로 아카이빙+새 이름 저장을 묶어서 처리(실패
+  시 파일은 안 건드림).
+- **디스코드 `ScoreboardUI`**: `selectSeasonList()`로 종료된 시즌 목록을 불러와 StringSelectMenu
+  ("현재 시즌"+최대 24개 과거 시즌)를 추가, 과거 시즌 선택 시 아카이브 스냅샷을 보여줌. 시즌 목록이
+  비어있으면(DDL 미실행 포함) 기존과 동일한 뒤로가기만 있는 화면으로 폴백.
+- **quizmgr `AdminSeasonUI`**(신규, 관리자 패널 2번째 줄 3번째 버튼): 현재 시즌 이름 + 종료된 시즌
+  개수 표시, "시즌 종료 및 새 시즌 시작" 버튼 → 확인 절차(2버튼) → 모달로 새 시즌 이름 입력 →
+  `endSeasonAndStartNew` 호출.
+- **웹 UI**: `web_express_app.ts`에 `GET /api/scoreboard`(쿼리 `season_id` 유무로 현재/과거 분기)/
+  `GET /api/scoreboard/seasons` 2개 라우트 추가(`requireGuildScopedSession`). 신규
+  `web-frontend/src/ScoreboardPanel.jsx` + `App.jsx`의 "☰ 더보기" 메뉴에 "🎖 순위표" 항목 추가(기존
+  3항목 → 4항목).
+
+검증: 신규 `test/managers/scoreboard_season_manager.test.js`(5개) + `test/managers/db_manager.test.js`에
+6개 추가(export 개수 41→45), `test/quiz_ui/components.test.js` export 개수 75→78 갱신. `npm test`
+(391 pass)/`npm run lint`(0 error)/`web-frontend`의 `npm run build` 통과. `docs/TEST_CHECKLIST.md`에
+AF섹션 신설(디스코드/웹/quizmgr 3갈래 체크리스트), 관련 `CLAUDE.md` 4개(`managers/`, `managers/db/`,
+`quiz_ui/`, `quiz_ui/components/`) 갱신. **DDL 미실행 상태 실사용 미검증** - 사용자가 dev DB에 DDL을
+먼저 적용해야 시즌 아카이브 관련 화면들을 실제로 테스트할 수 있음.
+
+부수적으로 발견한 이슈(수정은 보류, 사용자에게 사실만 보고): 이 코드베이스의 관리자/파괴적 액션
+로깅이 파일마다 들쭉날쭉함 — `ban_manager.ts`류 오래된 매니저는 액션마다 로깅하지만, 오늘 새로 만든
+`notice_manager.ts`/`maintenance_mode_manager.ts`/`scoreboard_season_manager.ts`는 애초에 `logger`
+import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 — 전체 감사는 범위가 커서 별도 논의로 분리.
+
+검증: `test/managers/db_manager.test.js`에 함수 개명 반영 + `selectTop50Scoreboard` 테스트 1개 추가
+(392 pass), `npm run lint`(0 error), 루트+`web-frontend` 양쪽 `npm run build` 통과, `ScoreboardUI`
+페이지네이션 로직은 `node -e` 스모크 테스트로 경계값(11개/37개 데이터, 4페이지 시작 랭크 등) 직접
+확인. `docs/TEST_CHECKLIST.md` AF섹션에 TOP50/페이지네이션 체크리스트 추가, 관련 `CLAUDE.md` 3개
+(`managers/`, `managers/db/`, `quiz_ui/`) 갱신.

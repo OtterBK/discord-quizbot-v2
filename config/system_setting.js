@@ -70,6 +70,7 @@ exports.SYSTEM_CONFIG = {
   BANNED_USER_PATH: `${PROJECT_ROOT}/resources/banned_user.txt`, //퀴즈만들기 밴
   TAGGED_DEV_QUIZ_INFO: `${PROJECT_ROOT}/resources/tagged_dev_quiz_info.json`, //공식 퀴즈 태그 설정값
   MAINTENANCE_NOTICE_PATH: `${PROJECT_ROOT}/resources/maintenance_notice.txt`, //실시간 점검 공지
+  CURRENT_SEASON_NAME_PATH: `${PROJECT_ROOT}/resources/current_season_name.txt`, //스코어보드 현재 시즌 이름(quizmgr에서 수정)
 
   HINT_PERCENTAGE: 2, //4로 설정하면 정답 전체의 1/4만 보여주겠다는 거임
   HINT_MAX_TRY: 1000, //힌트 만들 때 최대 시도 횟수

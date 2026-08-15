@@ -91,3 +91,8 @@ export const updateServerOption = (fields) =>
 
 // 봇 지원센터 링크(2026-08-15 신설) - SYSTEM_CONFIG.SUPPORT_SERVER_URL을 그대로 내려줌.
 export const getSupportLink = () => apiFetch('/api/support-link');
+
+// 스코어보드(순위표, 2026-08-15 신설) - seasonId를 안 주면 현재 시즌.
+export const getScoreboard = (seasonId) =>
+  apiFetch(seasonId === undefined ? '/api/scoreboard' : `/api/scoreboard?season_id=${seasonId}`);
+export const getScoreboardSeasons = () => apiFetch('/api/scoreboard/seasons');

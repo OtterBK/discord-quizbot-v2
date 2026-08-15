@@ -45,6 +45,18 @@
   Link 버튼, `guildCreate` 환영 메시지와 공유)도 같이 붙어서, 막힌 유저가 문의할 곳을 바로 찾을 수
   있음(2026-08-15 추가).
 
+## 스코어보드 시즌
+
+- **`scoreboard_season_manager.ts`**(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`) — "시즌"이
+  이 기능 이전엔 `text_contents.json`의 고정 텍스트 라벨일 뿐 실제 데이터 모델이 없었음(과거 시즌 기록은
+  복구 불가) — 이번에 신규 DB 테이블(`db/db_scoreboard.ts` 참고)과 함께 처음으로 실제 아카이브 기능이
+  생김. `getCurrentSeasonName`/`setCurrentSeasonName`은 `resources/current_season_name.txt`(
+  `current_notice.txt`/`maintenance_notice.txt`와 동일 패턴, 재배포 없이 quizmgr에서 바로 수정) 읽기/쓰기
+  순수 함수. `endSeasonAndStartNew(path, new_season_name)`는 "시즌 종료" 버튼 한 번으로 끝나는 합성
+  동작 — 현재 파일에 적힌 이름으로 `db_manager.endCurrentSeason`을 호출해 스냅샷+라이브 테이블 초기화를
+  맡기고, 성공했을 때만 파일에 새 이름을 이어 쓴다(실패 시 파일은 건드리지 않음). `quiz_ui/admin-season-ui.ts`
+  (quizmgr "시즌 관리")가 호출부.
+
 ## 밴 관리
 
 - **`ban_manager.js`** — `resources/banned_user.txt`를 메모리 `Set`으로 캐싱(10분 주기 재조회, `unref()`된 타이머). `isBanned(id_list)`, `banId(id)`, `unbanId(id)`, `getBannedIdList()`. **길드ID(멀티플레이 밴)와 유저ID(퀴즈 생성 영구밴)를 같은 목록으로 관리** — 의도된 설계(둘 다 "이 ID는 문제 있음"이라는 같은 의미). `banId`/`unbanId`는 파일에 쓰는 동시에 캐시도 즉시 갱신해 다음 재조회 주기를 기다리지 않음. 원래 이름은 `multiplayer_ban_manager.js`였는데 유저ID 밴도 겸하게 되면서 일반화된 이름으로 리네임됨. 파일 기반 싱글턴이라 Discord client 의존이 없어(2026-08-10 확인) `initialize()`가 클러스터(`bot.js`)뿐 아니라 마스터(`index.js`)에서도 호출됨 — 멀티플레이 웹 연동(Phase 4)의 `/api/session/confirm`(mode:multiplayer)이 로비 생성/참가 브로드캐스트 전에 마스터에서 바로 밴 체크를 하기 위함.
@@ -168,7 +180,12 @@ DM은 봇-유저 1:1이라 하이재킹 개념이 없어 기존 세션이 있어
   목록만 저장하며, 목록 조회 응답도 필터링 없이 그대로 내려준다. 비공개 전환/삭제로 무효해진 quiz_id를
   거르는 책임은 서버가 아니라 프론트엔드(`OmakaseTab.jsx`)에 있음 — 이미 불러온 공개 퀴즈
   목록(`/api/user-quizzes`)과 대조해서 존재하는 항목만 퀴즈함에 채우고, 못 찾은 항목 수만큼 안내
-  문구를 보여준다.
+  문구를 보여준다. **스코어보드 웹 노출(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`)**:
+  `GET /api/scoreboard`(쿼리 `season_id` 없으면 현재 시즌 — `scoreboard_season_manager`+
+  `selectGlobalScoreboard`/`selectTop10Scoreboard`, 있으면 해당 시즌 아카이브 —
+  `selectArchivedGuildScoreboard`/`selectArchivedTop50Scoreboard`)/`GET /api/scoreboard/seasons`
+  (종료된 시즌 목록, 드롭다운용) 둘 다 `requireGuildScopedSession` 적용. DDL 미실행 상태에서도
+  `selectSeasonList()`가 `undefined`→빈 배열로 안전하게 폴백해 크래시 없이 "시즌 없음" 상태로 보인다.
 
 ## 기타
 

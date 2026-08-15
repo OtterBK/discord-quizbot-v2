@@ -455,6 +455,18 @@ select.sort-select {
 .stat-box .k { font-size: 10.5px; color: var(--ink-faint); font-weight: 600; }
 .stat-box .v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 700; margin-top: 2px; }
 
+/* 스코어보드(순위표) 상위 랭킹 목록(2026-08-15 신설) - 클릭 불가한 순수 표시용 행이라 .tree-row(버튼)
+   대신 별도 정의 */
+.scoreboard-list { display: flex; flex-direction: column; gap: 6px; }
+.scoreboard-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  background: var(--surface-sunken); border: 1px solid var(--border);
+}
+.scoreboard-row .rank { font-size: 15px; font-weight: 700; width: 26px; text-align: center; flex-shrink: 0; }
+.scoreboard-row .name { flex: 1; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scoreboard-row .record { font-size: 11.5px; color: var(--ink-dim); font-family: var(--font-num); white-space: nowrap; }
+
 .field-label { font-size: 11.5px; font-weight: 700; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: block; }
 
 .stepper { display: flex; align-items: center; gap: 10px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; }

@@ -254,6 +254,12 @@ const admin_panel_row2_comp = new ActionRowBuilder()
       .setCustomId('admin_panel_current_notice_edit')
       .setLabel('📢 실시간 공지 수정')
       .setStyle(ButtonStyle.Primary),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_panel_season_manage')
+      .setLabel('🏆 시즌 관리')
+      .setStyle(ButtonStyle.Primary),
   );
 
 //관리자 패널 - 점검 모드 꺼짐 상태의 "켜기" 버튼
@@ -327,6 +333,48 @@ const modal_current_notice_edit = new ModalBuilder()
           .setMaxLength(1000)
           .setRequired(false)
           .setPlaceholder('예시) 🔹 오전/오후 9시마다 서버를 재시작합니다.')
+      )
+  );
+
+//관리자 패널 - 시즌 관리(quizmgr, 2026-08-15 신설) 화면의 "시즌 종료" 버튼
+const admin_season_end_btn_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_season_end_request')
+      .setLabel('🏆 시즌 종료 및 새 시즌 시작')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 시즌 종료 확인 절차 (오클릭 방지 - 현재 스코어보드를 초기화하는 되돌리기 어려운 동작)
+const admin_season_end_confirm_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_season_end_cancel')
+      .setLabel('아니요, 종료하지 않습니다.')
+      .setStyle(ButtonStyle.Success),
+  )
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_season_end_confirmed')
+      .setLabel('네, 시즌을 종료합니다.')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 패널 - 새 시즌 이름 입력 (시즌 종료 확인 직후 바로 이 모달을 띄움)
+const modal_new_season_name = new ModalBuilder()
+  .setCustomId('modal_new_season_name')
+  .setTitle('새 시즌 시작')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_new_season_name')
+          .setLabel('새 시즌 이름을 입력해주세요.')
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(1)
+          .setMaxLength(30)
+          .setRequired(true)
+          .setPlaceholder('예시) 4시즌')
       )
   );
 
@@ -694,6 +742,9 @@ module.exports = {
   admin_maintenance_disable_confirm_comp,
   modal_maintenance_notice,
   modal_current_notice_edit,
+  admin_season_end_btn_comp,
+  admin_season_end_confirm_comp,
+  modal_new_season_name,
   modal_quiz_info,
   modal_question_info,
   modal_question_additional_info,

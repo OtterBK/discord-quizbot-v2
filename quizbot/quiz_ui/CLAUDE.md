@@ -30,7 +30,7 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
   공유 모듈 — `multiplayer_mmr.js`와 동일 관례. 디스코드 UI가 지금 이 함수들을 호출하고, Phase 3~4의
   REST 핸들러(`web_quiz_editor_routes.ts`)도 같은 함수를 재사용할 예정.
 - **`multiplayer-quiz-select-ui.js`** — 멀티플레이 로비 생성/참가 진입점. `checkMultiplayerBanMessage(interaction)`(2026-08-12, UI 개선 2라운드 B-5 — 원래 이름 `checkMultiplayerBan(list)`)이 `ban_manager.isBanned(...)`로 위임하되, 유저ID/길드ID를 따로 검사해서 어느 쪽이 밴됐는지 구분하는 메시지(+문의처 안내)를 반환한다 — 예전엔 `[guild.id, user.id]`를 한 배열로 묶어 검사해서 "당신 또는 이 서버가..."로 뭉뚱그려 안내했음. 같은 증상이 있는 `web-handoff-ui.ts`의 `buildMultiplayerUI`(웹 경로)는 아직 안 고침.
-- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리/공지 관리/점검 모드/실시간 공지 수정, 2번째 줄 2버튼은 2026-08-15 추가). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고). `AdminPanelUI` 자체가 "실시간 공지 수정" 버튼→모달 흐름을 직접 처리함(별도 화면 전환 없음, `managers/notice_manager.ts`의 `readCurrentNotice`/`writeCurrentNotice` 위임).
+- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리/공지 관리/점검 모드/실시간 공지 수정/시즌 관리, 2번째 줄 3버튼 — 점검 모드+실시간 공지 수정은 2026-08-15 추가, 시즌 관리는 같은 날 후속 추가). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고). `AdminPanelUI` 자체가 "실시간 공지 수정" 버튼→모달 흐름을 직접 처리함(별도 화면 전환 없음, `managers/notice_manager.ts`의 `readCurrentNotice`/`writeCurrentNotice` 위임).
 - **`admin-notice-list-ui.ts`**/**`admin-notice-detail-ui.ts`**(quizmgr 공지 관리, 2026-08-15 신설) —
   `AdminPanelUI`의 "공지 관리" 버튼(`admin_panel_notice_manage`)에서 진입. `AdminNoticeListUI`는
   `AdminBanListUI`와 동일 패턴(select 메뉴, 최대 25개)으로 `notice_manager.loadNoticeList` 목록을
@@ -48,6 +48,13 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
   동작이라). 파일 I/O는 `managers/maintenance_mode_manager.ts`에 위임 — **주의**: 점검 모드가 켜지면
   `bot.js` 전역 핸들러가 관리자 외 전 유저의 인터랙션을 차단하지만, 관리자 본인은 그 체크를 그대로
   통과하므로 점검 모드 중에도 `/quizmgr`로 들어와 끌 수 있음(자기 자신을 잠글 걱정 없음).
+- **`admin-season-ui.ts`**(quizmgr 시즌 관리, 2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`) —
+  `AdminPanelUI`의 "🏆 시즌 관리" 버튼에서 진입. 현재 시즌 이름 + 지금까지 종료된 시즌 개수를 embed로
+  보여주고, "🏆 시즌 종료 및 새 시즌 시작" 버튼 1개 → 밴 해제와 동일한 2버튼 확인 절차(`admin_season_end_confirm_comp`)
+  → 확정 시 별도 reply 없이 바로 `interaction.showModal(modal_new_season_name)`으로 새 시즌 이름을 입력받음
+  → 모달 제출 시 `scoreboard_season_manager.endSeasonAndStartNew`(위 `managers/CLAUDE.md` 참고) 호출,
+  성공하면 화면을 새로고침하고 에페메럴로 결과 안내(실패 시 — DDL 미실행 등 — 에페메럴 실패 안내만 하고
+  화면은 그대로 둠).
 
 ## 그 외 화면 (탐색 결과 요약)
 
@@ -64,7 +71,7 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
 - **`user-quiz-select-ui.js`** — 유저 퀴즈 목록/검색/정렬 + 장바구니 담기 모드(생성자에 `basket_items` 넘기면 담기 모드로 전환). `onReady()`에서 전체 유저 퀴즈를 한 번에(`loadUserQuizListFromDB(undefined)`) 불러와 클라이언트 사이드에서 필터/정렬.
 - **`user-question-info-ui.js`** — 유저 퀴즈의 문제 편집기. **파일 자체 주석: "건드릴 엄두가 안난다... 우선 돌아가면 장땡"** — 조심해서 다룰 것. 문제 최대 개수 제한은 `SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ`(50, 2026-08-11부터 상수화). 이미지 URL 변경 시 `update()` 대신 강제 재전송(`sendDelayedUI(this, true)`) — Discord embed edit이 새 이미지 URL을 바로 안 불러오는 문제 우회. `duplicateQuestion`(B-3', 2026-08-07)은 현재 문제를 복사해 바로 다음 위치에 삽입 — `interaction.explicit_replied = true`는 반드시 함수 맨 첫 줄에서 설정할 것(await 이후로 미루면 `bot.js` 전역 fallback이 먼저 `deferUpdate()`를 호출해 "Interaction has already been acknowledged" 에러가 남, 2026-08-08 수정). `sendAudioPreview`(B-2, 2026-08-07)는 미리듣기 버튼 핸들러 — `updatePrivateUI()`(카드 edit) 대신 `interaction.reply({files, flags: Ephemeral})`로 직접 응답(B-2-1 "새 메시지 금지" 방침의 명시적 예외, 상세는 `docs/plans/TS_MIGRATION_AND_CONVENIENCE_PLAN.md` B-2 섹션 참고). **2026-08-11 리팩터**: 오디오 구간 파싱(`parseAudioRangePoints`)/반복횟수 클램프(`redefineRepeatCount`)/타이머 문자열 매칭/URL 유효성 검사/디스코드 CDN 링크 감지 로직이 전부 `quiz_editor_validation.ts`(위 항목)로 추출되고 호출부만 남음 — 이 파일에 남은 건 `interaction`/모달/embed 조립 등 디스코드 전용 로직뿐(동작 변경 없는 순수 이관, `docs/plans/WEB_QUIZ_CREATION_PLAN.md` Phase 2). **Phase 4(문제 CRUD REST, 2026-08-11)에서 이 파일은 전혀 안 건드림** — `web/web_quiz_editor_routes.ts`의 `applyQuestionFields`가 이 파일의 `applyQuestionInfo`/`applyQuestionAdditionalInfo`/`applyQuestionAnsweringInfo`를 단일 함수로 합친 REST 버전으로, Phase 2에서 이미 추출된 `quiz_editor_validation.ts` 함수만 재사용해서 만들어졌기 때문.
 - **`alert-quiz-start-ui.js`** — "퀴즈 시작합니다" 안내(정적, 인터랙션 없음). 모든 퀴즈 시작 경로의 종착점.
-- **`scoreboard-ui.js`** — 서버별/글로벌 랭킹. `db_manager.selectGlobalScoreboard`/`selectTop10Scoreboard` 사용. 제목의 "[베타 시즌]" 부분은 `text_contents.json`의 `scoreboard.season_label`로 이동됨(2026-08-12, UI 개선 2라운드 B-7 [P3]) — 나머지 제목 문구("🎖 순위표")와 "불러오는 중.../불러오지 못했습니다" 등은 여전히 하드코딩(전체 마이그레이션은 스코프 밖).
+- **`scoreboard-ui.ts`** — 서버별/글로벌 랭킹. **시즌 아카이브 연동(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`)**: 기존엔 제목의 "[베타 시즌]" 부분이 `text_contents.json`의 고정 텍스트(`scoreboard.season_label`, 2026-08-12 이동)였고 실제 시즌 데이터는 없었음 — 이번에 실제 데이터 모델이 생기면서 그 텍스트는 제거되고 `scoreboard_season_manager.getCurrentSeasonName`으로 대체. `selectSeasonList()`로 종료된 시즌 목록을 불러와 StringSelectMenu(`scoreboard_season_select`, "현재 시즌"+최대 24개 과거 시즌)로 전환 가능하게 함 — `selected_season_id`가 `null`이면 현재 시즌(`selectGlobalScoreboard`/`selectTop10Scoreboard`), 아니면 아카이브(`selectArchivedGuildScoreboard`/`selectArchivedTop50Scoreboard`)를 로드. 시즌 목록이 비어있으면(DDL 미실행 또는 아직 종료된 시즌 없음) select 메뉴 자체를 안 보여주고 기존과 동일하게 뒤로가기만 있는 화면으로 폴백.
 - **`server-setting-ui.js`** — 서버 옵션 편집. `quiz_option.js`의 `OptionStorage`를 **클론해서** 편집하다가 "저장" 버튼을 눌러야 커밋됨 — 저장 안 하고 나가면 변경사항 사라짐(의도된 동작). 권한 체크(`ManageGuild` 등) 없음 — 서버의 아무나 편집 가능한 게 **의도된 기존 동작**(2026-08-12 사용자 확인, 조사로 발견됐지만 버그 아님). 웹 버전(`web-frontend/src/ServerSettingPanel.jsx`, `GET`/`PUT /api/server-option`)이 `quiz_option.js`의 같은 `OptionStorage` 메모리 캐시를 공유함 — 웹에서 바꾸면 이 화면도 즉시 같은 값을 보게 됨. **`handleResetOption`(2026-08-12, UI 개선 2라운드 B-4 [P2])** — "기본값으로 초기화" 버튼(`option_control_btn_component`에 신설) 핸들러, `quiz_option.getDefaultQuizOption()`으로 `option_data`를 되돌림 — `handleSaveOption`과 동일하게 [저장]을 눌러야 DB에 실제 반영됨(여기선 바로 안 씀).
 - **`note-ui.js`** — 공지/패치노트 본문. 파일 읽기 로직은 `managers/notice_manager.ts`의 `readNoticeFile`로 추출됨.
 
@@ -108,5 +115,14 @@ QuizInfoUI 계열(Dev/Omakase/MultiplayerLobby 공통) 'start' → AlertQuizStar
 NoteSelectUI → NoteUI
 AdminPanelUI ─┬─ AdminBanListUI
               ├─ (신고처리, sendReportLog 직접 호출)
-              └─ UserQuizListUI(show_all_quizzes=true)
+              ├─ UserQuizListUI(show_all_quizzes=true)
+              ├─ AdminNoticeListUI ── AdminNoticeDetailUI
+              ├─ AdminMaintenanceUI
+              └─ AdminSeasonUI
 ```
+
+**웹 포팅(2026-08-15)**: 순위표(`ScoreboardUI`)는 위 `select-ui-mode-ui.js` 트랙 분기와 무관하게
+"☰ 더보기" 드롭다운에 별도로 노출됨(`web_express_app.ts`의 `GET /api/scoreboard[?season_id=]`+
+`GET /api/scoreboard/seasons`, `web-frontend/src/ScoreboardPanel.jsx`) — 나머지 화면 웹 포팅
+(위 섹션)과 동일한 "☰ 더보기" 자리를 재사용하되 별도 계획서(`docs/plans/SCOREBOARD_SEASON_PLAN.md`)로
+추가됨.

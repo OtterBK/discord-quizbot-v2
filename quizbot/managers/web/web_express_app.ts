@@ -30,6 +30,7 @@ const ban_manager = require('../ban_manager');
 const db_manager = require('../db_manager.js');
 const option_system = require('../../quiz_option/quiz_option.js');
 const { loadNoticeList, readNoticeFile } = require('../notice_manager');
+const scoreboard_season_manager = require('../scoreboard_season_manager');
 const { CLIENT_SIGNAL } = require('../multiplayer_signal.js');
 const { router: quiz_editor_router, requireOwnerScopedSession } = require('./web_quiz_editor_routes');
 const { apiRateLimiter } = require('./web_rate_limit');
@@ -607,6 +608,52 @@ exports.start = (): any =>
     const save_result = await db_manager.updateOptionParameterized(req.web_session.guild_id, option_storage.option.quiz);
 
     res.json({ success: save_result !== undefined, values: option_storage.getOptionData().quiz });
+  });
+
+  //스코어보드(순위표) 웹 노출 + 시즌 아카이브 조회(docs/plans/SCOREBOARD_SEASON_PLAN.md, 2026-08-15 신설).
+  //season_id 쿼리 파라미터가 없으면 현재 시즌(tb_global_scoreboard), 있으면 그 시즌의 아카이브
+  //(tb_global_scoreboard_archive)를 반환 - 디스코드 쪽 scoreboard-ui.ts의 분기와 동일한 로직.
+  app.get('/api/scoreboard', requireWebSession, requireGuildScopedSession, async (req: any, res: any) =>
+  {
+    const guild_id = req.web_session.guild_id;
+    const season_id = req.query.season_id !== undefined ? parseInt(req.query.season_id) : undefined;
+
+    if(season_id !== undefined && isNaN(season_id))
+    {
+      res.status(400).json({ error: 'invalid_season_id' });
+      return;
+    }
+
+    if(season_id === undefined)
+    {
+      const my_result = await db_manager.selectGlobalScoreboard(guild_id);
+      const top_result = await db_manager.selectTop10Scoreboard();
+
+      res.json({
+        season_name: scoreboard_season_manager.getCurrentSeasonName(SYSTEM_CONFIG.CURRENT_SEASON_NAME_PATH),
+        my_scoreboard: my_result?.rows?.[0] ?? null,
+        top: top_result?.rows ?? [],
+      });
+      return;
+    }
+
+    const season_list_result = await db_manager.selectSeasonList();
+    const season = (season_list_result?.rows ?? []).find((s: any) => s.season_id === season_id);
+
+    const my_result = await db_manager.selectArchivedGuildScoreboard(season_id, guild_id);
+    const top_result = await db_manager.selectArchivedTop50Scoreboard(season_id);
+
+    res.json({
+      season_name: season?.season_name ?? '지난 시즌',
+      my_scoreboard: my_result?.rows?.[0] ?? null,
+      top: top_result?.rows ?? [],
+    });
+  });
+
+  app.get('/api/scoreboard/seasons', requireWebSession, requireGuildScopedSession, async (req: any, res: any) =>
+  {
+    const season_list_result = await db_manager.selectSeasonList();
+    res.json({ seasons: season_list_result?.rows ?? [] });
   });
 
   //퀴즈 만들기 웹 연동(docs/WEB_QUIZ_CREATION_PLAN.md) Phase 3 - 퀴즈 메타데이터 REST CRUD 전체를
