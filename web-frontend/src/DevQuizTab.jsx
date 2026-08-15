@@ -128,7 +128,7 @@ export default function DevQuizTab({ onSessionInvalid }) {
   const handleRowClick = (node) => {
     if (node.leaf) {
       setSelectedLeaf(node);
-      const default_count = clamp(20, 1, node.quiz_size);
+      const default_count = clamp(node.quiz_size, 1, node.quiz_size); //기본값은 문제 최대 개수(2026-08-15 피드백, 기존엔 20으로 고정)
       setQuestionCount(default_count);
       setJustApplied(false);
       selectQuiz({ mode: 'dev', content_path: node.content_path, title: node.name }).catch(handleApiError);

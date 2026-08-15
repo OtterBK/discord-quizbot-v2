@@ -1243,3 +1243,31 @@ error)/`web-frontend` `npm run build` 전부 통과. 관련 CLAUDE.md(루트 제
 `web_express_app.ts`(`GET /api/quiz-tool-guide`)의 `fields2` 참조 제거(둘 다 이제 `fields1` 1개만
 반환). `web_express_app.test.js`의 필드 개수 검증(2→1)도 같이 수정. 위 3건 중 나머지(비주얼 개선/정렬/
 공지 관리)는 사용자가 실사용으로 정상 동작 확인 완료.
+
+## 2026-08-15 — GCP 신서버 웹 UI "Cannot GET /" 버그 수정 (install/update 스크립트)
+
+사용자가 직접 GCP에 새 서버를 세우고 `install_quizbot3.sh`로 설치 후 웹 UI(포트 3000, 방화벽 직접
+설정)에 접속하니 "Cannot GET /"만 뜨는 문제 발견. 원인: `web-frontend/`(퀴즈 선택 웹 UI, React+Vite)는
+루트와 별개의 독립 프로젝트라 루트 `npm run build`(tsc)로는 빌드되지 않는데, `install_quizbot3.sh`/
+`quizbot_update.sh` 둘 다 루트 빌드만 실행하고 `web-frontend`는 안 빌드했음 — `web-frontend/dist/`가
+없으니 `express.static`이 아무것도 못 찾아 Express 기본 404("Cannot GET /")가 뜬 것.
+`cd web-frontend && npm install && npm run build`로 즉시 해결 확인 후, 두 스크립트 모두 루트 빌드
+직후 같은 단계를 자동 실행하도록 수정(`install_quizbot3.sh`는 sudo로, `quizbot_update.sh`는
+`npm install`/`npm run build` 실패 시 서비스 미시작 후 중단하는 기존 에러 핸들링 패턴 그대로 따름).
+`auto_script/정석 사용법.txt`와 루트 `CLAUDE.md`의 "빌드/배포" 섹션도 이 단계를 명시하도록 갱신.
+셸 스크립트라 `node:test` 대상은 아니고 `bash -n`으로 문법만 검증.
+
+## 2026-08-15 — 웹 UI 문제 수 기본값 버그 수정 (20 고정 → 퀴즈 전체 문제 수)
+
+사용자 발견: 웹 UI(공식 퀴즈/유저 퀴즈)에서 퀴즈를 선택하면 문제 수 스테퍼 초기값이 항상 20이었음
+(퀴즈가 20개보다 많은 문제를 갖고 있어도). 원인은 `DevQuizTab.jsx:131`/`UserQuizTab.jsx:158`의
+`clamp(20, 1, max)` 호출 — 이미 그 시점에 퀴즈의 전체 문제 수(`node.quiz_size`/`d.question_count`)를
+알고 있었는데도 리터럴 `20`을 우선시하고 상한으로만 자르고 있었음(20보다 문제가 많으면 항상 20,
+적으면 그제서야 전체 문제 수). 디스코드 쪽(`user-quiz-info.ui.ts`/`quiz-info-ui.ts`/
+`alert-quiz-start-ui.ts`)은 원래부터 일관되게 "값이 없으면 전체 문제 수"를 기본값으로 쓰고 있어서,
+웹 쪽도 같은 규칙으로 맞춤 — `clamp(node.quiz_size, 1, node.quiz_size)` /
+`clamp(max_count, 1, max_count)`로 리터럴 20을 제거. 백엔드(`web_express_app.ts`의
+`/api/session/confirm` 클램프)는 프론트가 보낸 값을 재검증만 할 뿐 기본값 계산에 관여하지 않아 손댈
+곳 없음. 랜덤 퀴즈(오마카세)/멀티플레이는 원래부터 30이 관용적 기본값(고정 상한 100/60 안에서의
+기본값 개념)이라 이번 규칙과 무관, 수정 대상에서 제외. `web-frontend` 자체 테스트는 없어(UI 미대상
+관례) `npm run build`로 스모크 확인.

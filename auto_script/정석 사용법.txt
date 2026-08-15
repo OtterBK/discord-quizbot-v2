@@ -16,6 +16,8 @@
    설치 스크립트가 자동으로 하는 것:
    - PostgreSQL/Node.js/Git 설치, DB 생성 및 복원
    - 저장소 clone (지정한 브랜치) → npm install → npm run build (TS를 dist/로 컴파일)
+   - web-frontend(퀴즈 선택 웹 UI, React+Vite 별도 프로젝트) npm install → npm run build
+     (2026-08-15 추가 - 이 단계가 없으면 웹 UI 접속 시 "Cannot GET /"만 뜸)
    - QUIZBOT_PATH를 /etc/profile.d/quizbot_path.sh 에 전역 등록
    - quizbot3 systemd 서비스 생성 + enable (아직 시작은 안 함)
 
@@ -42,11 +44,12 @@
   sh auto_script/server_script/quizbot_update.sh
 
   내부적으로 하는 일: quizbot3 중지 → git fetch + reset --hard origin/<현재 브랜치> → npm install →
-  custom_node_modules 패치 재적용 → npm run build → quizbot3 재시작. private_config.json/resources/
-  log/dist/node_modules는 전부 .gitignore 대상이라 reset --hard로도 안 건드림(설정값·캐시 안전).
+  custom_node_modules 패치 재적용 → npm run build → web-frontend npm install/npm run build(2026-08-15
+  추가) → quizbot3 재시작. private_config.json/resources/log/dist/web-frontend/dist/node_modules는
+  전부 .gitignore 대상이라 reset --hard로도 안 건드림(설정값·캐시 안전).
   develop-claude 등 개발용 브랜치에서는 안전장치로 거부됨 — develop/master에서만 실행할 것.
-  npm install/npm run build 실패 시 서비스를 시작하지 않고 중단하니, 에러 메시지를 보고 고친 뒤 다시
-  실행할 것.
+  npm install/npm run build(루트든 web-frontend든) 실패 시 서비스를 시작하지 않고 중단하니, 에러
+  메시지를 보고 고친 뒤 다시 실행할 것.
 
 [참고용 - DB 직접 조작 시]
 

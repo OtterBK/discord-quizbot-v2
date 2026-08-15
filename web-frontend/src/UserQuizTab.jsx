@@ -155,7 +155,8 @@ export default function UserQuizTab({ onSessionInvalid }) {
     getUserQuizDetail(quiz.quiz_id)
       .then((d) => {
         setDetail(d);
-        setQuestionCount(clamp(20, 1, Math.max(1, d.question_count)));
+        const max_count = Math.max(1, d.question_count);
+        setQuestionCount(clamp(max_count, 1, max_count)); //기본값은 문제 최대 개수(2026-08-15 피드백, 기존엔 20으로 고정)
       })
       .catch(handleApiError);
   };

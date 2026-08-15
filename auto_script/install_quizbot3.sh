@@ -95,6 +95,14 @@ sudo cp -R custom_node_modules/* node_modules/
 print_emphasized "Building TypeScript sources (npm run build)..."
 sudo npm run build
 
+# web-frontend/는 루트와 별개의 독립 프로젝트(React+Vite, 별도 package.json)라 위 루트 npm run build로는
+# 안 만들어짐 - 빌드 산출물(web-frontend/dist/)이 없으면 웹 UI 접속 시 "Cannot GET /"만 뜸(2026-08-15 발견)
+print_emphasized "Building web-frontend (React+Vite)..."
+cd "$INSTALL_PATH/web-frontend"
+sudo npm install
+sudo npm run build
+cd "$INSTALL_PATH"
+
 # git clone/npm install/npm run build를 전부 sudo로 실행해서 여기까지는 디렉터리 전체가 root 소유임
 # 이후 사용자가 직접 npm run build 등을 실행할 수 있도록 실행 유저 소유로 되돌림
 print_emphasized "Fixing ownership of $INSTALL_PATH to current user..."
