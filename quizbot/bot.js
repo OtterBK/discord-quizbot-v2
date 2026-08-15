@@ -163,8 +163,8 @@ client.on('ready', () =>
 //새 유저는 디스코드가 보여주는 슬래시커맨드 한 줄 설명이 안내의 전부였음. 시스템 채널을 우선
 //시도하고, 없거나 권한이 없으면 메시지를 보낼 수 있는 첫 텍스트 채널로 폴백 - 보낼 수 있는 채널이
 //아예 없으면 조용히 넘어감(checkPermission과 동일하게 SendMessages 권한 확인).
-//guildCreate 환영 메시지 전용 지원센터 링크 버튼(2026-08-15 신설)
-const welcome_support_link_component = new ActionRowBuilder().addComponents(
+//지원센터 링크 버튼(2026-08-15 신설) - guildCreate 환영 메시지/점검 모드 차단 안내 공용
+const support_link_component = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
     .setLabel('❓ 지원센터')
     .setURL(SYSTEM_CONFIG.SUPPORT_SERVER_URL)
@@ -193,7 +193,7 @@ client.on('guildCreate', (guild) =>
     content:
       `\`\`\`🔸 안녕하세요! 퀴즈봇을 초대해주셔서 감사합니다.\n\n`
       + `/퀴즈 명령어로 바로 시작할 수 있어요. 사용법이 궁금하면 /도움말을 입력해보세요!\`\`\``,
-    components: [welcome_support_link_component], //지원센터 안내(2026-08-15 추가)
+    components: [support_link_component], //지원센터 안내(2026-08-15 추가)
   }).catch((err) => logger.error(`Failed to send welcome message to guild ${guild.id}, err: ${err.stack}`));
 });
 
@@ -528,9 +528,10 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
       flag: 'r',
     });
 
-    if(PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능 
+    if(PRIVATE_CONFIG.ADMIN_ID !== interaction.user.id) //점검 모드에서는 어드민만 가능
     {
-      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, flags: MessageFlags.Ephemeral});
+      //점검 문의할 곳이 있어야 하니 지원센터 링크도 같이 보여줌(2026-08-15 추가)
+      interaction.reply({content: `\`\`\`⚠ ${maintenance_notice}\`\`\``, components: [support_link_component], flags: MessageFlags.Ephemeral});
       return;
     }
   }

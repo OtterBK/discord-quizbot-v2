@@ -1410,3 +1410,32 @@ LC_ALL=en_US.UTF-8` 3줄을 설치 스크립트 초반(패키지 목록 갱신 �
 꺼짐/켜짐 두 상태의 embed가 올바르게 나오는지 직접 확인(테스트용으로 임시 생성한
 `resources/maintenance_notice.txt`는 확인 즉시 삭제). `docs/TEST_CHECKLIST.md`에 두 기능 체크리스트
 추가.
+
+## 2026-08-15 — quizbot_update.sh 운영 데이터 보호 범위 확장 + 점검 모드 안내에 지원센터 버튼 추가
+
+사용자가 "봇 업데이트하면 notices의 기본 공지를 계속 다시 받아온다"고 보고 - 관리자가 `/quizmgr`로
+지운 레거시 공지 2개가 `git reset --hard` 때마다 되살아나던 문제. 확인해보니 `resources/` 하위에
+git으로 추적되면서 봇이 런타임에 직접 쓰는 파일이 예상보다 많았음(`config/system_setting.js`는 이미
+전 세션에 보호 완료):
+
+- **`resources/notices/`의 레거시 공지 2개** — `git rm --cached`로 추적에서 완전히 제외(물리 파일은
+  그대로 둠). 더 이상 "새 설치 시 기본으로 깔리는 공지"로 취급하지 않기로 함(오래돼 사실상 안 쓰는
+  내용) - 관리자가 quizmgr로 지우면 이제 정말로 사라짐.
+- **`resources/current_notice.txt`**(quizmgr "실시간 공지 수정"으로 바뀜)/**`resources/banned_user.txt`**
+  (`ban_manager.js`가 실시간으로 쓰는 밴 목록) — `config/system_setting.js`와 동일한 백업/복원 방식으로
+  보호 대상에 추가. `quizbot_update.sh`의 개별 백업 코드를 `PROTECTED_PATHS` 배열 + 반복문으로
+  일반화(파일이 하나 더 늘어도 배열에 경로만 추가하면 되게).
+- **판단 기준**: `resources/quizdata/`(공식 퀴즈)·`resources/bgm/`처럼 코드와 함께 실제로 배포돼야 하는
+  콘텐츠는 그대로 둠(계속 `git reset --hard`로 갱신되는 게 맞음) - "서버별로 런타임에 바뀌는 운영
+  상태"인지 "코드와 함께 버전관리돼야 하는 콘텐츠"인지로 구분. `resources/tagged_dev_quiz_info.json`/
+  `resources/version_info.txt`는 런타임 쓰기 경로가 없음을 grep으로 확인 후 보호 대상에서 제외(전자는
+  quizdata와 짝을 이루는 정적 설정, 후자는 이미 안 쓰는 죽은 참조).
+
+같은 세션 추가 피드백: 점검 모드 차단 안내 메시지(`bot.js`)에 지원센터 Link 버튼이 없어서, 막힌
+유저가 문의할 방법이 안 보였음 - `guildCreate` 환영 메시지 전용이었던 컴포넌트를 `support_link_component`로
+개명해 두 곳(환영 메시지/점검 모드 차단 안내)에서 공유하도록 재사용.
+
+검증: 셸 스크립트라 `bash -n`으로 문법만 확인, `bot.js` 변경은 `npm test`(380 pass)/`npm run lint`
+(0 error)로 검증(회귀 없음 - 컴포넌트 개명은 참조 2곳만 바꾸는 단순 리네임). 문서(정석 사용법.txt,
+루트/managers `CLAUDE.md`, `docs/TEST_CHECKLIST.md`) 갱신. 실제 서버 반영/재검증은 사용자가 직접
+진행 예정.
