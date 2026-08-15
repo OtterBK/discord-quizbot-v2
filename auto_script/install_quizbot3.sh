@@ -95,6 +95,11 @@ sudo cp -R custom_node_modules/* node_modules/
 print_emphasized "Building TypeScript sources (npm run build)..."
 sudo npm run build
 
+# git clone/npm install/npm run build를 전부 sudo로 실행해서 여기까지는 디렉터리 전체가 root 소유임
+# 이후 사용자가 직접 npm run build 등을 실행할 수 있도록 실행 유저 소유로 되돌림
+print_emphasized "Fixing ownership of $INSTALL_PATH to current user..."
+sudo chown -R "$(id -u):$(id -g)" "$INSTALL_PATH"
+
 print_emphasized "Quizbot3 has been installed!"
 
 # Set environment variable
