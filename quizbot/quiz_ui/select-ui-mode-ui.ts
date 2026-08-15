@@ -21,6 +21,7 @@ const fs = require('fs');
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
+const logger = require('../../utility/logger.js')('QuizUI');
 const { sync_objects } = require('../managers/ipc_manager');
 const {
   select_ui_mode_btn_component,
@@ -132,11 +133,13 @@ class SelectUIModeUI extends QuizbotUI
 
     if(interaction.customId === '1') //디스코드 UI 눌렀을 때 - 기존 방식 그대로
     {
+      logger.info(`UI Mode Selected - feature: quiz_select, ui: discord, user_id: ${interaction.user.id}, guild_id: ${interaction.guild?.id}`); //UI 선호도 통계용(2026-08-15)
       return new MainUI();
     }
 
     if(interaction.customId === '2') //웹 UI 눌렀을 때 - WebHandoffUI로 곧장 진입(원격 컨트롤)
     {
+      logger.info(`UI Mode Selected - feature: quiz_select, ui: web, user_id: ${interaction.user.id}, guild_id: ${interaction.guild?.id}`); //UI 선호도 통계용(2026-08-15)
       return new WebHandoffUI('dev', interaction);
     }
   }
