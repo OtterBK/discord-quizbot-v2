@@ -73,6 +73,23 @@ CREATE TABLE quizbot.tb_global_scoreboard (
 ALTER TABLE quizbot.tb_global_scoreboard OWNER TO quizbot;
 
 --
+-- Name: tb_global_scoreboard_archive; Type: TABLE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE TABLE quizbot.tb_global_scoreboard_archive (
+    season_id integer NOT NULL,
+    guild_id bigint NOT NULL,
+    win integer,
+    lose integer,
+    play integer,
+    mmr integer,
+    guild_name character varying
+);
+
+
+ALTER TABLE quizbot.tb_global_scoreboard_archive OWNER TO quizbot;
+
+--
 -- Name: tb_like_info; Type: TABLE; Schema: quizbot; Owner: quizbot
 --
 
@@ -273,6 +290,41 @@ CREATE TABLE quizbot.tb_report_info (
 ALTER TABLE quizbot.tb_report_info OWNER TO quizbot;
 
 --
+-- Name: tb_scoreboard_season; Type: TABLE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE TABLE quizbot.tb_scoreboard_season (
+    season_id integer NOT NULL,
+    season_name character varying NOT NULL,
+    ended_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE quizbot.tb_scoreboard_season OWNER TO quizbot;
+
+--
+-- Name: tb_scoreboard_season_season_id_seq; Type: SEQUENCE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE SEQUENCE quizbot.tb_scoreboard_season_season_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE quizbot.tb_scoreboard_season_season_id_seq OWNER TO quizbot;
+
+--
+-- Name: tb_scoreboard_season_season_id_seq; Type: SEQUENCE OWNED BY; Schema: quizbot; Owner: quizbot
+--
+
+ALTER SEQUENCE quizbot.tb_scoreboard_season_season_id_seq OWNED BY quizbot.tb_scoreboard_season.season_id;
+
+
+--
 -- Name: tb_question_info question_id; Type: DEFAULT; Schema: quizbot; Owner: quizbot
 --
 
@@ -291,6 +343,13 @@ ALTER TABLE ONLY quizbot.tb_quiz_info ALTER COLUMN quiz_id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY quizbot.tb_random_quiz_preset ALTER COLUMN preset_id SET DEFAULT nextval('quizbot.tb_random_quiz_preset_preset_id_seq'::regclass);
+
+
+--
+-- Name: tb_scoreboard_season season_id; Type: DEFAULT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_scoreboard_season ALTER COLUMN season_id SET DEFAULT nextval('quizbot.tb_scoreboard_season_season_id_seq'::regclass);
 
 
 --
@@ -314,6 +373,14 @@ COPY quizbot.tb_chat_info (chat_id, content, sender_id, result) FROM stdin;
 --
 
 COPY quizbot.tb_global_scoreboard (guild_id, win, lose, play, mmr, guild_name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tb_global_scoreboard_archive; Type: TABLE DATA; Schema: quizbot; Owner: quizbot
+--
+
+COPY quizbot.tb_global_scoreboard_archive (season_id, guild_id, win, lose, play, mmr, guild_name) FROM stdin;
 \.
 
 
@@ -374,6 +441,14 @@ COPY quizbot.tb_report_info (target_id, reporter_id, report_detail, report_type)
 
 
 --
+-- Data for Name: tb_scoreboard_season; Type: TABLE DATA; Schema: quizbot; Owner: quizbot
+--
+
+COPY quizbot.tb_scoreboard_season (season_id, season_name, ended_at) FROM stdin;
+\.
+
+
+--
 -- Name: tb_question_info_question_id_seq1; Type: SEQUENCE SET; Schema: quizbot; Owner: quizbot
 --
 
@@ -392,6 +467,13 @@ SELECT pg_catalog.setval('quizbot.tb_quiz_info_quiz_id_seq', 3952, true);
 --
 
 SELECT pg_catalog.setval('quizbot.tb_random_quiz_preset_preset_id_seq', 1, false);
+
+
+--
+-- Name: tb_scoreboard_season_season_id_seq; Type: SEQUENCE SET; Schema: quizbot; Owner: quizbot
+--
+
+SELECT pg_catalog.setval('quizbot.tb_scoreboard_season_season_id_seq', 1, false);
 
 
 --
@@ -416,6 +498,14 @@ ALTER TABLE ONLY quizbot.tb_chat_info
 
 ALTER TABLE ONLY quizbot.tb_global_scoreboard
     ADD CONSTRAINT tb_global_scoreboard_pkey PRIMARY KEY (guild_id);
+
+
+--
+-- Name: tb_global_scoreboard_archive tb_global_scoreboard_archive_pkey; Type: CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_global_scoreboard_archive
+    ADD CONSTRAINT tb_global_scoreboard_archive_pkey PRIMARY KEY (season_id, guild_id);
 
 
 --
@@ -475,6 +565,21 @@ ALTER TABLE ONLY quizbot.tb_random_quiz_preset
 
 
 --
+-- Name: tb_scoreboard_season tb_scoreboard_season_pkey; Type: CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_scoreboard_season
+    ADD CONSTRAINT tb_scoreboard_season_pkey PRIMARY KEY (season_id);
+
+
+--
+-- Name: idx_global_scoreboard_archive_season_mmr; Type: INDEX; Schema: quizbot; Owner: quizbot
+--
+
+CREATE INDEX idx_global_scoreboard_archive_season_mmr ON quizbot.tb_global_scoreboard_archive USING btree (season_id, mmr DESC);
+
+
+--
 -- Name: idx_quiz_like_user; Type: INDEX; Schema: quizbot; Owner: quizbot
 --
 
@@ -502,6 +607,14 @@ ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
 
 ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
     ADD CONSTRAINT tb_random_quiz_preset_item_quiz_fk FOREIGN KEY (quiz_id) REFERENCES quizbot.tb_quiz_info(quiz_id) ON DELETE CASCADE;
+
+
+--
+-- Name: tb_global_scoreboard_archive tb_global_scoreboard_archive_season_fk; Type: FK CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_global_scoreboard_archive
+    ADD CONSTRAINT tb_global_scoreboard_archive_season_fk FOREIGN KEY (season_id) REFERENCES quizbot.tb_scoreboard_season(season_id) ON DELETE CASCADE;
 
 
 --

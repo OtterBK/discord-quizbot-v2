@@ -8,10 +8,11 @@ import ThemeToggle from './ThemeToggle.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import NoticesPanel from './NoticesPanel.jsx';
 import ServerSettingPanel from './ServerSettingPanel.jsx';
+import ScoreboardPanel from './ScoreboardPanel.jsx';
 
 // 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) - 디스코드 쪽 MainUI(퀴즈 선택 홈)에
 // 이 세 화면이 전부 같은 자리(버튼)에서 나오므로 웹에서도 같은 메뉴에 묶어 노출한다.
-const UTILITY_PANEL = { guide: '🛠 퀴즈 만들기 안내', notices: '📢 공지사항', settings: '⚙️ 서버 설정' };
+const UTILITY_PANEL = { guide: '🛠 퀴즈 만들기 안내', notices: '📢 공지사항', scoreboard: '🎖 순위표', settings: '⚙️ 서버 설정' };
 
 // 봇 공유하기(2026-08-15 피드백) - Readme.md에 있는 것과 동일한 초대 링크. 별도 패널 없이 클립보드
 // 복사 액션으로만 처리(패널이 필요할 만큼 콘텐츠가 있는 기능이 아님).
@@ -39,7 +40,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('dev');
-  const [utilityPanel, setUtilityPanel] = useState(null); // null | 'guide' | 'notices' | 'settings'
+  const [utilityPanel, setUtilityPanel] = useState(null); // null | 'guide' | 'notices' | 'scoreboard' | 'settings'
   const [menuOpen, setMenuOpen] = useState(false);
   const [latestNoticeMtime, setLatestNoticeMtime] = useState(null);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
@@ -230,6 +231,7 @@ export default function App() {
         <>
           {utilityPanel === 'guide' && <GuidePanel onBack={() => setUtilityPanel(null)} onSessionInvalid={handleSessionInvalid} />}
           {utilityPanel === 'notices' && <NoticesPanel onBack={() => setUtilityPanel(null)} onSessionInvalid={handleSessionInvalid} />}
+          {utilityPanel === 'scoreboard' && <ScoreboardPanel onBack={() => setUtilityPanel(null)} onSessionInvalid={handleSessionInvalid} />}
           {utilityPanel === 'settings' && <ServerSettingPanel onBack={() => setUtilityPanel(null)} onSessionInvalid={handleSessionInvalid} />}
         </>
       )}

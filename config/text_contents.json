@@ -242,8 +242,7 @@
         "scoreboard":
         {
             "title": "🧮 점수판",
-            "point_name": "점",
-            "season_label": "베타 시즌"
+            "point_name": "점"
         },
         "ending_ui":
         {

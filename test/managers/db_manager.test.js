@@ -15,7 +15,7 @@ const db_random_quiz_preset = require('../../quizbot/managers/db/db_random_quiz_
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 41개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 45개 이름으로 재수출한다', () =>
 {
   // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
   // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
@@ -25,6 +25,9 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 41개 이름으�
   // updateOptionParameterized는 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) 중 신설됨 -
   // 서버 설정 웹 API 전용 파라미터화 쿼리(기존 updateOption은 문자열 직접 삽입, 디스코드 경로 그대로 유지)
   // db_random_quiz_preset(5개)은 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) 구현 중 신설됨
+  // selectSeasonList/selectArchivedTop50Scoreboard/selectArchivedGuildScoreboard/endCurrentSeason은
+  // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md) 구현 중 신설됨(selectTop10Scoreboard도
+  // 이때 selectTop50Scoreboard로 개명 - TOP50 노출 요청, 2026-08-15 같은 날 후속)
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -37,7 +40,7 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 41개 이름으�
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 41);
+  assert.equal(actual_names.length, 45);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -155,6 +158,119 @@ test('updateGlobalScoreboard: 6개 파라미터를 순서대로 넘긴다 (guild
 
   assert.match(captured.query_string, /INSERT INTO tb_global_scoreboard/);
   assert.deepEqual(captured.values, ['guild_1', 1, 0, 1, 25, '테스트길드']);
+});
+
+//스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md, 2026-08-15 신설) - db_scoreboard.ts 회귀 테스트.
+test('selectSeasonList: 파라미터 없이 시즌 목록을 최신순으로 조회한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectSeasonList();
+
+  assert.match(captured.query_string, /FROM tb_scoreboard_season/);
+  assert.match(captured.query_string, /ORDER BY season_id DESC/);
+  assert.deepEqual(captured.values, undefined);
+});
+
+test('selectArchivedTop50Scoreboard: season_id로 그 시즌의 상위 50개를 조회한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectArchivedTop50Scoreboard(3);
+
+  assert.match(captured.query_string, /FROM tb_global_scoreboard_archive/);
+  assert.match(captured.query_string, /WHERE season_id = \$1 AND mmr != 0/);
+  assert.match(captured.query_string, /LIMIT 50/);
+  assert.deepEqual(captured.values, [3]);
+});
+
+test('selectTop50Scoreboard: 현재 시즌 상위 50개를 조회한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectTop50Scoreboard();
+
+  assert.match(captured.query_string, /FROM tb_global_scoreboard/);
+  assert.match(captured.query_string, /LIMIT 50/);
+});
+
+test('selectArchivedGuildScoreboard: season_id/guild_id로 그 시즌의 해당 길드 기록을 조회한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectArchivedGuildScoreboard(3, 'guild_1');
+
+  assert.match(captured.query_string, /FROM tb_global_scoreboard_archive/);
+  assert.match(captured.query_string, /WHERE season_id = \$1 AND guild_id = \$2/);
+  assert.deepEqual(captured.values, [3, 'guild_1']);
+});
+
+test('endCurrentSeason: 시즌 행을 만들고 현재 스코어보드를 아카이브에 복사한 뒤 라이브 테이블을 비운다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    if(/INSERT INTO tb_scoreboard_season/.test(query_string))
+    {
+      return { rows: [{ season_id: 5 }] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await db_manager.endCurrentSeason('3시즌');
+
+  assert.deepEqual(result, { season_id: 5, season_name: '3시즌' });
+  assert.equal(captured_queries.length, 3);
+  assert.match(captured_queries[0].query_string, /INSERT INTO tb_scoreboard_season \(season_name\) VALUES \(\$1\)/);
+  assert.deepEqual(captured_queries[0].values, ['3시즌']);
+  assert.match(captured_queries[1].query_string, /INSERT INTO tb_global_scoreboard_archive/);
+  assert.deepEqual(captured_queries[1].values, [5]);
+  assert.match(captured_queries[2].query_string, /DELETE FROM tb_global_scoreboard/);
+});
+
+test('endCurrentSeason: 시즌 행 생성이 실패하면 undefined를 반환하고 아카이브/삭제는 시도하지 않는다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    return undefined;
+  });
+
+  const result = await db_manager.endCurrentSeason('3시즌');
+
+  assert.equal(result, undefined);
+  assert.equal(captured_queries.length, 1);
+});
+
+test('endCurrentSeason: 아카이브 복사가 실패하면 방금 만든 시즌 행을 정리하고 undefined를 반환한다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    if(/INSERT INTO tb_scoreboard_season/.test(query_string))
+    {
+      return { rows: [{ season_id: 5 }] };
+    }
+    if(/INSERT INTO tb_global_scoreboard_archive/.test(query_string))
+    {
+      return undefined; //아카이브 복사 실패
+    }
+    return { rows: [] };
+  });
+
+  const result = await db_manager.endCurrentSeason('3시즌');
+
+  assert.equal(result, undefined);
+  assert.equal(captured_queries.length, 3); //insert season -> insert archive(실패) -> 정리용 delete
+  assert.match(captured_queries[2].query_string, /DELETE FROM tb_scoreboard_season WHERE season_id = \$1/);
+  assert.deepEqual(captured_queries[2].values, [5]);
 });
 
 //랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13 신설) - db_random_quiz_preset.ts 회귀 테스트.

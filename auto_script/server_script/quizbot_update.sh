@@ -54,7 +54,7 @@ fi
 # 밴이 원복될 뻔했음). private_config.json과 동일하게 "서버의 현재 값이 항상 우선" 취급 - reset 전에
 # 전부 백업해뒀다가 reset 후 그대로 복원. 주의: 이 방식이면 코드 쪽에서 이 파일들에 새로 추가된 내용
 # (예: SYSTEM_CONFIG 새 필드)은 자동으로 안 들어옴 - 필요하면 origin의 최신 파일과 비교해서 수동 병합할 것.
-PROTECTED_PATHS=("config/system_setting.js" "resources/current_notice.txt" "resources/banned_user.txt")
+PROTECTED_PATHS=("config/system_setting.js" "resources/current_notice.txt" "resources/banned_user.txt" "resources/current_season_name.txt")
 BACKUP_DIR="/tmp/quizbot_update_backup_$$"
 mkdir -p "$BACKUP_DIR"
 for path in "${PROTECTED_PATHS[@]}"; do
@@ -74,7 +74,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "🔒 Restoring local 운영 데이터(config/system_setting.js, current_notice.txt, banned_user.txt)..."
+echo "🔒 Restoring local 운영 데이터(config/system_setting.js, current_notice.txt, banned_user.txt, current_season_name.txt)..."
 for path in "${PROTECTED_PATHS[@]}"; do
     if [ -f "$BACKUP_DIR/$path" ]; then
         sudo cp "$BACKUP_DIR/$path" "$path"

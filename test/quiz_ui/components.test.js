@@ -18,7 +18,7 @@ const multiplayer_components = require('../../quizbot/quiz_ui/components/multipl
 const report_components = require('../../quizbot/quiz_ui/components/report_components');
 const web_handoff_components = require('../../quizbot/quiz_ui/components/web_handoff_components');
 
-test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 75개)', () =>
+test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 78개)', () =>
 {
   // 죽은 export였던 note_ui_component는 Phase 6에서 삭제됨 (DEPRECATED_CODE_REMOVED.md 참고)
   // quiz_delete_confirm_admin_comp/admin_panel_comp는 관리자 기능 추가로 신설됨
@@ -33,6 +33,9 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
   // admin_panel_row2_comp/admin_maintenance_enable_btn_comp/admin_maintenance_manage_comp/
   // admin_maintenance_disable_confirm_comp/modal_maintenance_notice/modal_current_notice_edit는
   // quizmgr 점검 모드+실시간 공지 수정 기능(2026-08-15) 신설로 추가됨
+  // admin_season_end_btn_comp/admin_season_end_confirm_comp/modal_new_season_name은
+  // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md, 2026-08-15) 구현 중
+  // quizmgr 시즌 관리(AdminSeasonUI) 기능으로 신설됨
   const expected_names = [
     ...Object.keys(base_components),
     ...Object.keys(custom_quiz_components),
@@ -44,7 +47,7 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
 
   const actual_names = Object.keys(components).sort();
 
-  assert.equal(actual_names.length, 75);
+  assert.equal(actual_names.length, 78);
   assert.deepEqual(actual_names, expected_names);
 });
 
