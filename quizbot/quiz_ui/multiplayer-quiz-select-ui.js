@@ -290,12 +290,12 @@ class MultiplayerQuizSelectUI extends QuizBotControlComponentUI
     //추가 - 밴 아니면 undefined 반환.
     if(ban_manager.isBanned([interaction.user.id]))
     {
-      return `\`\`\`🌐 회원님이 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\n이의가 있으시면 otter6975@gmail.com 으로 문의해주세요.\`\`\``;
+      return `\`\`\`🌐 회원님이 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``;
     }
 
     if(ban_manager.isBanned([interaction.guild.id]))
     {
-      return `\`\`\`🌐 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\n이의가 있으시면 otter6975@gmail.com 으로 문의해주세요.\`\`\``;
+      return `\`\`\`🌐 이 서버가 퀴즈봇 운영 정책을 위반하여 멀티플레이를 이용하실 수 없습니다.\`\`\``;
     }
 
     return undefined;

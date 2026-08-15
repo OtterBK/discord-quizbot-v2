@@ -37,6 +37,14 @@ const { apiRateLimiter } = require('./web_rate_limit');
 let server: any = undefined;
 let dev_quiz_tree_cache: any[] | undefined = undefined; //원본(loadLocalDirectoryQuiz) 형식 그대로 캐싱 - content_path로 재조회할 때 씀
 
+//랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) - 유저당 최대 10개(사용자 확정 사항), 이름
+//길이는 다른 웹 편집기 텍스트 필드(web_quiz_editor_routes.ts의 QUIZ_TITLE_MAX_LENGTH류)와 같은 관행으로
+//서버에서도 재검증. 항목 수 상한은 OmakaseQuizRoomUI.createDefaultOmakaseQuizInfo의 quiz_size(100)와
+//동일하게 상식적인 값만 둠(퀴즈함 자체엔 원래 상한이 없음).
+const RANDOM_QUIZ_PRESET_MAX_COUNT = 10;
+const RANDOM_QUIZ_PRESET_NAME_MAX_LENGTH = 30;
+const RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT = 100;
+
 const clamp = (value: number, min: number, max: number): number =>
 {
   if(isNaN(value))
@@ -222,6 +230,95 @@ exports.start = (): any =>
   app.get('/api/omakase-tags', requireWebSession, (req: any, res: any) =>
   {
     res.json({ dev_tags: omakase_dev_tags, type_tags: omakase_type_tags, genre_tags: omakase_genre_tags });
+  });
+
+  //랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13 신설) - 웹 UI 한정, "직접 담기"
+  //모드의 퀴즈함(quiz_id 목록)만 유저(owner_id) 단위로 저장한다(옵션은 저장하지 않고 항상 불러오는
+  //시점의 현재 설정을 따름). guild 세션(omakase)/owner 세션 둘 다 owner_id를 갖고 있어 스코프 제한
+  //없이 requireWebSession만으로 충분하다. 목록 응답의 quiz_id_list는 비공개 전환/삭제된 항목까지
+  //그대로 내려주고, 필터링은 프론트엔드가 이미 불러온 공개 퀴즈 목록(/api/user-quizzes)과 대조해서
+  //한다(계획 문서의 "앱 코드 레벨" 항목 참고 - DB/API 레벨에서 다시 조회하지 않아 구현이 단순해짐).
+  app.get('/api/random-quiz-presets', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_list = await db_manager.selectRandomQuizPresetsByUser(req.web_session.owner_id);
+
+    res.json({
+      presets: (preset_list?.rows ?? []).map((row: any) => ({
+        preset_id: row.preset_id,
+        preset_name: row.preset_name,
+        quiz_id_list: row.quiz_id_list,
+        created_time: row.created_time,
+      })),
+    });
+  });
+
+  //이름 중복은 DB의 UNIQUE(user_id, preset_name) 제약이 최종 방어선이지만, db_core.sendQuery가 모든
+  //에러를 동일하게 undefined로 삼켜서(에러 코드 구분 불가) 사전에 SELECT로 직접 확인한다.
+  app.post('/api/random-quiz-presets', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_name = typeof req.body?.preset_name === 'string' ? req.body.preset_name.trim() : '';
+    if(preset_name.length === 0 || preset_name.length > RANDOM_QUIZ_PRESET_NAME_MAX_LENGTH)
+    {
+      res.status(400).json({ error: 'invalid_preset_name' });
+      return;
+    }
+
+    const raw_quiz_id_list: any[] = Array.isArray(req.body?.quiz_id_list) ? req.body.quiz_id_list : [];
+    const quiz_id_list: number[] = Array.from(new Set<number>(
+      raw_quiz_id_list.map((v: any) => parseInt(v)).filter((v: number) => !isNaN(v)),
+    ));
+    if(quiz_id_list.length === 0 || quiz_id_list.length > RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT)
+    {
+      res.status(400).json({ error: 'invalid_quiz_id_list' });
+      return;
+    }
+
+    const owner_id = req.web_session.owner_id;
+
+    const existing = await db_manager.selectRandomQuizPresetByName(owner_id, preset_name);
+    if((existing?.rows?.length ?? 0) > 0)
+    {
+      res.status(400).json({ error: 'duplicate_name' });
+      return;
+    }
+
+    const count_result = await db_manager.countRandomQuizPresetsByUser(owner_id);
+    const preset_count = parseInt(count_result?.rows?.[0]?.count ?? '0');
+    if(preset_count >= RANDOM_QUIZ_PRESET_MAX_COUNT)
+    {
+      res.status(400).json({ error: 'max_presets_reached' });
+      return;
+    }
+
+    const preset_id = await db_manager.insertRandomQuizPreset(owner_id, preset_name, quiz_id_list, RANDOM_QUIZ_PRESET_MAX_COUNT);
+    if(preset_id === undefined)
+    {
+      res.status(500).json({ error: 'save_failed' });
+      return;
+    }
+
+    logger.info(`[Web] Created Random Quiz Preset... preset_id: ${preset_id}, owner_id: ${owner_id}`);
+    res.status(201).json({ preset_id, preset_name, quiz_id_list, created_time: new Date() });
+  });
+
+  app.delete('/api/random-quiz-presets/:preset_id', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_id = parseInt(req.params.preset_id);
+    if(isNaN(preset_id))
+    {
+      res.status(400).json({ error: 'invalid_preset_id' });
+      return;
+    }
+
+    const result = await db_manager.deleteRandomQuizPreset(preset_id, req.web_session.owner_id);
+    if((result?.rows?.length ?? 0) === 0)
+    {
+      res.status(404).json({ error: 'preset_not_found' });
+      return;
+    }
+
+    logger.info(`[Web] Deleted Random Quiz Preset... preset_id: ${preset_id}, owner_id: ${req.web_session.owner_id}`);
+    res.json({ success: true });
   });
 
   //멀티플레이 웹 연동(Phase 4) - multiplayer_session_registry.multiplayer_sessions는 이미 마스터 프로세스

@@ -125,7 +125,16 @@ DM은 봇-유저 1:1이라 하이재킹 개념이 없어 기존 세션이 있어
   `db_option.updateOptionParameterized`로 영속화, 값 검증은 `text_contents.json`의
   `server_setting_ui.select_menu.option_values` 화이트리스트 기준). 권한 체크는 의도적으로 없음(서버
   설정은 디스코드와 동일하게 아무 길드원이나 편집 가능 — 사용자 확인, `quiz_ui/CLAUDE.md`의
-  `server-setting-ui.js` 항목 참고).
+  `server-setting-ui.js` 항목 참고). **랜덤 퀴즈 프리셋(2026-08-13 신설, `docs/plans/
+  RANDOM_QUIZ_PRESET_PLAN.md`)**: "랜덤 퀴즈" 탭 "직접 담기" 모드의 퀴즈함(quiz_id 목록)을
+  유저(`owner_id`) 단위 최대 10개까지 저장/재적용하는 웹 UI 한정 기능. `GET`/`POST`/
+  `DELETE /api/random-quiz-presets[/:preset_id]` 3개, `requireWebSession`만으로 충분(guild 세션인
+  omakase도 owner 세션도 둘 다 `owner_id`를 갖고 있어 스코프 제한 불필요). DB는
+  `db/db_random_quiz_preset.ts`(`db/CLAUDE.md` 참고) — 옵션(태그/문제 수 등)은 저장하지 않고 quiz_id
+  목록만 저장하며, 목록 조회 응답도 필터링 없이 그대로 내려준다. 비공개 전환/삭제로 무효해진 quiz_id를
+  거르는 책임은 서버가 아니라 프론트엔드(`OmakaseTab.jsx`)에 있음 — 이미 불러온 공개 퀴즈
+  목록(`/api/user-quizzes`)과 대조해서 존재하는 항목만 퀴즈함에 채우고, 못 찾은 항목 수만큼 안내
+  문구를 보여준다.
 
 ## 기타
 

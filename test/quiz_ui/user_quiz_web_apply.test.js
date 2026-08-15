@@ -81,7 +81,12 @@ test('UserQuizInfoUI.onReceivedWebSessionSignal: 확정 후 다른 유저 퀴즈
   ui.quiz_info['selected_question_count'] = 3;
 
   let update_called = false;
-  ui.holder = { updateUI: () => { update_called = true; } };
+  //reapplyFromWebPayload는 update() 대신 sendDelayedUI(this, true)로 강제 재전송한다(2026-08-15,
+  //웹 재선택 시 새 썸네일 이미지가 embed edit로는 간헐적으로 안 불러와지는 버그 수정)
+  ui.holder = {
+    updateUI: () => { update_called = true; },
+    sendDelayedUI: () => { update_called = true; },
+  };
 
   const result = ui.onReceivedWebSessionSignal({
     event: 'applied',

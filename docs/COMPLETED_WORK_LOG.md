@@ -1098,3 +1098,112 @@ UI를 다시 고르면 `WebHandoffUI`가 평소처럼 `'create'` 액션으로 �
 
 검증: 수정한 셸 스크립트(`quizbot_update.sh`) `bash -n` 통과. **미검증** — 실제 서버에서
 `quizbot_update.sh` 실행은 안 해봄, 다음 서버 배포 시 최우선 확인 대상.
+
+## 2026-08-13 — 랜덤 퀴즈 프리셋 설계+구현 완료 (B-8, 신규 기능)
+
+웹 UI("랜덤 퀴즈" 탭 "직접 담기" 모드)에서 자주 쓰는 퀴즈함(quiz_id 목록) 조합을 이름 붙여 저장/재적용
+하는 기능. 사용자 결정: 범위는 퀴즈함 목록만(옵션은 저장 안 함), 유저 단위 최대 10개.
+
+- **스키마 설계**: 이 코드베이스는 마이그레이션 프레임워크가 없어 DDL을 직접 psql로 실행하는 관행 —
+  `tb_random_quiz_preset`(메타)/`tb_random_quiz_preset_item`(항목, `sort_order`로 순서 보존) 연결
+  테이블 2개로 설계(배열 컬럼 대신 `tb_like_info`류 기존 패턴을 따름, 퀴즈 삭제 시 FK
+  `ON DELETE CASCADE`로 항목 자동 정리). 사용자가 직접 SQL 실행 완료 후, 신규 설치용 덤프
+  (`auto_script/db_backup/base.sql`)에도 동일 스키마를 pg_dump 포맷 그대로 반영(알파벳 정렬 위치 등
+  기존 관행 맞춤).
+- **DB 헬퍼**: `quizbot/managers/db/db_random_quiz_preset.ts`(목록/이름 중복 확인/개수 카운트/생성/
+  삭제 5개), `db_manager.js` facade에 재수출(export 36→41개, 회귀 테스트 갱신). `insertRandomQuizPreset`은
+  트랜잭션 헬퍼가 없는 이 코드베이스 관행상 2단계 INSERT라, item 삽입 실패 시 방금 만든 빈 preset을
+  직접 정리해 고아 방지.
+- **Express API**: `web_express_app.ts`에 인라인 3개 추가(`GET`/`POST`/`DELETE
+  /api/random-quiz-presets[/:preset_id]`, 기존 `/api/omakase-tags` 등과 동일한 배치 방식 — 별도
+  라우터 파일 안 만듦). 당초 계획한 `requireOwnerScopedSession` 대신 **스코프 제한 없는
+  `requireWebSession`만 사용**하도록 단순화 — guild 세션(omakase가 실제 쓰는 세션 종류)도 owner
+  세션도 둘 다 `owner_id`를 갖고 있음을 코드 확인 후 결정. 이름 중복은 `db_core.sendQuery`가 에러
+  코드를 구분 안 해서(항상 `undefined`) DB의 `UNIQUE(user_id, preset_name)` 대신 사전 SELECT로 확인.
+- **프론트엔드**: `OmakaseTab.jsx`의 퀴즈함 드로워 상단에 "저장된 프리셋" 섹션 추가 — 기존
+  `qd-row`/`qd-remove` 등 클래스를 그대로 재사용해 신규 CSS는 래퍼 3개뿐. 삭제는 `QuizDetailPage.jsx`와
+  동일한 2클릭 확인(🗑→⚠️) 관례. 불러오기는 서버가 필터링 없이 내려준 `quiz_id_list`를 이미 불러온
+  공개 퀴즈 목록(`userQuizzes`)과 대조해서 존재하는 항목만 채우는 방식 — 비공개 전환/삭제 필터링을
+  프론트가 담당해서 별도 API/DB 조회가 필요 없어짐(설계 단순화).
+
+검증: `npx tsc --noEmit`(0 error)/`npm run lint`(0 error, 기존 57 warning 수준 유지)/`npm test`(361
+pass — `db_random_quiz_preset` 회귀 테스트 4건 + `/api/random-quiz-presets` 통합 테스트 9건 신규)/
+`npm run build`(백엔드+프론트엔드) 전부 통과. **미검증** — 실제 Discord+브라우저 테스트 전무, 다음
+세션 최우선(`docs/TEST_CHECKLIST.md` AE 섹션). 상세는 `docs/plans/RANDOM_QUIZ_PRESET_PLAN.md`.
+
+## 2026-08-13 — 랜덤 퀴즈 프리셋 최초 구현 직후 사용자 피드백 3건 반영 (같은 세션)
+
+(1) 프리셋 불러오기 시 아무 반응이 없던 문제 — `✓ "이름" 불러왔어요.` 안내를 3초간 표시 후 자동으로
+지우도록 수정. (2) 사용자가 "API 직접 호출로 10개 제한을 우회할 수 있는지" 점검 요청 → 실제로
+개수확인(SELECT)과 저장(INSERT)이 별도 요청이라 동시 호출 시 우회 가능한 TOCTOU 허점을 발견 —
+`insertRandomQuizPreset`의 INSERT 문 자체에 `where (select count(*) ...) < $3` 조건을 넣어 원자적으로
+재확인하도록 수정(완전한 직렬화는 아니지만 창을 크게 좁힘, 이 코드베이스에 트랜잭션/락 인프라가 없어
+완전 방지는 과함으로 판단). (3) 삭제 확인(🗑→⚠️) 아이콘이 레이아웃에서 어긋나 보이던 문제 —
+`.qd-remove`에 `display:flex` 중앙정렬 누락이 원인, 추가로 수정. 검증: `tsc`/`lint`/`test`(362
+pass)/`web-frontend` `build` 통과(백엔드 `npm run build`는 `config/private_config.json`이 `dist/`로
+복사되는 부작용을 피하려 이번엔 생략, `tsc --noEmit`으로 코드 정확성만 재확인). 상세는
+`docs/plans/RANDOM_QUIZ_PRESET_PLAN.md` 하단.
+
+## 2026-08-13 — 세션 중 `config/private_config.json` 실수로 덮어씀 → 사용자가 복구 (사고 기록)
+
+랜덤 퀴즈 프리셋 작업 중 `npm test`가 `config/private_config.json`(비밀 설정, gitignore 대상) 부재로
+전부 실패하는 걸 보고, 테스트 통과 목적으로 더미 값 `config/private_config.json`을 새로 만든 뒤
+검증 차원에서 `npm run build`를 실행함 — 이 빌드가 `scripts/copy-js-assets.js`로 `config/*.json`을
+`dist/`에 byte-for-byte 복사하는데, `dist/config/private_config.json`이 2026-08-07부터 살아남아있던
+(소스 트리엔 이미 없어졌던) 사용자의 실제 설정 유일한 사본이었다는 걸 모르고 그 위에 더미 값을
+덮어써버림. 파일이 삭제된 게 아니라 내용이 덮어써진 거라 git으로도 복구 불가(애초에 gitignore
+대상이라 커밋된 적도 없음) — 다행히 사용자가 직접 복구함. 앞으로의 교훈은
+`[[feedback_private_config_json_build_caution]]` 메모리로 저장, 재발 방지 규칙으로 삼음.
+
+## 2026-08-14~15 — `docs/TEST_CHECKLIST.md` 전수 재검증 완료 (A~AE 30개 섹션)
+
+체크박스 전체 초기화 후 A섹션부터 순서대로 재검증. 특수 환경(2클러스터 강제 실행, force_take 라이브
+레이스컨디션)이나 미구현 기능(악성 길드 강제퇴장) 4개 항목만 남기고 전부 확인 완료. 진행 중 죽은
+코드(`/신고처리` 슬래시커맨드, 이미 `/quizmgr` 관리자 패널로 대체됨)를 발견해 즉시 제거(예외 처리 —
+명령어 목록 확인 항목 자체를 막던 케이스). 발견한 버그/개선사항은 전부 즉시 고치지 않고
+`docs/plans/TEST_CHECKLIST_BUG_LOG.md`에 기록만 하고 계속 진행(아래 항목에서 일괄 수정).
+
+## 2026-08-15 — 체크리스트 문서 정리 (기능 영역별 목차 + 중복/죽은 항목 정리)
+
+전수 재검증 중 사용자가 "같은 주제(다크모드/세션 GC/하이재킹 방어/서버 설정)를 여러 섹션에서 반복
+확인하게 된다"고 지적 — 섹션이 A→Z→AA→AE로 기능 추가 시점 순서로 계속 누적돼온 결과. 물리적 섹션
+순서/내용은 유지(서로 다른 시점에 구현된 별개 시스템을 검증하는 경우가 많아 억지로 합치면 오히려
+불명확해짐)하고: 기능 영역별 목차 추가, AC섹션의 이미 죽은 취소선 항목 삭제, W섹션의 O섹션과 100%
+중복인 항목 삭제, AB섹션 서버설정 항목 2개를 F섹션으로 이동, 헷갈리는 지점(GC 만료/하이재킹 방어
+용어)에 "다른 시스템" 설명 추가.
+
+## 2026-08-15 — 전수 재검증 버그 로그 일괄 수정 (B-9)
+
+`docs/plans/TEST_CHECKLIST_BUG_LOG.md`에 쌓인 14건을 순서대로 처리 — 11건 수정, 2건 보류. 실제
+버그 3건의 원인을 특정해 수정했다는 게 이번 배치의 핵심:
+- **E섹션 랜덤퀴즈 진행 중 크래시**(`Cannot read properties of null (reading 'quiz')`) — "그만두기"로
+  강제종료할 때 가끔 발생한다는 사용자 힌트가 정확했음. `prepare.ts`의 `generateAudioResourceFromWeb`이
+  yt-dlp 다운로드 `await` 도중 세션이 `free()`되면(`option_data`가 null로 초기화) await 재개 후 그
+  null을 그대로 읽다 크래시하는 레이스 — 다른 실패 케이스와 동일한 방식(조용히 스킵)으로 처리하도록
+  null 체크 추가.
+- **J섹션 `/quizmgr` 신고처리 UnhandledPromiseRejection** — `sendReportLog`가 DB 조회 `await` 전에
+  `interaction.explicit_replied`를 안 세워서 `bot.js` 전역 fallback의 `deferUpdate()`와 경합하는
+  레이스(`user-question-info-ui.ts`의 `duplicateQuestion`과 동일 패턴). 동기적으로 플래그를 먼저
+  세우도록 수정 + 기존에 `user.send()`로만(사실상 무응답) 처리하던 두 실패 분기도 `interaction.reply()`로
+  교체.
+- **P섹션 웹에서 유저 퀴즈 재선택 시 이미지 간헐적 미표시** — `UserQuizInfoUI.reapplyFromWebPayload`가
+  `update()`(embed edit)를 쓰고 있었는데, Discord가 embed edit로는 새 이미지 URL을 간헐적으로 안
+  불러오는 잘 알려진 버그(`user-question-info-ui.ts`의 "24.05.07 embed 이미지 버그"와 동일 원인) —
+  `sendDelayedUI(this, true)` 강제 재전송으로 교체.
+- **Q섹션 랜덤퀴즈 "직접 담기" 목록에 태그 미표시** — `OmakaseTab.jsx`의 `BasketQuizCard`에 태그
+  렌더링 로직 자체가 없었음(`UserQuizTab.jsx`의 `QuizCard`엔 있었음) — 추가. `MultiplayerTab.jsx`도
+  같은 컴포넌트를 재사용해서 "직접 골라 담기"(R섹션)도 같이 고쳐짐.
+
+나머지: 트리비얼 문구 삭제 4건(J 신고접수 멘트, L 멀티플레이 밴 문의처, D 퀴즈함 제거 ephemeral 누락,
++ "봇 공유하기" 메뉴 신설), UX 개선 5건(B 투트랙 화면 서버수 표시, V 문제편집 탭 가시성(신규
+`.segmented-tabrail`)/이어서 새 문제 추가 버튼(부수적으로 "새 문제 추가 화면 진입 시 이전 폼이 안
+지워지던 버그"도 같이 발견해 수정)/비공개 퀴즈 안내문구, Q 퀴즈함 탭 전환 시 유지(`App.jsx`로 상태
+끌어올림)). 보류 2건: E섹션 태그/퀴즈함 시작차단 간헐적 버그(정적 코드로는 원인 특정 실패, 재현
+불안정), P섹션 호버 미리보기 상세설명/문제수(목록 API에 해당 데이터가 없어 API 설계 변경이 필요한
+아키텍처 결정 — 방향 확정 전까지 보류). 검증: `tsc --noEmit`/`lint`(0 error)/`test`(362 pass, 웹
+재선택 이미지 수정에 맞춰 `user_quiz_web_apply.test.js`의 mock holder에 `sendDelayedUI` 추가)/양쪽
+`build` 전부 통과, 로컬 봇 재빌드+재시작 완료.
+
+작업 중 `npm test`가 `config/private_config.json` JSON 파싱 오류로 30건 실패하는 걸 발견 — 파일
+마지막 줄에 오타로 보이는 글자 하나(`ㄸ`)가 남아있었음(비밀 설정 파일이라 사용자 확인 후 삭제,
+2026-08-13에 있었던 덮어쓰기 사고와는 다른 별개의 편집 사고로 추정).

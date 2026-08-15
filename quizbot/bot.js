@@ -380,7 +380,8 @@ const create_quiz_handler = async (interaction) =>
 };
 
 //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 도움말/온보딩이 전혀 없던 문제 신설. 관리자 전용 명령어
-//(quizmgr/신고처리)는 의도적으로 여기서 언급 안 함(루트 CLAUDE.md "관리자 전용 기능" - 호기심 유발 방지 관례).
+//(quizmgr, 2026-08-14부터 유일한 관리자 진입점 - /신고처리는 삭제됨)는 의도적으로 여기서 언급 안 함
+//(루트 CLAUDE.md "관리자 전용 기능" - 호기심 유발 방지 관례).
 const help_handler = (interaction) =>
 {
   interaction.explicit_replied = true;

@@ -25,6 +25,11 @@ const sendReportLog = async (interaction: any): Promise<void> =>
     return;
   }
 
+  //await 이전에 동기적으로 세워둬야 함 - 안 그러면 bot.js 전역 fallback이 먼저 deferUpdate()를
+  //호출해서 아래 interaction.reply() 호출 시 "Interaction has already been acknowledged" 에러 발생
+  //(2026-08-15, 전수 테스트 중 발견 - user-question-info-ui.ts의 duplicateQuestion과 동일한 패턴)
+  interaction.explicit_replied = true;
+
   if(interaction.guild)
   {
     interaction.reply({content: `\`\`\`개인 메시지 채널에서만 사용 가능합니다.\`\`\``, flags: MessageFlags.Ephemeral});
@@ -41,7 +46,7 @@ const sendReportLog = async (interaction: any): Promise<void> =>
     const err_message = `select reported chat info list error. err: ${err.stack}`;
 
     logger.error(err_message);
-    user.send({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
+    interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
 
     return;
   }
@@ -51,7 +56,7 @@ const sendReportLog = async (interaction: any): Promise<void> =>
     const err_message = `reported_chat_info_list is undefined error`;
 
     logger.error(err_message);
-    user.send({content: `\`\`\`${err_message}\`\`\``});
+    interaction.reply({content: `\`\`\`${err_message}\`\`\``, flags: MessageFlags.Ephemeral});
 
     return;
   }

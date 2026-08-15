@@ -236,6 +236,7 @@ export default function QuizDetailPage({ onSessionInvalid }) {
           <button type="button" className="toolbar-cta" disabled={togglingPublic} onClick={handleTogglePublic}>
             {togglingPublic ? '전환 중...' : detail.is_private ? '🌐 공개로 전환' : '🔒 비공개로 전환'}
           </button>
+          {detail.is_private && <div className="hint-text">🔸 공개로 전환해야 유저 퀴즈 목록에 노출됩니다.</div>}
           {publicError && <div className="error-banner">🔸 {publicError}</div>}
         </div>
 

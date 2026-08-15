@@ -27,16 +27,6 @@ const isReportChatModal = (interaction: any): boolean =>
   return false;
 };
 
-const isReportManageCommand = (interaction: any): boolean =>
-{
-  if(interaction.isCommand() && interaction.commandName === '신고처리')
-  {
-    return true;
-  }
-
-  return false;
-};
-
 const isReportProcessButton = (interaction: any): boolean =>
 {
   if(interaction.isButton() && interaction.customId.startsWith('ps_rpt_'))
@@ -68,12 +58,6 @@ const checkReportEvent = (interaction: any): boolean | undefined =>
   if(isReportChatModal(interaction))
   {
     report_submission.submitReportChatModal(interaction);
-    return true;
-  }
-
-  if(isReportManageCommand(interaction))
-  {
-    report_manual_processing.sendReportLog(interaction);
     return true;
   }
 

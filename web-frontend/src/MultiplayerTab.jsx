@@ -390,6 +390,7 @@ export default function MultiplayerTab({ onSessionInvalid }) {
                   <BasketQuizCard
                     key={q.quiz_id}
                     quiz={q}
+                    tagNameByValue={browseTagNameByValue}
                     selected={selectedQuiz?.quiz_id === q.quiz_id}
                     inBasket={basketItems[q.quiz_id] !== undefined}
                     onClick={() => handleBasketCardClick(q)}

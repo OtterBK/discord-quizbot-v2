@@ -60,10 +60,6 @@ const commands = [
     .setDescription('전체 채팅 기능을 켜거나 끕니다.'),
 
   new SlashCommandBuilder()
-    .setName('신고처리')
-    .setDescription('관리자 명령어'),
-
-  new SlashCommandBuilder()
     .setName('quizmgr')
     .setDescription('.'),
 ];

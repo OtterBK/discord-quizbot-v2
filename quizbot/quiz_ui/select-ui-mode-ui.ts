@@ -21,6 +21,7 @@ const fs = require('fs');
 //#region 로컬 modules
 const { SYSTEM_CONFIG,} = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
+const { sync_objects } = require('../managers/ipc_manager');
 const {
   select_ui_mode_btn_component,
 } = require("./components");
@@ -54,8 +55,31 @@ class SelectUIModeUI extends QuizbotUI
       color: 0x87CEEB,
       title: text_contents.select_ui_mode.title,
       description: text_contents.select_ui_mode.description,
-      fields: this.buildNoticeFields(),
+      fields: [...this.buildServerCountFields(), ...this.buildNoticeFields()],
     };
+  }
+
+  //투트랙 분리 전 MainUI 화면에 있던 서버 수 필드(2026-08-15, 전수 테스트 중 사용자 피드백 -
+  //투트랙 화면으로 넘어오며 이 정보가 안 보이게 됐던 것을 복원).
+  buildServerCountFields()
+  {
+    return [
+      {
+        name: text_contents.main_menu.total_server,
+        value: `${text_contents.icon.ICON_GUILD} ${sync_objects.get('guild_count')}`,
+        inline: true,
+      },
+      {
+        name: text_contents.main_menu.playing_server,
+        value: `${text_contents.icon.ICON_LOCALPLAY} ${sync_objects.get('local_play_count')}`,
+        inline: true,
+      },
+      {
+        name: text_contents.main_menu.competitive_server,
+        value: `${text_contents.icon.ICON_MULTIPLAY} ${sync_objects.get('multi_play_count')}`,
+        inline: true,
+      },
+    ];
   }
 
   //실시간 공지(resources/current_notice.txt)가 있으면 embed 필드로 얹는다 - 파일이 없거나 비어있으면

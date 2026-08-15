@@ -154,6 +154,25 @@ button { cursor: pointer; }
 .tabrail button:hover:not(.active):not(:disabled) { color: var(--ink); }
 .tabrail button:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* 문제 편집 화면(①기본정보/②힌트설정/③정답공개설정) 전용 - 밑줄 강조만으로는 가시성이 부족하다는
+   피드백(2026-08-15)으로, 블록형 배경색 세그먼트 컨트롤로 구분되게 함. 1차 시도는 컨테이너
+   배경(--surface-sunken)이 카드 배경(--surface)과 대비가 약하고 버튼 텍스트도 중앙정렬이 안 돼서
+   "허접해 보인다"는 재피드백을 받아 대비/정렬을 다시 잡음(2026-08-15, 같은 날 2차 수정). */
+.segmented-tabrail {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(20,20,15,0.06);
+}
+.segmented-tabrail button {
+  flex: 1; border: 1px solid transparent; background: transparent; color: var(--ink-dim);
+  font-size: 13.5px; font-weight: 600; padding: 9px 8px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.segmented-tabrail button.active { background: var(--primary); color: #fff; box-shadow: 0 1px 3px rgba(29,78,216,0.35); }
+.segmented-tabrail button:hover:not(.active):not(:disabled) { background: var(--surface); color: var(--ink); border-color: var(--border); }
+.segmented-tabrail button:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .mode-desc { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); padding: 2px 2px 0; }
 .mode-desc b { color: var(--ink); font-weight: 700; }
 
@@ -543,6 +562,14 @@ select.sort-select {
 .qd-head h2 { margin: 0; font-size: 13.5px; font-weight: 700; }
 .qd-head button { border: none; background: var(--surface-sunken); color: var(--ink-dim); width: 24px; height: 24px; border-radius: 7px; font-size: 12px; }
 .qd-head button:hover { color: var(--ink); }
+
+/* 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13) - qd-footer와 대칭되는 구조로
+   퀴즈함 드로워 상단에 배치, 항목 자체는 기존 qd-row/mini-thumb/qd-info/qd-remove를 그대로 재사용한다. */
+.qd-presets { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.qd-preset-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+.qd-preset-save { display: flex; gap: 6px; align-items: center; }
+.qd-preset-save .text-field { flex: 1; }
+
 .qd-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; min-height: 60px; }
 .qd-row {
   display: flex; align-items: center; gap: 9px; padding: 7px; border-radius: 10px;
@@ -554,7 +581,12 @@ select.sort-select {
 .qd-row .qd-info { flex: 1; min-width: 0; }
 .qd-row .qd-title { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qd-row .qd-sub { font-size: 10.5px; color: var(--ink-faint); font-family: var(--font-num); }
-.qd-row .qd-remove { border: none; background: var(--surface); color: var(--ink-faint); width: 22px; height: 22px; border-radius: 7px; font-size: 11px; flex-shrink: 0; }
+.qd-row .qd-remove {
+  border: none; background: var(--surface); color: var(--ink-faint); width: 22px; height: 22px;
+  border-radius: 7px; font-size: 12px; line-height: 1; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+} /* display:flex 센터링 없이는 ✕는 그럭저럭 보였지만(단순 문자), 삭제 2클릭 확인용 ⚠️ 이모지로
+     바뀌면 글리프 폭/높이가 달라 박스 안에서 어긋나 보였음(랜덤 퀴즈 프리셋, 2026-08-13 피드백) */
 .qd-row .qd-remove:hover { color: var(--red); }
 .qd-empty { padding: 30px 16px; text-align: center; color: var(--ink-faint); font-size: 12.5px; line-height: 1.6; }
 .qd-footer { padding: 12px 14px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }

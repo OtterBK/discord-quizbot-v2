@@ -140,7 +140,10 @@ class UserQuizInfoUI extends QuizInfoUI
 
     this.refreshUI();
     this.fillInfoAsDevQuizInfo();
-    this.update();
+    //update()(embed edit)로는 새 썸네일 이미지가 간헐적으로 안 불러와지는 Discord 임베드 버그가 있음
+    //(user-question-info-ui.ts의 "24.05.07 embed 이미지 버그" 주석과 동일 원인) - 웹에서 다른 퀴즈로
+    //재선택할 때마다 썸네일이 바뀔 수 있으므로 강제 재전송(2026-08-15, 전수 테스트 중 발견)
+    this.sendDelayedUI(this, true);
   }
 
   refreshUI() //ui에 quiz_info 재적용

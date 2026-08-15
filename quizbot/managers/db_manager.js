@@ -8,6 +8,7 @@
 const db_core = require('./db/db_core');
 const db_option = require('./db/db_option');
 const db_quiz = require('./db/db_quiz');
+const db_random_quiz_preset = require('./db/db_random_quiz_preset');
 const db_report = require('./db/db_report');
 const db_scoreboard = require('./db/db_scoreboard');
 
@@ -16,6 +17,7 @@ module.exports = {
   executeQuery: db_core.executeQuery,
   ...db_option,
   ...db_quiz,
+  ...db_random_quiz_preset,
   ...db_report,
   ...db_scoreboard,
 };

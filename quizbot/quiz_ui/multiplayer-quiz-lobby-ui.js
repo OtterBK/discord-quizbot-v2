@@ -376,7 +376,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     if(!cached_basket_items)
     {
       interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\`\`\``, flags: MessageFlags.Ephemeral});
+      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\n🔸 웹 UI에서 프리셋 기능을 사용해보세요.\`\`\``, flags: MessageFlags.Ephemeral});
       return;
     }
 

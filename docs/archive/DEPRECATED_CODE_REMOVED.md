@@ -120,3 +120,36 @@
   }
   ```
 - 관련 커밋: `62c4839`
+
+### `command_manager.ts`/`report_event_dispatch.ts` — `/신고처리` 슬래시커맨드
+
+- 원본 위치: `quizbot/managers/command_manager.ts:62-64`, `quizbot/managers/report/report_event_dispatch.ts`(`isReportManageCommand` 함수 + `checkReportEvent`의 호출부)
+- 삭제일: 2026-08-14
+- 죽은 코드 판단 근거: `/quizmgr` 관리자 패널의 "신고처리" 버튼(`admin_panel_report` → `sendReportLog` 직접 호출, `admin-panel-ui.ts`)으로 진입 경로가 통합되면서 최상위 슬래시커맨드로서의 `/신고처리`가 더 이상 필요 없어짐(사용자 확인) — `command_manager.ts`에서 먼저 주석 처리된 뒤, 같은 세션에서 완전히 삭제. `grep -rn "신고처리"` 결과 남은 매치는 전부 관리자 패널 버튼 라벨/커밋되지 않은 UI 텍스트뿐, 슬래시커맨드로서의 참조는 없음.
+- 원문:
+  ```ts
+  // command_manager.ts
+  new SlashCommandBuilder()
+    .setName('신고처리')
+    .setDescription('관리자 명령어'),
+  ```
+  ```ts
+  // report_event_dispatch.ts
+  const isReportManageCommand = (interaction: any): boolean =>
+  {
+    if(interaction.isCommand() && interaction.commandName === '신고처리')
+    {
+      return true;
+    }
+
+    return false;
+  };
+
+  // checkReportEvent 내부:
+  if(isReportManageCommand(interaction))
+  {
+    report_manual_processing.sendReportLog(interaction);
+    return true;
+  }
+  ```
+- 관련 커밋: (미커밋, `develop-claude` 작업 중)

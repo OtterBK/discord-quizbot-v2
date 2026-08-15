@@ -11,10 +11,11 @@ const db_manager = require('../../quizbot/managers/db_manager.js');
 const db_core = require('../../quizbot/managers/db/db_core');
 const db_option = require('../../quizbot/managers/db/db_option');
 const db_quiz = require('../../quizbot/managers/db/db_quiz');
+const db_random_quiz_preset = require('../../quizbot/managers/db/db_random_quiz_preset');
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 36개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 41개 이름으로 재수출한다', () =>
 {
   // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
   // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
@@ -23,18 +24,20 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 36개 이름으�
   // creator_id로 소유권을 DB 레벨에서 강제하는 단건 조회(비공개 퀴즈도 본인이면 편집 가능해야 함)
   // updateOptionParameterized는 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) 중 신설됨 -
   // 서버 설정 웹 API 전용 파라미터화 쿼리(기존 updateOption은 문자열 직접 삽입, 디스코드 경로 그대로 유지)
+  // db_random_quiz_preset(5개)은 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) 구현 중 신설됨
   const expected_names = [
     'initialize',
     'executeQuery',
     ...Object.keys(db_option),
     ...Object.keys(db_quiz),
+    ...Object.keys(db_random_quiz_preset),
     ...Object.keys(db_report),
     ...Object.keys(db_scoreboard),
   ].sort();
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 36);
+  assert.equal(actual_names.length, 41);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -152,6 +155,97 @@ test('updateGlobalScoreboard: 6개 파라미터를 순서대로 넘긴다 (guild
 
   assert.match(captured.query_string, /INSERT INTO tb_global_scoreboard/);
   assert.deepEqual(captured.values, ['guild_1', 1, 0, 1, 25, '테스트길드']);
+});
+
+//랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13 신설) - db_random_quiz_preset.ts 회귀 테스트.
+test('selectRandomQuizPresetsByUser: user_id로 조회하고 quiz_id_list를 sort_order 기준으로 집계한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectRandomQuizPresetsByUser('user_1');
+
+  assert.match(captured.query_string, /where p\.user_id = \$1/);
+  assert.match(captured.query_string, /array_agg\(i\.quiz_id order by i\.sort_order\)/);
+  assert.deepEqual(captured.values, ['user_1']);
+});
+
+test('insertRandomQuizPreset: preset을 만든 뒤 quiz_id_list를 sort_order와 함께 일괄 삽입한다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    if(/insert into tb_random_quiz_preset \(/.test(query_string))
+    {
+      return { rows: [{ preset_id: 7 }] };
+    }
+    return { rows: [] };
+  });
+
+  const preset_id = await db_manager.insertRandomQuizPreset('user_1', '내 프리셋', [3, 1, 2], 10);
+
+  assert.equal(preset_id, 7);
+  assert.equal(captured_queries.length, 2);
+  assert.match(captured_queries[0].query_string, /where \(select count\(\*\) from tb_random_quiz_preset where user_id = \$1\) < \$3/);
+  assert.deepEqual(captured_queries[0].values, ['user_1', '내 프리셋', 10]);
+  assert.match(captured_queries[1].query_string, /unnest\(\$2::int\[\]\) with ordinality/);
+  assert.deepEqual(captured_queries[1].values, [7, [3, 1, 2]]);
+});
+
+//10개 제한이 순수 애플리케이션 레벨 체크(countRandomQuizPresetsByUser)에만 있으면, 두 요청이 거의
+//동시에 들어올 때(API 직접 호출) 둘 다 "아직 9개"를 보고 통과해 제한을 넘길 수 있다(TOCTOU) - INSERT
+//문 자체의 WHERE 절이 그 순간의 실제 개수를 다시 확인해서 이미 max_count에 도달했으면 0 row를
+//반환하는지(=삽입 자체가 막히는지) 확인.
+test('insertRandomQuizPreset: WHERE 절 조건에 걸려 0 row가 반환되면(이미 max_count 도달) undefined를 반환하고 item은 삽입하지 않는다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    return { rows: [] }; //WHERE 조건에 안 걸려 0 row
+  });
+
+  const preset_id = await db_manager.insertRandomQuizPreset('user_1', '내 프리셋', [1], 10);
+
+  assert.equal(preset_id, undefined);
+  assert.equal(captured_queries.length, 1); //preset insert가 막히면 item insert 자체를 시도하지 않음
+});
+
+test('insertRandomQuizPreset: 항목 삽입이 실패하면 방금 만든 preset을 삭제하고 undefined를 반환한다', async (t) =>
+{
+  const captured_queries = [];
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) =>
+  {
+    captured_queries.push({ query_string, values });
+    if(/insert into tb_random_quiz_preset \(/.test(query_string))
+    {
+      return { rows: [{ preset_id: 7 }] };
+    }
+    if(/insert into tb_random_quiz_preset_item/.test(query_string))
+    {
+      return undefined; //item 삽입 실패
+    }
+    return { rows: [] };
+  });
+
+  const preset_id = await db_manager.insertRandomQuizPreset('user_1', '내 프리셋', [1]);
+
+  assert.equal(preset_id, undefined);
+  assert.equal(captured_queries.length, 3); //insert preset -> insert item(실패) -> 정리용 delete
+  assert.match(captured_queries[2].query_string, /delete from tb_random_quiz_preset where preset_id = \$1/);
+  assert.deepEqual(captured_queries[2].values, [7]);
+});
+
+test('deleteRandomQuizPreset: preset_id와 user_id를 둘 다 조건에 넣어 소유권을 강제한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.deleteRandomQuizPreset(7, 'user_1');
+
+  assert.match(captured.query_string, /where preset_id = \$1 and user_id = \$2/);
+  assert.deepEqual(captured.values, [7, 'user_1']);
 });
 
 test('sendQuery: is_initialized가 false면 실제 pool.query를 호출하지 않고 undefined를 반환한다', async () =>

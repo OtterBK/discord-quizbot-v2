@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getOmakaseTags, getUserQuizzes, getUserQuizDetail, selectQuiz, confirmSelection } from './api.js';
+import {
+  getOmakaseTags, getUserQuizzes, getUserQuizDetail, selectQuiz, confirmSelection,
+  getRandomQuizPresets, createRandomQuizPreset, deleteRandomQuizPreset,
+} from './api.js';
 import { fallbackThumbFor, isValidThumbnailUrl, SORT_OPTIONS, compareQuizzesBySort, useHoverPreview } from './quizCardUtils.js';
 import QuizDetailCard from './QuizDetailCard.jsx';
 import QuizHoverPreview from './QuizHoverPreview.jsx';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const OMAKASE_QUIZ_SIZE = 100; // OmakaseQuizRoomUI.createDefaultOmakaseQuizInfo의 quiz_size와 동일(고정값)
+
+// 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) 저장 실패 사유별 안내 문구 - web_express_app.ts의
+// error 코드와 1:1 대응.
+const PRESET_ERROR_MESSAGES = {
+  invalid_preset_name: '이름은 1~30자로 입력해주세요.',
+  duplicate_name: '이미 같은 이름의 프리셋이 있어요.',
+  invalid_quiz_id_list: '퀴즈함이 비어있어요.',
+  max_presets_reached: '프리셋은 최대 10개까지만 저장할 수 있어요.',
+};
 
 // MultiplayerTab.jsx(Phase 4)도 그대로 재사용 - 태그 select 칩 하나 표시하는 것뿐이라 omakase 전용 로직 없음.
 export function ChipRow({ tags, activeMask, onToggle }) {
@@ -29,9 +41,14 @@ export function ChipRow({ tags, activeMask, onToggle }) {
 // 승인된 목업 설계와 동일한 상호작용). 담기/빼기는 상세 패널의 전용 버튼으로도 가능하다.
 // selected = 지금 미리보고 있는 카드(테두리 강조), inBasket = 실제로 퀴즈함에 담겼는지(체크 배지).
 // MultiplayerTab.jsx(Phase 4)도 그대로 재사용.
-export function BasketQuizCard({ quiz, selected, inBasket, onClick, onContextMenu, onMouseEnter, onMouseLeave }) {
+export function BasketQuizCard({ quiz, tagNameByValue, selected, inBasket, onClick, onContextMenu, onMouseEnter, onMouseLeave }) {
   const thumb = fallbackThumbFor(quiz.quiz_id);
   const hasThumbnail = isValidThumbnailUrl(quiz.thumbnail);
+  const matchedTagNames = tagNameByValue
+    ? Object.entries(tagNameByValue)
+      .filter(([value]) => (quiz.tags_value & Number(value)) !== 0)
+      .map(([, name]) => name)
+    : [];
 
   return (
     <button
@@ -56,6 +73,9 @@ export function BasketQuizCard({ quiz, selected, inBasket, onClick, onContextMen
       <span className="card-body">
         <h3>{quiz.title}</h3>
         <span className="creator">by {quiz.creator_name ?? '알 수 없음'}</span>
+        <span className="tags">
+          {matchedTagNames.map((name) => <span key={name} className="mini-tag">{name}</span>)}
+        </span>
       </span>
     </button>
   );
@@ -64,7 +84,9 @@ export function BasketQuizCard({ quiz, selected, inBasket, onClick, onContextMen
 // 확정(confirm)은 디스코드 화면을 OmakaseQuizRoomUI로 전환하지만, 세션 토큰은 그대로 유지된다
 // (dev/user 탭과 동일한 토큰 생명주기). omakase는 DB 조회가 필요 없는 작은 데이터(태그/인증필터/
 // 퀴즈함/문제 수)라 설정을 바꿀 때마다 select를 호출해 디스코드 임베드를 실시간으로 갱신한다.
-export default function OmakaseTab({ onSessionInvalid }) {
+// basketItems/setBasketItems는 부모(App.jsx)에서 끌어올려 받는다 - 탭 전환으로 이 컴포넌트가
+// 언마운트돼도 "직접 담기" 퀴즈함 내용이 유지되게 하기 위함(2026-08-15 피드백).
+export default function OmakaseTab({ onSessionInvalid, basketItems, setBasketItems }) {
   const [tagsData, setTagsData] = useState(null); // { dev_tags, type_tags, genre_tags }
   const [userQuizzes, setUserQuizzes] = useState(null);
   const [browseTags, setBrowseTags] = useState([]); // QUIZ_TAG 전체(유형+장르) - 퀴즈함 브라우징 필터용
@@ -75,12 +97,22 @@ export default function OmakaseTab({ onSessionInvalid }) {
   const [typeTags, setTypeTags] = useState(0); // custom_quiz_type_tags
   const [genreTags, setGenreTags] = useState(0); // custom_quiz_tags
   const [certifiedFilter, setCertifiedFilter] = useState(true); // 장르로 뽑기 모드 전용
-  const [basketItems, setBasketItems] = useState({}); // { [quiz_id]: {quiz_id, title} }
+  // basketItems({ [quiz_id]: {quiz_id, title} })는 이제 부모(App.jsx)가 들고 있는 prop
   const [questionCount, setQuestionCount] = useState(30);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [justApplied, setJustApplied] = useState(false);
+
+  // 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) - "직접 담기" 모드의 퀴즈함(quiz_id 목록)만
+  // 유저 단위로 저장/재적용. 옵션은 프리셋에 안 담고 항상 지금 화면의 현재 설정을 따른다.
+  const [presets, setPresets] = useState([]);
+  const [showPresetSaveInput, setShowPresetSaveInput] = useState(false);
+  const [presetNameDraft, setPresetNameDraft] = useState('');
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetError, setPresetError] = useState(null);
+  const [presetNotice, setPresetNotice] = useState(null); // 불러오기 시 제외된 항목 안내
+  const [confirmingDeletePresetId, setConfirmingDeletePresetId] = useState(null);
 
   // 퀴즈함 모드 브라우징 필터(실제 omakase 필드가 아니라 검색 편의용 로컬 상태)
   const [browseSearch, setBrowseSearch] = useState('');
@@ -95,6 +127,7 @@ export default function OmakaseTab({ onSessionInvalid }) {
   const hoverPreview = useHoverPreview();
 
   const devTagSectionRef = useRef(null);
+  const presetNoticeTimeoutRef = useRef(null);
 
   const handleApiError = (err) => {
     if (err.status === 401) {
@@ -105,11 +138,12 @@ export default function OmakaseTab({ onSessionInvalid }) {
   };
 
   useEffect(() => {
-    Promise.all([getOmakaseTags(), getUserQuizzes()])
-      .then(([tags, { quizzes, tags: quiz_tags }]) => {
+    Promise.all([getOmakaseTags(), getUserQuizzes(), getRandomQuizPresets()])
+      .then(([tags, { quizzes, tags: quiz_tags }, { presets: preset_list }]) => {
         setTagsData(tags);
         setUserQuizzes(quizzes);
         setBrowseTags(quiz_tags);
+        setPresets(preset_list);
       })
       .catch(handleApiError);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,6 +235,70 @@ export default function OmakaseTab({ onSessionInvalid }) {
   const changeQuestionCount = (value) => {
     setQuestionCount(value);
     pushUpdate({});
+  };
+
+  const handleSavePreset = async () => {
+    const preset_name = presetNameDraft.trim();
+    if (preset_name === '') return;
+
+    setSavingPreset(true);
+    setPresetError(null);
+    try {
+      const quiz_id_list = Object.keys(basketItems).map(Number);
+      const created = await createRandomQuizPreset(preset_name, quiz_id_list);
+      setPresets((prev) => [...prev, created]);
+      setPresetNameDraft('');
+      setShowPresetSaveInput(false);
+    } catch (err) {
+      if (err.status === 401) {
+        onSessionInvalid();
+        return;
+      }
+      setPresetError(PRESET_ERROR_MESSAGES[err.message] ?? '저장에 실패했어요.');
+    } finally {
+      setSavingPreset(false);
+    }
+  };
+
+  // 프리셋의 quiz_id_list는 서버가 필터링 없이 그대로 내려준다(비공개 전환/삭제된 항목까지 포함) -
+  // 이미 불러온 공개 퀴즈 목록(userQuizzes)에서 실제로 찾아지는 항목만 퀴즈함에 채우고, 못 찾은
+  // 개수만큼 안내한다(계획 문서의 "앱 코드 레벨" 필터링 항목). 불러왔다는 걸 알 수 있는 확인용
+  // 안내가 없다는 2026-08-13 피드백 - dev 탭 확정 버튼의 justApplied(1.5초 표시 후 자동 해제)와
+  // 같은 톤으로, 이 자리에 이미 있던 hint-text 한 줄을 잠깐 보여줬다가 자동으로 지운다.
+  const handleLoadPreset = (preset) => {
+    const next = {};
+    for (const quiz_id of preset.quiz_id_list) {
+      const quiz = userQuizzes.find((q) => q.quiz_id === quiz_id);
+      if (quiz !== undefined) next[quiz_id] = { quiz_id, title: quiz.title };
+    }
+
+    const dropped_count = preset.quiz_id_list.length - Object.keys(next).length;
+    setPresetNotice(dropped_count > 0
+      ? `"${preset.preset_name}" 불러옴 — ${dropped_count}개 항목은 더 이상 사용할 수 없어 제외됐어요.`
+      : `✓ "${preset.preset_name}" 불러왔어요.`);
+    clearTimeout(presetNoticeTimeoutRef.current);
+    presetNoticeTimeoutRef.current = setTimeout(() => setPresetNotice(null), 3000);
+
+    setUserMode('basket');
+    setBasketItems(next);
+    pushUpdate({ basket_mode: true, basket_items: next });
+  };
+
+  // 문제 삭제 등 다른 화면과 동일한 2클릭 확인 관례(QuizDetailPage.jsx의 confirmingDeleteQuestionId).
+  const handleDeletePreset = async (preset_id) => {
+    if (confirmingDeletePresetId !== preset_id) {
+      setConfirmingDeletePresetId(preset_id);
+      return;
+    }
+
+    try {
+      await deleteRandomQuizPreset(preset_id);
+      setPresets((prev) => prev.filter((p) => p.preset_id !== preset_id));
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setConfirmingDeletePresetId(null);
+    }
   };
 
   const browseTagNameByValue = useMemo(
@@ -370,6 +468,7 @@ export default function OmakaseTab({ onSessionInvalid }) {
                   <BasketQuizCard
                     key={q.quiz_id}
                     quiz={q}
+                    tagNameByValue={browseTagNameByValue}
                     selected={selectedQuiz?.quiz_id === q.quiz_id}
                     inBasket={basketItems[q.quiz_id] !== undefined}
                     onClick={() => handleBasketCardClick(q)}
@@ -487,6 +586,66 @@ export default function OmakaseTab({ onSessionInvalid }) {
           <h2>퀴즈함</h2>
           <button type="button" title="닫기" onClick={() => setDrawerOpen(false)}>✕</button>
         </div>
+        <div className="qd-presets">
+          <span className="field-label">📌 저장된 프리셋 ({presets.length}/10)</span>
+          {presets.length > 0 && (
+            <div className="qd-preset-list">
+              {presets.map((p) => (
+                // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+                <div key={p.preset_id} role="button" tabIndex={0} className="qd-row" onClick={() => handleLoadPreset(p)}>
+                  <span className="mini-thumb" style={{ background: 'linear-gradient(155deg, var(--primary) 0%, var(--violet) 100%)' }}>📌</span>
+                  <div className="qd-info">
+                    <div className="qd-title">{p.preset_name}</div>
+                    <div className="qd-sub">{p.quiz_id_list.length}개</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="qd-remove"
+                    title="삭제"
+                    onClick={(e) => { e.stopPropagation(); handleDeletePreset(p.preset_id); }}
+                  >
+                    {confirmingDeletePresetId === p.preset_id ? '⚠️' : '✕'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showPresetSaveInput ? (
+            <div className="qd-preset-save">
+              <input
+                type="text"
+                className="text-field"
+                placeholder="프리셋 이름"
+                maxLength={30}
+                value={presetNameDraft}
+                onChange={(e) => setPresetNameDraft(e.target.value)}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="toolbar-cta"
+                disabled={savingPreset || presetNameDraft.trim() === ''}
+                onClick={handleSavePreset}
+              >
+                {savingPreset ? '저장 중...' : '저장'}
+              </button>
+              <button type="button" className="link-btn" onClick={() => { setShowPresetSaveInput(false); setPresetError(null); }}>취소</button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="link-btn"
+              disabled={basketCount === 0 || presets.length >= 10}
+              onClick={() => setShowPresetSaveInput(true)}
+            >
+              + 현재 퀴즈함을 프리셋으로 저장
+            </button>
+          )}
+          {presetError && <div className="error-banner">{presetError}</div>}
+          {presetNotice && <div className="hint-text">{presetNotice}</div>}
+        </div>
+
         <div className="qd-list">
           {basketCount === 0 ? (
             <div className="qd-empty">아직 담긴 퀴즈가 없어요.<br />"직접 골라 담기" 모드에서 카드를 클릭해보세요.</div>
