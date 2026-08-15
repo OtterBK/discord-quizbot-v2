@@ -46,28 +46,41 @@ if [ "$TARGET_BRANCH" != "$CURRENT_BRANCH" ]; then
     fi
 fi
 
-# config/system_setting.js는 private_config.json과 달리 .gitignore 대상이 아니라서 git reset --hard가
-# 그대로 덮어씀 - 서버별로 로컬에서 직접 고친 값(예: WEB_SERVER_PORT)이 있으면 업데이트할 때마다
-# 조용히 원복될 뻔했음(2026-08-15 발견). private_config.json과 동일하게 "서버의 현재 값이 항상 우선"
-# 취급 - reset 전에 백업해뒀다가 reset 후 그대로 복원. 주의: 이 방식이면 코드 쪽에서 새로 추가한
-# SYSTEM_CONFIG 필드는 이 파일에 자동으로 안 들어옴 - 새 필드가 필요하면 origin의 최신 파일과 비교해서
-# 수동으로 병합할 것.
-CONFIG_BACKUP="/tmp/quizbot_system_setting_backup_$$.js"
-cp "config/system_setting.js" "$CONFIG_BACKUP"
+# 아래 파일들은 private_config.json과 달리 .gitignore 대상이 아니라서 git reset --hard가 그대로
+# 덮어씀 - 그런데 전부 "서버에서 직접 바뀌는 운영 상태"를 담고 있어서 업데이트할 때마다 조용히
+# 원복될 위험이 있었음(2026-08-15 발견): config/system_setting.js(로컬에서 직접 고친 값, 예:
+# WEB_SERVER_PORT), resources/current_notice.txt(quizmgr "실시간 공지 수정"으로 바꾼 내용),
+# resources/banned_user.txt(ban_manager.js가 실시간으로 쓰는 밴 목록 - 방치하면 업데이트할 때마다
+# 밴이 원복될 뻔했음). private_config.json과 동일하게 "서버의 현재 값이 항상 우선" 취급 - reset 전에
+# 전부 백업해뒀다가 reset 후 그대로 복원. 주의: 이 방식이면 코드 쪽에서 이 파일들에 새로 추가된 내용
+# (예: SYSTEM_CONFIG 새 필드)은 자동으로 안 들어옴 - 필요하면 origin의 최신 파일과 비교해서 수동 병합할 것.
+PROTECTED_PATHS=("config/system_setting.js" "resources/current_notice.txt" "resources/banned_user.txt")
+BACKUP_DIR="/tmp/quizbot_update_backup_$$"
+mkdir -p "$BACKUP_DIR"
+for path in "${PROTECTED_PATHS[@]}"; do
+    if [ -f "$path" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$path")"
+        cp "$path" "$BACKUP_DIR/$path"
+    fi
+done
 
-# private_config.json/resources/log/dist/node_modules는 전부 .gitignore 대상이라
-# reset --hard로 건드리지 않음 (설정 값/캐시/빌드산출물은 그대로 유지됨)
+# resources/notices/(quizmgr 공지 게시판)/maintenance_notice.txt(점검 모드)는 .gitignore 대상이라
+# reset --hard로 건드리지 않음(설정 값/캐시/빌드산출물도 마찬가지)
 echo "♻️  Resetting to origin/$TARGET_BRANCH..."
 sudo git reset --hard "origin/$TARGET_BRANCH"
 if [ $? -ne 0 ]; then
     echo "❌ git reset failed. Aborting without restarting the service."
-    rm -f "$CONFIG_BACKUP"
+    rm -rf "$BACKUP_DIR"
     exit 1
 fi
 
-echo "🔒 Restoring local config/system_setting.js (로컬 커스터마이징 값 유지)..."
-sudo cp "$CONFIG_BACKUP" "config/system_setting.js"
-rm -f "$CONFIG_BACKUP"
+echo "🔒 Restoring local 운영 데이터(config/system_setting.js, current_notice.txt, banned_user.txt)..."
+for path in "${PROTECTED_PATHS[@]}"; do
+    if [ -f "$BACKUP_DIR/$path" ]; then
+        sudo cp "$BACKUP_DIR/$path" "$path"
+    fi
+done
+rm -rf "$BACKUP_DIR"
 
 echo "📦 Installing dependencies..."
 sudo npm install

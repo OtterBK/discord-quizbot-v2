@@ -91,10 +91,15 @@ UTF-8 locale 설정도 install_quizbot3.sh에만 있어서 기존 서버엔 소�
   origin/<선택한 브랜치> → npm install → custom_node_modules 패치 재적용 → npm run build →
   web-frontend npm install/npm run build(2026-08-15 추가) → **소유권을 ubuntu:ubuntu로 복원(2026-08-15
   추가)**. private_config.json/resources/log/dist/web-frontend/dist/node_modules는 전부 .gitignore
-  대상이라 reset --hard로도 안 건드림(설정값·캐시 안전). config/system_setting.js는 git 추적
-  대상이지만 reset 전후로 백업/복원해서 로컬에서 직접 고친 값(예: WEB_SERVER_PORT)이 원복되지 않게
-  보호함(2026-08-15 추가 — 단, 이 파일에 새로 추가된 SYSTEM_CONFIG 필드는 이 방식으로는 자동 반영이
-  안 되니 origin의 최신 파일과 비교해서 수동 병합 필요).
+  대상이라 reset --hard로도 안 건드림(설정값·캐시 안전, resources/notices/의 quizmgr가 만든 공지와
+  resources/maintenance_notice.txt(점검 모드)도 마찬가지). config/system_setting.js/
+  resources/current_notice.txt/resources/banned_user.txt 3개는 git 추적 대상이지만 reset 전후로
+  백업/복원해서 서버에서 직접 바뀐 값(로컬 설정 커스터마이징/quizmgr 실시간 공지 수정/실시간 밴 목록)이
+  원복되지 않게 보호함(2026-08-15 추가·확장 — quizdata/bgm처럼 코드와 함께 배포돼야 하는 콘텐츠가
+  아니라 서버별 운영 상태이기 때문. 단, 이 파일들에 새로 추가된 내용(예: 새 SYSTEM_CONFIG 필드)은 이
+  방식으로는 자동 반영이 안 되니 origin의 최신 파일과 비교해서 수동 병합 필요). 이미 오래돼 사실상
+  운영 콘텐츠로 안 쓰는 레거시 공지 2개(`resources/notices/`)는 git 추적에서 아예 제외해서, 관리자가
+  quizmgr로 지워도 다음 업데이트 때 되살아나지 않게 함(2026-08-15).
   develop-claude 등 개발용 브랜치에서는 안전장치로 거부됨 — develop/master에서만 실행할 것.
   npm install/npm run build(루트든 web-frontend든) 실패 시 서비스를 시작하지 않고 중단하니, 에러
   메시지를 보고 고친 뒤 다시 실행할 것.
