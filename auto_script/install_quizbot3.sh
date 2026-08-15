@@ -57,6 +57,14 @@ read -p "💾 Enter swap memory size (e.g., 8G, or leave empty to skip): " SWAP_
 print_emphasized "Updating package list..."
 sudo apt update -y
 
+# GCP 등 일부 클라우드 기본 이미지가 UTF-8이 아닌 locale(C/POSIX)로 떠 있는 경우가 있음 - 이 상태에서는
+# resources/notices/ 등 한글 파일명이 `ls`에 물음표(?)로 깨져 보임(실제 파일 데이터는 UTF-8 그대로라
+# 봇 동작 자체엔 영향 없지만, 관리자가 서버에서 직접 확인/조작할 때 혼란스러움 - 2026-08-15 발견).
+print_emphasized "Ensuring UTF-8 locale (en_US.UTF-8)..."
+sudo apt install -y locales
+sudo locale-gen en_US.UTF-8
+sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+
 print_emphasized "Installing Net tools..."
 sudo apt install net-tools -y 
 
@@ -103,10 +111,14 @@ sudo npm install
 sudo npm run build
 cd "$INSTALL_PATH"
 
-# git clone/npm install/npm run build를 전부 sudo로 실행해서 여기까지는 디렉터리 전체가 root 소유임
-# 이후 사용자가 직접 npm run build 등을 실행할 수 있도록 실행 유저 소유로 되돌림
-print_emphasized "Fixing ownership of $INSTALL_PATH to current user..."
-sudo chown -R "$(id -u):$(id -g)" "$INSTALL_PATH"
+# git clone/npm install/npm run build를 전부 sudo로 실행해서 여기까지는 디렉터리 전체가 root 소유임 -
+# quizbot3.service는 User=ubuntu로 도는데(systemd 템플릿 참고) 파일이 root 소유로 남으면 나중에
+# 그 파일을 쓰거나 지우는 동작(예: /quizmgr 공지 삭제)이 EACCES로 실패함(2026-08-15 발견). 이 스크립트
+# 자체가 `sudo bash install_quizbot3.sh`로 통째로 실행되는 걸 전제하므로(정석 사용법.txt 참고)
+# "$(id -u):$(id -g)"는 이미 root(0:0)라 되돌리기가 안 됨 - cron 등록(-u ubuntu)/systemd
+# 템플릿(User=ubuntu)과 동일하게 ubuntu로 고정.
+print_emphasized "Fixing ownership of $INSTALL_PATH to ubuntu..."
+sudo chown -R ubuntu:ubuntu "$INSTALL_PATH"
 
 print_emphasized "Quizbot3 has been installed!"
 

@@ -14,6 +14,8 @@
    - swap 메모리 크기 (선택)
 
    설치 스크립트가 자동으로 하는 것:
+   - UTF-8 locale(en_US.UTF-8) 설정(2026-08-15 추가 - GCP 등 일부 클라우드 기본 이미지가 non-UTF-8
+     locale이라 한글 파일명이 `ls`에 물음표로 깨져 보이던 문제 방지, 봇 동작 자체엔 영향 없었음)
    - PostgreSQL/Node.js/Git 설치, DB 생성 및 복원
    - 저장소 clone (지정한 브랜치) → npm install → npm run build (TS를 dist/로 컴파일)
    - web-frontend(퀴즈 선택 웹 UI, React+Vite 별도 프로젝트) npm install → npm run build
@@ -67,17 +69,47 @@ pkill -9로 확실히 정리한다. 이 훅은 서비스 유닛 자체에 박혀
   sudo sh -c "sed 's|__QUIZBOT_PATH__|$QUIZBOT_PATH|g' '$QUIZBOT_PATH/auto_script/systemd/quizbot3.service.template' > /etc/systemd/system/quizbot3.service"
   sudo systemctl daemon-reload
 
+[한글 파일명이 `ls`에 물음표로 깨져 보일 때 - 2026-08-15 이전에 이미 설치된 서버]
+
+UTF-8 locale 설정도 install_quizbot3.sh에만 있어서 기존 서버엔 소급 적용 안 됨 - 아래를 한 번만
+실행하면 됨(재부팅/재로그인 불필요, 새 SSH 세션부터 바로 적용):
+  sudo apt install -y locales
+  sudo locale-gen en_US.UTF-8
+  sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+실제 파일 데이터는 이 설정과 무관하게 항상 UTF-8이라 봇 동작 자체엔 영향 없음 - 이건 순전히 `ls` 등
+터미널 표시 문제였음.
+
 [코드 업데이트 시 (신규 기능/버그수정 반영, develop/master 브랜치 전용)]
 
   sh auto_script/server_script/quizbot_update.sh
 
-  내부적으로 하는 일: quizbot3 중지 → git fetch + reset --hard origin/<현재 브랜치> → npm install →
-  custom_node_modules 패치 재적용 → npm run build → web-frontend npm install/npm run build(2026-08-15
-  추가) → quizbot3 재시작. private_config.json/resources/log/dist/web-frontend/dist/node_modules는
-  전부 .gitignore 대상이라 reset --hard로도 안 건드림(설정값·캐시 안전).
+  실행하면 먼저 "어느 브랜치로 업데이트할지" 묻는다(Enter만 치면 현재 브랜치 유지, develop/master 중
+  다른 쪽을 입력하면 그쪽으로 전환 - 2026-08-15 추가, develop에서 검증 끝난 뒤 master로 옮겨 운영하는
+  시나리오 지원).
+
+  내부적으로 하는 일: quizbot3 중지 → git fetch + (브랜치 전환 시 checkout) + reset --hard
+  origin/<선택한 브랜치> → npm install → custom_node_modules 패치 재적용 → npm run build →
+  web-frontend npm install/npm run build(2026-08-15 추가) → **소유권을 ubuntu:ubuntu로 복원(2026-08-15
+  추가)**. private_config.json/resources/log/dist/web-frontend/dist/node_modules는 전부 .gitignore
+  대상이라 reset --hard로도 안 건드림(설정값·캐시 안전). config/system_setting.js는 git 추적
+  대상이지만 reset 전후로 백업/복원해서 로컬에서 직접 고친 값(예: WEB_SERVER_PORT)이 원복되지 않게
+  보호함(2026-08-15 추가 — 단, 이 파일에 새로 추가된 SYSTEM_CONFIG 필드는 이 방식으로는 자동 반영이
+  안 되니 origin의 최신 파일과 비교해서 수동 병합 필요).
   develop-claude 등 개발용 브랜치에서는 안전장치로 거부됨 — develop/master에서만 실행할 것.
   npm install/npm run build(루트든 web-frontend든) 실패 시 서비스를 시작하지 않고 중단하니, 에러
   메시지를 보고 고친 뒤 다시 실행할 것.
+
+  **업데이트 완료 후 서비스가 자동으로 시작되지 않는다(2026-08-15 변경)** — 빌드/설정을 확인할 새도
+  없이 바로 재시작되는 게 위험하다는 판단. 확인 후 quizbot_start.sh로 직접 시작할 것(스크립트 마지막에
+  안내 문구로도 뜸).
+
+  **소유권 문제(2026-08-15 이전 버전으로 이미 업데이트를 한 번이라도 돌린 서버)**: git
+  fetch/reset/npm install/npm run build를 전부 sudo(root)로 실행하면서 이후 소유권 복원 단계가 없어서,
+  손댄 파일이 전부 root 소유로 남는 버그가 있었음 — quizbot3.service는 User=ubuntu로 돌기 때문에,
+  root 소유 파일을 봇이 쓰거나 지우는 동작(예: /quizmgr 공지 삭제)이 EACCES로 실패한다. 위 수정으로
+  앞으로의 업데이트는 자동으로 해결되지만, **과거에 이미 생긴 root 소유 파일은 한 번 수동으로
+  고쳐야 한다**:
+    sudo chown -R ubuntu:ubuntu "$QUIZBOT_PATH"
 
 [참고용 - DB 직접 조작 시]
 
