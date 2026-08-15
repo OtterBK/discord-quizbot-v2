@@ -413,6 +413,24 @@ select.sort-select {
 .markdown-desc code { background: var(--surface-sunken); padding: 1px 5px; border-radius: 5px; font-family: var(--font-num); }
 .markdown-desc blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid var(--border); color: var(--ink-faint); }
 
+/* 퀴즈 만들기 안내(GuidePanel)/공지사항 상세(NoticesPanel) 전용 - 디스코드 임베드와 같은 원문을 쓰지만
+   웹에서는 카드형 레이아웃으로 보여준다(2026-08-15 피드백). */
+.guide-page { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.guide-hero { display: flex; align-items: center; gap: 10px; }
+.guide-hero-icon {
+  width: 34px; height: 34px; border-radius: 10px; background: var(--primary-bg); color: var(--primary-ink);
+  display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;
+}
+.guide-card {
+  background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 12px;
+  padding: 13px 14px; border-left: 3px solid var(--border);
+}
+.guide-card-accent-violet { border-left-color: var(--violet); }
+.guide-card-accent-primary { border-left-color: var(--primary); }
+.guide-card .field-label { margin-bottom: 8px; }
+.guide-card .markdown-desc p { line-height: 1.65; }
+.guide-card .markdown-desc strong { color: var(--ink); }
+
 .summary-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .summary-row:last-child { border-bottom: none; }
 .summary-row .k { color: var(--ink-faint); flex-shrink: 0; }

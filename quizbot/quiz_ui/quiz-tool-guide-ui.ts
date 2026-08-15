@@ -38,7 +38,6 @@ class QuizToolGuideUI extends QuizbotUI
       url: undefined,
       fields: [
         text_contents.quiz_tool_guide_ui.fields1,
-        text_contents.quiz_tool_guide_ui.fields2,
       ]
     };
   }

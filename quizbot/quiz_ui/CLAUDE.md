@@ -30,7 +30,16 @@ Discord UI 화면들. `components/`(→ `components/CLAUDE.md`)에 버튼/모달
   공유 모듈 — `multiplayer_mmr.js`와 동일 관례. 디스코드 UI가 지금 이 함수들을 호출하고, Phase 3~4의
   REST 핸들러(`web_quiz_editor_routes.ts`)도 같은 함수를 재사용할 예정.
 - **`multiplayer-quiz-select-ui.js`** — 멀티플레이 로비 생성/참가 진입점. `checkMultiplayerBanMessage(interaction)`(2026-08-12, UI 개선 2라운드 B-5 — 원래 이름 `checkMultiplayerBan(list)`)이 `ban_manager.isBanned(...)`로 위임하되, 유저ID/길드ID를 따로 검사해서 어느 쪽이 밴됐는지 구분하는 메시지(+문의처 안내)를 반환한다 — 예전엔 `[guild.id, user.id]`를 한 배열로 묶어 검사해서 "당신 또는 이 서버가..."로 뭉뚱그려 안내했음. 같은 증상이 있는 `web-handoff-ui.ts`의 `buildMultiplayerUI`(웹 경로)는 아직 안 고침.
-- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고).
+- **`admin-panel-ui.js`**/**`admin-ban-list-ui.js`** — `/quizmgr` 관리자 패널(밴 목록 관리/신고처리/퀴즈 관리/공지 관리). 다른 유저는 절대 접근 불가하도록 다층 방어(루트 `CLAUDE.md`의 "관리자 전용 기능" 참고).
+- **`admin-notice-list-ui.ts`**/**`admin-notice-detail-ui.ts`**(quizmgr 공지 관리, 2026-08-15 신설) —
+  `AdminPanelUI`의 "공지 관리" 버튼(`admin_panel_notice_manage`)에서 진입. `AdminNoticeListUI`는
+  `AdminBanListUI`와 동일 패턴(select 메뉴, 최대 25개)으로 `notice_manager.loadNoticeList` 목록을
+  보여주고 "새 공지 작성" 버튼(모달, 제목+본문)이 있음. 항목 선택 시 `AdminNoticeDetailUI`로 전환 -
+  본문 미리보기 + 수정(모달, 기존 값 프리필)/삭제(밴 해제와 동일한 확인 절차 - `admin_ban_unban_confirm_comp`
+  패턴 재사용) 버튼. 삭제 확정 시 `this.goToBack()`으로 목록 화면으로 돌아가고,
+  `AdminNoticeListUI.onAwaked()`가 뒤로가기 시점마다 목록을 다시 불러와 최신 상태를 반영한다(작성/수정/
+  삭제 어느 경로로 돌아와도 동일하게 동작). 파일 I/O 자체는 `managers/notice_manager.ts`의
+  `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile`에 위임(그 파일 CLAUDE.md 참고).
 
 ## 그 외 화면 (탐색 결과 요약)
 
@@ -61,6 +70,12 @@ state)에 3항목으로 묶임 — 퀴즈 선택 4-tab(`dev`/`user`/`omakase`/`m
 `ServerSettingPanel.jsx`(전부 `web-frontend/src/`), 백엔드는 `web_express_app.ts`에 인라인 라우트로
 추가(`managers/CLAUDE.md`의 "퀴즈 선택 웹 연동" 항목 참고). 패치노트는 스코프 아웃(위 `note-select-ui.js`
 항목 참고), 서버 설정은 권한 체크 없이 그대로 포팅(위 `server-setting-ui.js` 항목 참고).
+**비주얼 개선(2026-08-15 피드백)**: `GuidePanel.jsx`/`NoticesPanel.jsx` 둘 다 `remark-breaks`를
+`<Markdown remarkPlugins={[remarkBreaks]}>`로 연결(패키지는 이미 설치돼 있었으나 실제 연결이 안 돼
+있어 원문의 단일 줄바꿈이 무시되던 문제 수정 - 원문은 디스코드 임베드와 그대로 공유하므로 손대지
+않음). `GuidePanel.jsx`는 `.guide-page`/`.guide-card`(좌측 accent 컬러 카드) 레이아웃으로 재구성(CSS는
+`styles.css`의 "퀴즈 만들기 안내/공지사항 상세 전용" 구역), `NoticesPanel.jsx` 상세 화면도 동일
+`.guide-card`로 감쌈.
 
 ## 화면 이동 그래프 (요약)
 

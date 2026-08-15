@@ -13,6 +13,16 @@
   있던 파일 읽기 로직을 그대로 추출(`quiz_editor_validation.ts`와 동일 관례) — 디스코드 UI가 이
   함수들을 호출하고, `web/web_express_app.ts`의 `GET /api/notices`/`GET /api/notices/:name`도
   재사용한다. 패치노트(`patch_note_contents`)는 죽은 기능이라 손대지 않음.
+  **quizmgr 공지 관리(2026-08-15 신설)**: `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile` 3개
+  추가(`quiz_ui/admin-notice-list-ui.ts`/`admin-notice-detail-ui.ts`가 사용) — 공지 파일명을 이제
+  `YYYYMMDDHHmmss_제목.txt`(14자리 타임스탬프 접두사)로 관리한다. 기존엔 파일명 한글로케일 역순
+  정렬이라 제목에 따라 작성 순서가 뒤바뀔 수 있었던 문제(사용자 피드백)를 해결하기 위함 — mtime은
+  서버 배포 시 `git reset --hard`로 깨질 수 있어 채택 안 하고(운영 배포 스크립트,
+  `auto_script/server_script/quizbot_update.sh` 참고), 파일명 자체에 순서를 새겨서 git 배포와 무관하게
+  안정적으로 보장한다. `loadNoticeList`는 이 접두사 기준 최신순으로 정렬하고(접두사 없는 레거시 파일은
+  mtime으로 폴백), `updateNoticeFile`은 제목이 바뀌어도 기존 접두사(=작성 순서)를 유지한 채 파일명만
+  바꾼다(접두사 없던 레거시 파일을 수정하면 이때 접두사가 새로 부여됨 - 자가 치유). 기존 공지 2개는
+  git 히스토리(`git log --follow`)로 실제 최초 커밋 시점을 확인해 그 순서로 마이그레이션됨.
 
 ## 밴 관리
 

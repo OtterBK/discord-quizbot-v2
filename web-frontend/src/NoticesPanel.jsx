@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Markdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 import { getNotices, getNoticeDetail } from './api.js';
 
 const formatDate = (iso) => {
@@ -70,7 +71,9 @@ export default function NoticesPanel({ onBack, onSessionInvalid }) {
         <>
           <div className="detail-title" style={{ marginTop: 10 }}>{selected.title}</div>
           <div className="detail-desc" style={{ marginBottom: 8 }}>{formatDate(selected.mtime)}</div>
-          <div className="markdown-desc"><Markdown>{selected.content}</Markdown></div>
+          <div className="guide-card">
+            <div className="markdown-desc"><Markdown remarkPlugins={[remarkBreaks]}>{selected.content}</Markdown></div>
+          </div>
         </>
       )}
     </div>

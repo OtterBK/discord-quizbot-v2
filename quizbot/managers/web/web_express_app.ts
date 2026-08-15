@@ -530,7 +530,7 @@ exports.start = (): any =>
   app.get('/api/quiz-tool-guide', requireWebSession, (req: any, res: any) =>
   {
     const guide = text_contents.quiz_tool_guide_ui;
-    res.json({ title: guide.title, description: guide.description, fields: [guide.fields1, guide.fields2] });
+    res.json({ title: guide.title, description: guide.description, fields: [guide.fields1] });
   });
 
   //공지사항 목록/상세 - quiz_ui/note-select-ui.ts, note-ui.ts와 동일한 notice_manager.ts 함수 재사용.

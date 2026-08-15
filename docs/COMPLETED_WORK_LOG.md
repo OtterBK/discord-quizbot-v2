@@ -1207,3 +1207,39 @@ pass)/`web-frontend` `build` 통과(백엔드 `npm run build`는 `config/private
 작업 중 `npm test`가 `config/private_config.json` JSON 파싱 오류로 30건 실패하는 걸 발견 — 파일
 마지막 줄에 오타로 보이는 글자 하나(`ㄸ`)가 남아있었음(비밀 설정 파일이라 사용자 확인 후 삭제,
 2026-08-13에 있었던 덮어쓰기 사고와는 다른 별개의 편집 사고로 추정).
+
+## 2026-08-15 — 웹 안내 페이지 비주얼 개선 + 공지사항 정렬 안정화 + quizmgr 공지 관리 기능
+
+사용자 요청 3건을 한 세션에서 처리:
+
+1. **웹 UI 퀴즈 만들기 안내 페이지 비주얼 개선** — `GuidePanel.jsx`/`NoticesPanel.jsx` 둘 다 이미
+   설치돼 있었지만 실제 연결이 안 돼 있던 `remark-breaks`를 `<Markdown remarkPlugins={[remarkBreaks]}>`로
+   연결(원문의 단일 줄바꿈이 무시되던 문제 수정, 원문은 디스코드 임베드와 그대로 공유하므로 손대지
+   않음). `GuidePanel.jsx`를 `.guide-page`/`.guide-card`(좌측 accent 컬러) 카드형 레이아웃으로 재구성,
+   `NoticesPanel.jsx` 상세 화면도 동일 카드로 감쌈. CSS는 `web-frontend/src/styles.css`의 기존 디자인
+   토큰(`--primary`/`--violet`/`--surface-sunken` 등, 라이트/다크 둘 다 대응)만 사용.
+2. **공지사항 정렬 방식 변경** — 기존 `resources/notices/*.txt` 파일명 한글로케일 역순 정렬이 제목에
+   따라 작성 순서를 보장 못 하는 문제(사용자 발견)를 해결. 파일명 앞에 14자리 타임스탬프
+   접두사(`YYYYMMDDHHmmss_`)를 붙이는 방식으로 결정(mtime은 서버 배포 시 `git reset --hard`로 깨질 수
+   있어 제외, 별도 인덱스 JSON도 검토했으나 파일-인덱스 불일치 위험으로 제외 — 사용자 선택).
+   `notice_manager.ts`의 `loadNoticeList`가 이 접두사 기준 최신순 정렬(접두사 없는 레거시 파일은
+   mtime 폴백)로 바뀌고, 기존 공지 2개는 `git log --follow`로 확인한 실제 최초 커밋 시점 순서로
+   마이그레이션(`git mv`로 파일명 변경, 내용 무변경).
+3. **quizmgr 공지 작성/수정/삭제 관리자 기능 신설** — `AdminPanelUI`에 "공지 관리" 버튼 추가,
+   `AdminNoticeListUI`(목록 select + 작성 모달)/`AdminNoticeDetailUI`(본문 미리보기 + 수정 모달/삭제
+   확인)를 `AdminBanListUI`와 동일 패턴(select 메뉴, 확인 절차)으로 신설.
+   `notice_manager.ts`에 `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile` 3개 추가 —
+   `updateNoticeFile`은 제목이 바뀌어도 기존 타임스탬프 접두사(작성 순서)는 유지하고, 접두사 없던
+   레거시 파일을 수정하면 그때 접두사가 새로 부여됨(자가 치유).
+
+검증: `test/managers/notice_manager.test.js` 정렬/CRUD 테스트 갱신+추가(11 pass),
+`test/quiz_ui/components.test.js` export 개수 64→69 갱신, `npm test`(370 pass)/`npm run lint`(0
+error)/`web-frontend` `npm run build` 전부 통과. 관련 CLAUDE.md(루트 제외 `managers/`,
+`quiz_ui/`, `quiz_ui/components/`) + `docs/TEST_CHECKLIST.md`(L섹션 공지 관리 신규 항목,
+웹 안내/공지사항 항목 `[ ]`로 되돌림) 갱신 완료. 실사용 테스트(Discord+브라우저)는 다음 세션 확인 필요.
+
+**같은 날 후속(사용자 실사용 확인 후)**: "예시 영상" 필드 제거(더 이상 예시 영상을 제공하지 않음) —
+`config/text_contents.json`의 `quiz_tool_guide_ui.fields2` 삭제, `quiz-tool-guide-ui.ts`(디스코드)/
+`web_express_app.ts`(`GET /api/quiz-tool-guide`)의 `fields2` 참조 제거(둘 다 이제 `fields1` 1개만
+반환). `web_express_app.test.js`의 필드 개수 검증(2→1)도 같이 수정. 위 3건 중 나머지(비주얼 개선/정렬/
+공지 관리)는 사용자가 실사용으로 정상 동작 확인 완료.
