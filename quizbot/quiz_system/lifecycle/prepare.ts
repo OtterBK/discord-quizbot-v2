@@ -662,6 +662,11 @@ class Prepare extends QuizLifeCycle
     }
 
     const option_data = this.quiz_session.option_data;
+    if(option_data == undefined) //위쪽 다운로드 대기(await) 중에 강제 종료 등으로 세션이 free()돼서
+    { //option_data가 null로 초기화된 경우 - 계속 진행하면 크래시(2026-08-15, 전수 테스트 중 발견)
+      logger.info(`quiz_session.option_data is null while preparing audio (session was freed mid-download) - skip`);
+      return [undefined, undefined, 'session freed while preparing audio'];
+    }
     let audio_length_sec = Math.floor(option_data.quiz.audio_play_time / 1000); //우선 서버 설정값
 
     if(audio_start_point == undefined || audio_start_point >= audio_duration_sec) //시작 요청 값 없거나, 시작 요청 구간이 오디오 범위 넘어서면

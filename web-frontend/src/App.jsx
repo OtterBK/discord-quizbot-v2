@@ -13,6 +13,10 @@ import ServerSettingPanel from './ServerSettingPanel.jsx';
 // 이 세 화면이 전부 같은 자리(버튼)에서 나오므로 웹에서도 같은 메뉴에 묶어 노출한다.
 const UTILITY_PANEL = { guide: '🛠 퀴즈 만들기 안내', notices: '📢 공지사항', settings: '⚙️ 서버 설정' };
 
+// 봇 공유하기(2026-08-15 피드백) - Readme.md에 있는 것과 동일한 초대 링크. 별도 패널 없이 클립보드
+// 복사 액션으로만 처리(패널이 필요할 만큼 콘텐츠가 있는 기능이 아님).
+const BOT_INVITE_URL = 'https://discord.com/oauth2/authorize?client_id=788060831660114012&permissions=2150681600&scope=bot';
+
 // 공지사항 안 읽음 배지(2026-08-12 피드백 - 메뉴가 헤더 아이콘 하나뿐이라 서버 설정/공지사항의
 // 존재 자체를 알아채기 힘들다는 지적) - 브라우저별 localStorage에 마지막으로 확인한 공지의 mtime을
 // 저장해두고, 그보다 최신 공지가 있으면 배지를 띄운다. 처음 방문한 브라우저는 저장값이 없어 전부
@@ -39,6 +43,10 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [latestNoticeMtime, setLatestNoticeMtime] = useState(null);
   const [hasUnreadNotice, setHasUnreadNotice] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  // 랜덤 퀴즈 탭의 "직접 담기" 퀴즈함(quiz_id 목록) - 탭을 전환하면 OmakaseTab이 통째로 언마운트돼
+  // 로컬 state가 날아가던 문제(2026-08-15 피드백)로, 이 값만 부모(App)로 끌어올려 탭을 오가도 유지되게 함.
+  const [omakaseBasketItems, setOmakaseBasketItems] = useState({});
 
   const handleSessionInvalid = () => setError('session_invalid');
 
@@ -50,6 +58,20 @@ export default function App() {
       localStorage.setItem(LAST_SEEN_NOTICE_KEY, latestNoticeMtime);
       setHasUnreadNotice(false);
     }
+  };
+
+  const shareBot = async () => {
+    try {
+      await navigator.clipboard.writeText(BOT_INVITE_URL);
+    } catch {
+      window.open(BOT_INVITE_URL, '_blank', 'noopener,noreferrer');
+    }
+    setShareCopied(true);
+    //복사 확인 문구를 보여줘야 하니 메뉴를 바로 닫지 않고, 잠깐 보여준 뒤에 같이 닫는다
+    setTimeout(() => {
+      setShareCopied(false);
+      setMenuOpen(false);
+    }, 1200);
   };
 
   useEffect(() => {
@@ -149,6 +171,9 @@ export default function App() {
                       {key === 'notices' && hasUnreadNotice && <span className="unread-dot inline" />}
                     </button>
                   ))}
+                  <button type="button" onClick={shareBot}>
+                    {shareCopied ? '✓ 초대 링크가 복사됐어요' : '🔗 봇 공유하기'}
+                  </button>
                 </div>
               </>
             )}
@@ -176,7 +201,13 @@ export default function App() {
 
           {activeTab === 'dev' && <DevQuizTab onSessionInvalid={handleSessionInvalid} />}
           {activeTab === 'user' && <UserQuizTab onSessionInvalid={handleSessionInvalid} />}
-          {activeTab === 'omakase' && <OmakaseTab onSessionInvalid={handleSessionInvalid} />}
+          {activeTab === 'omakase' && (
+            <OmakaseTab
+              onSessionInvalid={handleSessionInvalid}
+              basketItems={omakaseBasketItems}
+              setBasketItems={setOmakaseBasketItems}
+            />
+          )}
           {activeTab === 'multiplayer' && <MultiplayerTab onSessionInvalid={handleSessionInvalid} />}
         </>
       ) : (

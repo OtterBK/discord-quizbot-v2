@@ -547,7 +547,7 @@ class QuizInfoUI extends QuizbotUI
     }
 
     interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 퀴즈함에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``});
+    interaction.reply({content: `\`\`\`🔸 퀴즈함에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
     this.refreshUI();
     return this;

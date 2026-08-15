@@ -630,3 +630,161 @@ test('PUT /api/server-option: DB 저장이 실패(db_core.sendQuery가 undefined
   assert.equal(body.success, false);
   assert.equal(body.values.skip_type, '주최자'); //메모리 캐시는 그대로 반영됨(디스코드 쪽과 동일 동작)
 });
+
+//랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13 신설) - db_manager 경계에서 mock 처리
+//(db_manager.test.js와 동일 관례). guild 세션(omakase)도 owner_id를 갖고 있어 createDevSession()으로
+//충분하다(스코프 제한이 없는 라우트임을 확인하는 것도 겸함).
+
+test('GET /api/random-quiz-presets: 유저의 프리셋 목록을 반환한다', async (t) =>
+{
+  const session = createDevSession();
+
+  t.mock.method(db_manager, 'selectRandomQuizPresetsByUser', async (user_id) =>
+  {
+    assert.equal(user_id, 'owner_test');
+    return { rows: [{ preset_id: 1, preset_name: '내 프리셋', quiz_id_list: [3, 1], created_time: new Date(), modified_time: null }] };
+  });
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, { headers: { Authorization: `Bearer ${session.token}` } });
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.presets.length, 1);
+  assert.equal(body.presets[0].preset_id, 1);
+  assert.equal(body.presets[0].preset_name, '내 프리셋');
+  assert.deepEqual(body.presets[0].quiz_id_list, [3, 1]);
+});
+
+test('POST /api/random-quiz-presets: 이름이 비어있으면 400 invalid_preset_name을 반환한다', async () =>
+{
+  const session = createDevSession();
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '  ', quiz_id_list: [1] }),
+  });
+  assert.equal(res.status, 400);
+
+  const body = await res.json();
+  assert.equal(body.error, 'invalid_preset_name');
+});
+
+test('POST /api/random-quiz-presets: quiz_id_list가 비어있으면 400 invalid_quiz_id_list를 반환한다', async () =>
+{
+  const session = createDevSession();
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '내 프리셋', quiz_id_list: [] }),
+  });
+  assert.equal(res.status, 400);
+
+  const body = await res.json();
+  assert.equal(body.error, 'invalid_quiz_id_list');
+});
+
+test('POST /api/random-quiz-presets: 같은 이름이 이미 있으면 400 duplicate_name을 반환한다', async (t) =>
+{
+  const session = createDevSession();
+
+  t.mock.method(db_manager, 'selectRandomQuizPresetByName', async () => ({ rows: [{ preset_id: 1 }] }));
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '내 프리셋', quiz_id_list: [1] }),
+  });
+  assert.equal(res.status, 400);
+
+  const body = await res.json();
+  assert.equal(body.error, 'duplicate_name');
+});
+
+test('POST /api/random-quiz-presets: 이미 10개면 400 max_presets_reached를 반환한다', async (t) =>
+{
+  const session = createDevSession();
+
+  t.mock.method(db_manager, 'selectRandomQuizPresetByName', async () => ({ rows: [] }));
+  t.mock.method(db_manager, 'countRandomQuizPresetsByUser', async () => ({ rows: [{ count: '10' }] }));
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '내 프리셋', quiz_id_list: [1] }),
+  });
+  assert.equal(res.status, 400);
+
+  const body = await res.json();
+  assert.equal(body.error, 'max_presets_reached');
+});
+
+test('POST /api/random-quiz-presets: 유효하면 201로 저장된 프리셋을 반환한다(quiz_id_list는 중복 제거+정수 필터링됨)', async (t) =>
+{
+  const session = createDevSession();
+
+  t.mock.method(db_manager, 'selectRandomQuizPresetByName', async () => ({ rows: [] }));
+  t.mock.method(db_manager, 'countRandomQuizPresetsByUser', async () => ({ rows: [{ count: '2' }] }));
+
+  let captured_args;
+  t.mock.method(db_manager, 'insertRandomQuizPreset', async (owner_id, preset_name, quiz_id_list, max_count) =>
+  {
+    captured_args = { owner_id, preset_name, quiz_id_list, max_count };
+    return 7;
+  });
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${session.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ preset_name: '내 프리셋', quiz_id_list: [1, '2', 1, 'not_a_number'] }),
+  });
+  assert.equal(res.status, 201);
+
+  const body = await res.json();
+  assert.equal(body.preset_id, 7);
+  assert.equal(body.preset_name, '내 프리셋');
+  assert.deepEqual(body.quiz_id_list, [1, 2]);
+
+  assert.equal(captured_args.owner_id, 'owner_test');
+  assert.equal(captured_args.max_count, 10); //10개 제한을 INSERT 쪽에도 넘겨서 TOCTOU 없이 원자적으로 재확인시킴
+  assert.deepEqual(captured_args.quiz_id_list, [1, 2]);
+});
+
+test('DELETE /api/random-quiz-presets/:preset_id: 소유하지 않은(또는 존재하지 않는) preset이면 404를 반환한다', async (t) =>
+{
+  const session = createDevSession();
+
+  t.mock.method(db_manager, 'deleteRandomQuizPreset', async () => ({ rows: [] }));
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets/999`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${session.token}` },
+  });
+  assert.equal(res.status, 404);
+
+  const body = await res.json();
+  assert.equal(body.error, 'preset_not_found');
+});
+
+test('DELETE /api/random-quiz-presets/:preset_id: 성공하면 success:true를 반환한다', async (t) =>
+{
+  const session = createDevSession();
+
+  let captured_args;
+  t.mock.method(db_manager, 'deleteRandomQuizPreset', async (preset_id, user_id) =>
+  {
+    captured_args = { preset_id, user_id };
+    return { rows: [{ preset_id }] };
+  });
+
+  const res = await fetch(`${BASE_URL}/api/random-quiz-presets/7`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${session.token}` },
+  });
+  assert.equal(res.status, 200);
+
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.deepEqual(captured_args, { preset_id: 7, user_id: 'owner_test' });
+});

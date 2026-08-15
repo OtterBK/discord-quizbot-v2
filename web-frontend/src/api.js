@@ -73,6 +73,14 @@ export const confirmMultiplayer = (action, selection, selected_question_count) =
 // confirmMultiplayer 직후의 실제 처리 결과(1회성 - 읽으면 서버에서 즉시 비워짐) - { result: null | {action, success, reason} }
 export const getMultiplayerResult = () => apiFetch('/api/multiplayer-result');
 
+// 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) - "직접 담기" 모드의 퀴즈함(quiz_id 목록)을
+// 유저 단위로 저장/재적용. 옵션은 저장하지 않는다.
+export const getRandomQuizPresets = () => apiFetch('/api/random-quiz-presets');
+export const createRandomQuizPreset = (preset_name, quiz_id_list) =>
+  apiFetch('/api/random-quiz-presets', { method: 'POST', body: JSON.stringify({ preset_name, quiz_id_list }) });
+export const deleteRandomQuizPreset = (preset_id) =>
+  apiFetch(`/api/random-quiz-presets/${preset_id}`, { method: 'DELETE' });
+
 // 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) - 안내 페이지/공지사항/서버 설정.
 export const getQuizToolGuide = () => apiFetch('/api/quiz-tool-guide');
 export const getNotices = () => apiFetch('/api/notices');

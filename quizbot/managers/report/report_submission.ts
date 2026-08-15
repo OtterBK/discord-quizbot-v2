@@ -56,7 +56,7 @@ const submitReportChatModal = (interaction: any): void =>
   const result = 0;
   const report_type = report_chat_info.REPORT_PROCESSED_RESULT_TYPE.IN_PROGRESS;
 
-  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\n🔸 관리자가 검토 후 처리하며, 처리 결과는 개별로 안내드리지 않는 점 양해 부탁드려요.\`\`\``, flags: MessageFlags.Ephemeral});
+  interaction.reply({content: `\`\`\`🔸 신고가 접수되었습니다. 감사합니다.\`\`\``, flags: MessageFlags.Ephemeral});
 
   db_manager.insertChatInfo(report_chat_info.chat_info_key_fields, [chat_id, content, sender_id, result]);
   db_manager.insertReportInfo(report_chat_info.report_info_key_fields, [chat_id, reporter_id, report_detail, report_type]);

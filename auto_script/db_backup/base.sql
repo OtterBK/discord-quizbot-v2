@@ -209,6 +209,56 @@ ALTER SEQUENCE quizbot.tb_quiz_info_quiz_id_seq OWNED BY quizbot.tb_quiz_info.qu
 
 
 --
+-- Name: tb_random_quiz_preset; Type: TABLE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE TABLE quizbot.tb_random_quiz_preset (
+    preset_id integer NOT NULL,
+    user_id bigint NOT NULL,
+    preset_name character varying(30) NOT NULL,
+    created_time timestamp without time zone DEFAULT now() NOT NULL,
+    modified_time timestamp without time zone
+);
+
+
+ALTER TABLE quizbot.tb_random_quiz_preset OWNER TO quizbot;
+
+--
+-- Name: tb_random_quiz_preset_item; Type: TABLE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE TABLE quizbot.tb_random_quiz_preset_item (
+    preset_id integer NOT NULL,
+    quiz_id integer NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE quizbot.tb_random_quiz_preset_item OWNER TO quizbot;
+
+--
+-- Name: tb_random_quiz_preset_preset_id_seq; Type: SEQUENCE; Schema: quizbot; Owner: quizbot
+--
+
+CREATE SEQUENCE quizbot.tb_random_quiz_preset_preset_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE quizbot.tb_random_quiz_preset_preset_id_seq OWNER TO quizbot;
+
+--
+-- Name: tb_random_quiz_preset_preset_id_seq; Type: SEQUENCE OWNED BY; Schema: quizbot; Owner: quizbot
+--
+
+ALTER SEQUENCE quizbot.tb_random_quiz_preset_preset_id_seq OWNED BY quizbot.tb_random_quiz_preset.preset_id;
+
+
+--
 -- Name: tb_report_info; Type: TABLE; Schema: quizbot; Owner: quizbot
 --
 
@@ -234,6 +284,13 @@ ALTER TABLE ONLY quizbot.tb_question_info ALTER COLUMN question_id SET DEFAULT n
 --
 
 ALTER TABLE ONLY quizbot.tb_quiz_info ALTER COLUMN quiz_id SET DEFAULT nextval('quizbot.tb_quiz_info_quiz_id_seq'::regclass);
+
+
+--
+-- Name: tb_random_quiz_preset preset_id; Type: DEFAULT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset ALTER COLUMN preset_id SET DEFAULT nextval('quizbot.tb_random_quiz_preset_preset_id_seq'::regclass);
 
 
 --
@@ -293,6 +350,22 @@ COPY quizbot.tb_quiz_info (quiz_id, creator_id, creator_name, creator_icon_url, 
 
 
 --
+-- Data for Name: tb_random_quiz_preset; Type: TABLE DATA; Schema: quizbot; Owner: quizbot
+--
+
+COPY quizbot.tb_random_quiz_preset (preset_id, user_id, preset_name, created_time, modified_time) FROM stdin;
+\.
+
+
+--
+-- Data for Name: tb_random_quiz_preset_item; Type: TABLE DATA; Schema: quizbot; Owner: quizbot
+--
+
+COPY quizbot.tb_random_quiz_preset_item (preset_id, quiz_id, sort_order) FROM stdin;
+\.
+
+
+--
 -- Data for Name: tb_report_info; Type: TABLE DATA; Schema: quizbot; Owner: quizbot
 --
 
@@ -312,6 +385,13 @@ SELECT pg_catalog.setval('quizbot.tb_question_info_question_id_seq1', 92624, tru
 --
 
 SELECT pg_catalog.setval('quizbot.tb_quiz_info_quiz_id_seq', 3952, true);
+
+
+--
+-- Name: tb_random_quiz_preset_preset_id_seq; Type: SEQUENCE SET; Schema: quizbot; Owner: quizbot
+--
+
+SELECT pg_catalog.setval('quizbot.tb_random_quiz_preset_preset_id_seq', 1, false);
 
 
 --
@@ -371,10 +451,57 @@ ALTER TABLE ONLY quizbot.tb_quiz_info
 
 
 --
+-- Name: tb_random_quiz_preset_item tb_random_quiz_preset_item_pkey; Type: CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
+    ADD CONSTRAINT tb_random_quiz_preset_item_pkey PRIMARY KEY (preset_id, quiz_id);
+
+
+--
+-- Name: tb_random_quiz_preset tb_random_quiz_preset_pkey; Type: CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset
+    ADD CONSTRAINT tb_random_quiz_preset_pkey PRIMARY KEY (preset_id);
+
+
+--
+-- Name: tb_random_quiz_preset tb_random_quiz_preset_user_name_uniq; Type: CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset
+    ADD CONSTRAINT tb_random_quiz_preset_user_name_uniq UNIQUE (user_id, preset_name);
+
+
+--
 -- Name: idx_quiz_like_user; Type: INDEX; Schema: quizbot; Owner: quizbot
 --
 
 CREATE INDEX idx_quiz_like_user ON quizbot.tb_like_info USING btree (quiz_id, user_id);
+
+
+--
+-- Name: idx_random_quiz_preset_user_id; Type: INDEX; Schema: quizbot; Owner: quizbot
+--
+
+CREATE INDEX idx_random_quiz_preset_user_id ON quizbot.tb_random_quiz_preset USING btree (user_id);
+
+
+--
+-- Name: tb_random_quiz_preset_item tb_random_quiz_preset_item_preset_fk; Type: FK CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
+    ADD CONSTRAINT tb_random_quiz_preset_item_preset_fk FOREIGN KEY (preset_id) REFERENCES quizbot.tb_random_quiz_preset(preset_id) ON DELETE CASCADE;
+
+
+--
+-- Name: tb_random_quiz_preset_item tb_random_quiz_preset_item_quiz_fk; Type: FK CONSTRAINT; Schema: quizbot; Owner: quizbot
+--
+
+ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
+    ADD CONSTRAINT tb_random_quiz_preset_item_quiz_fk FOREIGN KEY (quiz_id) REFERENCES quizbot.tb_quiz_info(quiz_id) ON DELETE CASCADE;
 
 
 --

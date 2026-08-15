@@ -40,6 +40,8 @@ import {
   DiscordAnswerPreview,
 } from './questionDisplay.jsx';
 
+const MAX_QUESTIONS_PER_QUIZ = 50; //config/system_setting.js SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ 미러링(QuizDetailPage.jsx와 동일 관례)
+
 const composeRangeRow = (start, end) =>
 {
   if (start === '' || start === null || start === undefined) return '';
@@ -125,7 +127,15 @@ export default function QuestionEditPage({ onSessionInvalid }) {
         setQuizTitle(detail.title);
         setQuestionOrder(detail.questions.map((q) => q.question_id));
 
-        if (isEditMode === false) return;
+        if (isEditMode === false) {
+          //"이전 문제"/"다음 문제"와 같은 방식으로 같은 컴포넌트 인스턴스가 재사용되며 이 route로
+          //넘어오는 경우(예: 저장 후 "+ 새 문제 추가") 이전 문제의 폼 값이 남아있지 않도록 초기화
+          setForm(EMPTY_FORM);
+          setAnswerDrafts({});
+          setServerValidation(null);
+          setLoadError(null);
+          return;
+        }
 
         const question = detail.questions.find((q) => String(q.question_id) === questionId);
         if (question === undefined) {
@@ -241,7 +251,7 @@ export default function QuestionEditPage({ onSessionInvalid }) {
             <ContentTagChips tags={computeContentTags(form)} />
           </div>
 
-          <div className="tabrail section-block" style={{ paddingTop: 0, paddingBottom: 0 }}>
+          <div className="segmented-tabrail section-block" style={{ paddingTop: 0, paddingBottom: 0 }}>
             <button type="button" className={activeTab === 'basic' ? 'active' : ''} onClick={() => setActiveTab('basic')}>① 기본 정보</button>
             <button type="button" className={activeTab === 'extra' ? 'active' : ''} onClick={() => setActiveTab('extra')}>② 힌트 설정</button>
             <button type="button" className={activeTab === 'answering' ? 'active' : ''} onClick={() => setActiveTab('answering')}>③ 정답 공개 설정</button>
@@ -418,6 +428,15 @@ export default function QuestionEditPage({ onSessionInvalid }) {
                 onClick={() => navigate(`/quiz/${quizId}/questions/${nextQuestionId}`)}
               >
                 다음 문제 →
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={questionOrder.length >= MAX_QUESTIONS_PER_QUIZ}
+                title={questionOrder.length >= MAX_QUESTIONS_PER_QUIZ ? `문제는 최대 ${MAX_QUESTIONS_PER_QUIZ}개까지 만들 수 있어요.` : undefined}
+                onClick={() => navigate(`/quiz/${quizId}/questions/new`)}
+              >
+                + 새 문제 추가
               </button>
             </span>
             <span style={{ display: 'flex', gap: 8 }}>
