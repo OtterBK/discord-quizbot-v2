@@ -1344,3 +1344,43 @@ require 스모크 테스트로 버튼 3개/URL 반영 확인. 관련 CLAUDE.md(`
 제각각이라 정렬이 안 맞아 보인다는 피드백 — 셋 다 `height: 38px`로 통일(`.theme-toggle`은 컨테이너에
 `height:38px`+`padding:4px`, 내부 버튼은 `height:100%`로 남는 공간을 채우는 방식). 색상은
 `.menu-trigger`만 이미 `.support-link`와 같은 violet 톤으로 맞춰뒀던 상태 그대로 유지.
+
+## 2026-08-15 — install_quizbot3.sh에 UTF-8 locale 설정 추가
+
+사용자가 GCP 서버에서 `resources/notices/`의 한글 파일명이 `ls`에 물음표로 깨져 보인다고 보고. 원인
+조사 결과 `install_quizbot3.sh`에 locale 설정이 아예 없어서, 클라우드 기본 이미지가 non-UTF-8
+locale(C/POSIX)로 뜨는 경우 터미널이 UTF-8 파일명을 못 보여주는 것으로 판단(Node.js `fs`는 locale과
+무관하게 항상 raw UTF-8로 파일명을 다루므로, 실제 데이터/봇 동작엔 영향 없음 — 순수 표시 문제).
+`sudo apt install -y locales` → `locale-gen en_US.UTF-8` → `update-locale LANG=en_US.UTF-8
+LC_ALL=en_US.UTF-8` 3줄을 설치 스크립트 초반(패키지 목록 갱신 직후)에 추가. 이전에 설치된 서버는
+소급 적용 안 되므로 같은 3줄을 수동 실행하도록 `auto_script/정석 사용법.txt`에 안내 추가. 셸 스크립트라
+`bash -n`으로 문법만 검증, 실제 서버 반영은 사용자가 직접 진행 예정.
+
+## 2026-08-15 — `quizbot_update.sh`/`install_quizbot3.sh` 소유권 버그 수정 + 업데이트 스크립트 3건 개선
+
+사용자가 GCP 서버에서 `/quizmgr` 공지 삭제 시도 중 `EACCES: permission denied, unlink` 에러 보고
+(git 추적 대상이던 레거시 공지 파일 대상). 원인: `quizbot_update.sh`가 `git fetch`/`reset --hard`/
+`npm install`/`npm run build`를 전부 `sudo`(root)로 실행하면서 이후 소유권을 되돌리는 단계가 아예
+없었음 — `quizbot3.service`는 `User=ubuntu`로 도는데, 파일이 root 소유로 남아 그 파일을 쓰거나 지우는
+동작이 EACCES로 실패. `install_quizbot3.sh`도 같은 문제가 있었음 — 소유권 복원 시도(`chown -R
+"$(id -u):$(id -g)"`)가 있긴 했지만, 스크립트 자체가 `sudo bash install_quizbot3.sh`로 통째로 실행되는
+전제라 `$(id -u)`가 이미 root(0)를 가리켜 사실상 no-op이었음. 둘 다 `ubuntu:ubuntu`로 하드코딩해서
+수정(systemd `User=ubuntu`/cron `-u ubuntu`와 이미 일관된 고정 유저 가정).
+
+같은 세션에서 사용자가 이어서 요청한 `quizbot_update.sh` 개선 3건도 함께 처리:
+1. **브랜치 선택권 제공** — develop에서 검증 후 master로 전환해서 운영하는 시나리오 지원. 실행 시
+   업데이트할 브랜치를 물어보고(Enter면 현재 브랜치 유지), 다른 브랜치를 입력하면 `git checkout` 후
+   그 브랜치의 `origin`으로 reset.
+2. **업데이트 후 자동 재시작 제거** — 빌드/설정 확인할 틈 없이 바로 `systemctl restart`되던 걸 없애고,
+   완료 메시지에 수동 시작 안내(`quizbot_start.sh` 또는 `systemctl start quizbot3`)만 출력.
+3. **`config/system_setting.js` 로컬 커스터마이징 보호** — 이 파일은 `private_config.json`과 달리
+   `.gitignore` 대상이 아니라서 `reset --hard`가 그대로 덮어씀 — 서버에서 직접 고친 값(예: 사용자가
+   `WEB_SERVER_PORT`를 3000으로 바꾼 것)이 업데이트마다 조용히 원복될 뻔했던 문제. `private_config.json`과
+   동일하게 "서버의 현재 값이 항상 우선"으로 취급 — reset 전 `/tmp`에 백업, reset 후 `sudo cp`로 복원
+   (일반 `cp`는 reset 직후 root 소유가 된 파일에 쓸 권한이 없어 `sudo` 필요). 트레이드오프: 이 파일에
+   새 `SYSTEM_CONFIG` 필드가 추가돼도 자동으로 안 들어오니, 그런 경우는 수동 병합 필요 —
+   `auto_script/정석 사용법.txt`/루트 `CLAUDE.md`에 명시.
+
+검증: 셸 스크립트라 `bash -n`으로 문법만 확인, 실제 서버 반영/재검증은 사용자가 직접 진행 예정. 이미
+과거에 `quizbot_update.sh`를 돌린 서버는 `sudo chown -R ubuntu:ubuntu <설치 경로>`를 한 번 수동
+실행해야 기존에 이미 root 소유가 된 파일들이 정리됨(스크립트 자체 수정은 다음 실행부터만 적용).

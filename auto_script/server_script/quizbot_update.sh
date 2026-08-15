@@ -15,7 +15,17 @@ if [ "$CURRENT_BRANCH" != "develop" ] && [ "$CURRENT_BRANCH" != "master" ]; then
     exit 1
 fi
 
-echo "🔄 Updating quizbot3 (branch: $CURRENT_BRANCH)..."
+# develop에서 검증 끝난 뒤 master로 전환해서 운영하는 시나리오 지원(2026-08-15 추가) - 기본값은 현재
+# 브랜치 유지(Enter만 치면 됨), develop/master 중 다른 쪽을 입력하면 그쪽으로 전환 후 업데이트.
+read -p "🌿 업데이트할 브랜치를 입력하세요 (develop/master, 기본값: 현재 브랜치 '$CURRENT_BRANCH'): " TARGET_BRANCH
+TARGET_BRANCH="${TARGET_BRANCH:-$CURRENT_BRANCH}"
+
+if [ "$TARGET_BRANCH" != "develop" ] && [ "$TARGET_BRANCH" != "master" ]; then
+    echo "❌ '$TARGET_BRANCH'는 지원하지 않는 브랜치입니다. develop 또는 master만 입력하세요."
+    exit 1
+fi
+
+echo "🔄 Updating quizbot3 (branch: $TARGET_BRANCH)..."
 
 echo "⏹  Stopping quizbot3 service..."
 sudo systemctl stop quizbot3
@@ -27,14 +37,37 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+if [ "$TARGET_BRANCH" != "$CURRENT_BRANCH" ]; then
+    echo "🔀 Switching branch: $CURRENT_BRANCH → $TARGET_BRANCH..."
+    sudo git checkout "$TARGET_BRANCH"
+    if [ $? -ne 0 ]; then
+        echo "❌ git checkout failed. Aborting without touching the running code."
+        exit 1
+    fi
+fi
+
+# config/system_setting.js는 private_config.json과 달리 .gitignore 대상이 아니라서 git reset --hard가
+# 그대로 덮어씀 - 서버별로 로컬에서 직접 고친 값(예: WEB_SERVER_PORT)이 있으면 업데이트할 때마다
+# 조용히 원복될 뻔했음(2026-08-15 발견). private_config.json과 동일하게 "서버의 현재 값이 항상 우선"
+# 취급 - reset 전에 백업해뒀다가 reset 후 그대로 복원. 주의: 이 방식이면 코드 쪽에서 새로 추가한
+# SYSTEM_CONFIG 필드는 이 파일에 자동으로 안 들어옴 - 새 필드가 필요하면 origin의 최신 파일과 비교해서
+# 수동으로 병합할 것.
+CONFIG_BACKUP="/tmp/quizbot_system_setting_backup_$$.js"
+cp "config/system_setting.js" "$CONFIG_BACKUP"
+
 # private_config.json/resources/log/dist/node_modules는 전부 .gitignore 대상이라
 # reset --hard로 건드리지 않음 (설정 값/캐시/빌드산출물은 그대로 유지됨)
-echo "♻️  Resetting to origin/$CURRENT_BRANCH..."
-sudo git reset --hard "origin/$CURRENT_BRANCH"
+echo "♻️  Resetting to origin/$TARGET_BRANCH..."
+sudo git reset --hard "origin/$TARGET_BRANCH"
 if [ $? -ne 0 ]; then
     echo "❌ git reset failed. Aborting without restarting the service."
+    rm -f "$CONFIG_BACKUP"
     exit 1
 fi
+
+echo "🔒 Restoring local config/system_setting.js (로컬 커스터마이징 값 유지)..."
+sudo cp "$CONFIG_BACKUP" "config/system_setting.js"
+rm -f "$CONFIG_BACKUP"
 
 echo "📦 Installing dependencies..."
 sudo npm install
@@ -73,7 +106,17 @@ if [ $? -ne 0 ]; then
 fi
 cd "$QUIZBOT_PATH" || { echo "❌ Failed to cd back into $QUIZBOT_PATH"; exit 1; }
 
-echo "▶️  Starting quizbot3 service..."
-sudo systemctl start quizbot3
+# git fetch/reset/npm install/npm run build를 전부 sudo로 실행해서 여기까지 손댄 파일이 root 소유로
+# 남아있음 - quizbot3.service는 User=ubuntu로 도는데, 파일이 root 소유면 그 파일을 쓰거나 지우는
+# 동작(예: /quizmgr 공지 삭제)이 EACCES로 실패함(2026-08-15 발견 - resources/notices/의 git 추적
+# 파일을 봇이 못 지우던 문제). install_quizbot3.sh 설치 시점에도 같은 문제가 있어 같이 고침.
+echo "🔧 Fixing ownership back to ubuntu:ubuntu..."
+sudo chown -R ubuntu:ubuntu "$QUIZBOT_PATH"
 
-echo "✅ Update complete (branch: $CURRENT_BRANCH). 로그 확인: journalctl -u quizbot3 -f"
+# 업데이트 직후 자동 재시작하지 않음(2026-08-15 변경) - 빌드/설정에 문제가 없는지 확인할 시간 없이
+# 바로 재시작되던 게 위험하다는 피드백. 확인 후 quizbot_start.sh로 직접 시작할 것.
+echo "✅ Update complete (branch: $TARGET_BRANCH)."
+echo "   서비스는 자동으로 시작되지 않습니다 - 확인 후 아래 명령으로 직접 시작하세요:"
+echo "   sh $QUIZBOT_PATH/auto_script/server_script/quizbot_start.sh"
+echo "   (또는: sudo systemctl start quizbot3)"
+echo "   로그 확인: journalctl -u quizbot3 -f"
