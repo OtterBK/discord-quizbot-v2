@@ -607,8 +607,8 @@ select.sort-select {
 .qd-head button { border: none; background: var(--surface-sunken); color: var(--ink-dim); width: 24px; height: 24px; border-radius: 7px; font-size: 12px; }
 .qd-head button:hover { color: var(--ink); }
 
-/* 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13) - qd-footer와 대칭되는 구조로
-   퀴즈함 드로워 상단에 배치, 항목 자체는 기존 qd-row/mini-thumb/qd-info/qd-remove를 그대로 재사용한다. */
+/* 랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md, 2026-08-13) - 퀴즈함 드로워 상단에 배치,
+   항목 자체는 기존 qd-row/mini-thumb/qd-info/qd-remove를 그대로 재사용한다. */
 .qd-presets { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .qd-preset-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
 .qd-preset-save { display: flex; gap: 6px; align-items: center; }
@@ -633,12 +633,6 @@ select.sort-select {
      바뀌면 글리프 폭/높이가 달라 박스 안에서 어긋나 보였음(랜덤 퀴즈 프리셋, 2026-08-13 피드백) */
 .qd-row .qd-remove:hover { color: var(--red); }
 .qd-empty { padding: 30px 16px; text-align: center; color: var(--ink-faint); font-size: 12.5px; line-height: 1.6; }
-.qd-footer { padding: 12px 14px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-.qd-limit-note { font-size: 11px; color: var(--ink-faint); line-height: 1.5; }
-.qd-limit-badge {
-  display: inline-flex; align-items: center; gap: 4px; background: var(--primary-bg); color: var(--primary-ink);
-  font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 9px;
-}
 
 .footer-note { text-align: center; font-size: 11.5px; color: var(--ink-faint); padding-top: 6px; }
 .footer-note code { font-family: var(--font-num); background: var(--surface-sunken); padding: 1px 5px; border-radius: 5px; }

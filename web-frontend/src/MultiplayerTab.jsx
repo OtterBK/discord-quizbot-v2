@@ -521,10 +521,6 @@ export default function MultiplayerTab({ onSessionInvalid }) {
             })
           )}
         </div>
-        <div className="qd-footer">
-          {basketCount > 25 && <span className="qd-limit-badge">🎉 25개 초과! 웹에서만 가능한 자유예요</span>}
-          <div className="qd-limit-note">💡 디스코드 목록 UI는 25개까지만 지원하지만, 여기선 자유롭게 더 담을 수 있어요.</div>
-        </div>
       </div>
 
       <QuizHoverPreview hover={hoverPreview.hover} tagNameByValue={browseTagNameByValue} />

@@ -17,6 +17,8 @@ const cloneDeep = require("lodash/cloneDeep.js");
 const {
   multiplayer_lobby_host_tag_comp,
   multiplayer_lobby_host_basket_comp,
+  multiplayer_basket_manage_open_comp,
+  multiplayer_basket_view_comp,
   multiplayer_lobby_kick_select_menu,
   multiplayer_participant_select_menu,
   multiplayer_participant_select_row,
@@ -25,12 +27,11 @@ const {
   omakase_custom_quiz_tags_select_menu,
   multiplayer_lobby_participant_comp,
   modal_multiplayer_quiz_setting,
-  request_basket_reopen_comp,
   multiplayer_leave_confirm_comp,
   multiplayer_kick_confirm_comp,
 } = require("./components");
 
-const { 
+const {
   QuizbotUI,
 } = require("./common-ui");
 
@@ -39,6 +40,11 @@ const { AlertQuizStartUI } = require("./alert-quiz-start-ui");
 const { QuizInfoUI } = require('./quiz-info-ui');
 const { UserQuizSelectUI } = require("./user-quiz-select-ui.js");
 const { OmakaseQuizRoomUI } = require("./omakase-quiz-room-ui");
+const basket_manage_flow = require('./basket-manage-flow'); //퀴즈함 관리+프리셋(2026-08-19 이식, OmakaseQuizRoomUI와 공용, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md)
+
+//퀴즈함 100개 확장(2026-08-19, 오마카세의 OMAKASE_MAX_BASKET_SIZE와 동일한 값 - omakase-quiz-room-ui.ts
+//상단 주석에 행 예산/페이지네이션 대안 근거 정리돼 있음, 여기도 동일하게 적용됨).
+const MULTIPLAYER_MAX_BASKET_SIZE = 100;
 
 //#endregion
 
@@ -355,7 +361,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
     if(use_basket_mode === true) //이미 사용 중이다?
     {
-      return new UserQuizSelectUI(basket_items); //그럼 다시 담을 수 있게 ㄱㄱ
+      return new UserQuizSelectUI(basket_items, MULTIPLAYER_MAX_BASKET_SIZE); //그럼 다시 담을 수 있게 ㄱㄱ
     }
 
     this.quiz_info['basket_mode'] = true;
@@ -365,27 +371,7 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
 
     this.sendEditLobbySignal(interaction);
 
-    return new UserQuizSelectUI(basket_items);
-  }
-
-  handleLoadBasketItems(interaction)
-  {
-    const guild_id = interaction.guild.id;
-    const cached_basket_items = QuizInfoUI.BASKET_CACHE[guild_id];
-
-    if(!cached_basket_items)
-    {
-      interaction.explicit_replied = true;
-      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\n🔸 웹 UI에서 프리셋 기능을 사용해보세요.\`\`\``, flags: MessageFlags.Ephemeral});
-      return;
-    }
-
-    this.quiz_info['basket_items'] = cloneDeep(cached_basket_items);
-
-    interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 퀴즈함 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
-
-    this.sendEditLobbySignal(interaction);
+    return new UserQuizSelectUI(basket_items, MULTIPLAYER_MAX_BASKET_SIZE);
   }
 
   handleRequestUseTagMode(interaction)
@@ -602,8 +588,15 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     this.sendEditLobbySignal(interaction);
   }
 
-  onInteractionCreate(interaction) 
+  onInteractionCreate(interaction)
   {
+    //퀴즈함 관리+프리셋(2026-08-19 이식) - OmakaseQuizRoomUI와 동일하게 화면 전환 없이 위임만 함
+    if(basket_manage_flow.isBasketManageEvent(interaction) || basket_manage_flow.isBasketManageModalEvent(interaction))
+    {
+      basket_manage_flow.handleBasketManageEvent(interaction, this);
+      return undefined;
+    }
+
     if(this.isTagSelectedEvent(interaction))
     {
       return this.handleTagSelectedEvent(interaction);
@@ -646,14 +639,13 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
 
     const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
 
-    if(this.readonly) //readonly면 불필요. 
+    if(this.readonly) //readonly면 불필요.
     {
       if(use_basket_mode)
       {
-        this.setupBasketSelectMenu(); //이거정도는 필요 ㅋ
-        this.components.push(this.basket_select_component);
+        this.components.push(multiplayer_basket_view_comp); //조회+프리셋 저장/관리만 가능(항목 추가/제거는 호스트 길드 전용, basket-manage-flow.ts의 is_host 판별 참고)
       }
-      
+
       return;
     }
 
@@ -677,10 +669,8 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     }
     else
     {
-      this.setupBasketSelectMenu();
-      this.components.push(this.basket_select_component);
-      this.components.push(request_basket_reopen_comp);
-    }   
+      this.components.push(multiplayer_basket_manage_open_comp);
+    }
   }
   
   updateLobbyEmbed(quiz_info) 
@@ -897,12 +887,6 @@ class MultiplayerQuizLobbyUI extends QuizInfoUI
     }
 
     MultiplayerQuizLobbyUI.applyWebPayloadToQuizInfo(this.quiz_info, signal.payload);
-
-    const guild_id = this.holder?.guild_id;
-    if(guild_id !== undefined)
-    {
-      QuizInfoUI.BASKET_CACHE[guild_id] = this.quiz_info['basket_items'];
-    }
 
     this.refreshUI();
     this.sendEditLobbySignal(); //다른 참가 길드에 브로드캐스트 - 태그 select 메뉴를 바꿀 때도 이미 일어나는 기존 동작(handleTagSelected)과 동일
