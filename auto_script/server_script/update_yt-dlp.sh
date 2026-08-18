@@ -11,11 +11,11 @@ fi
 # 저장소에서 받는다 - stable에만 있는 회귀 버그(예: 2026-08-18 android_vr 클라이언트 403 이슈,
 # yt-dlp#17456)를 다음 stable 릴리스 전까지 임시로 우회해야 할 때만 1회성으로 쓰는 용도.
 RELEASE_CHANNEL="stable"
-if [ "$1" == "nightly" ]; then
+if [ "$1" = "nightly" ]; then
     RELEASE_CHANNEL="nightly"
 fi
 
-if [ "$RELEASE_CHANNEL" == "nightly" ]; then
+if [ "$RELEASE_CHANNEL" = "nightly" ]; then
     DOWNLOAD_URL="https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp_linux"
     echo "nightly 채널로 받습니다 (임시 우회용, 평소엔 인자 없이 stable로 실행할 것)"
 else
