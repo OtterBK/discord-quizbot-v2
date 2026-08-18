@@ -28,7 +28,6 @@ const { QuizbotUI } = require('./common-ui');
 const { DevQuizSelectUI } = require('./dev-quiz-select-ui');
 const { DevQuizInfoUI } = require('./dev-quiz-info-ui');
 const { OmakaseQuizRoomUI } = require('./omakase-quiz-room-ui');
-const { QuizInfoUI } = require('./quiz-info-ui');
 const ban_manager = require('../managers/ban_manager');
 const quiz_system = require('../quiz_system/quiz_system');
 //#endregion
@@ -228,8 +227,6 @@ class WebHandoffUI extends QuizbotUI
   {
     const adapter_interaction = { guild: this.guild, member: { id: this.owner_id } };
     const omakase_quiz_info = OmakaseQuizRoomUI.buildOmakaseQuizInfoFromWebPayload(payload, adapter_interaction);
-
-    QuizInfoUI.BASKET_CACHE[this.guild.id] = omakase_quiz_info['basket_items'];
 
     return new OmakaseQuizRoomUI(omakase_quiz_info);
   }

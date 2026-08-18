@@ -66,6 +66,20 @@ exports.selectOwnedQuizInfoById = async (quiz_id: number, creator_id: string): P
 
 };
 
+//랜덤 퀴즈 프리셋(디스코드 UI, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md) - 프리셋에 저장된 quiz_id_list를
+//"불러오기" 화면에 제목과 함께 보여주기 위한 일괄 조회. selectRandomQuestionListByBasket과 동일한
+//ANY($1::int[]) 패턴 재사용 - 삭제되거나 비공개로 바뀐 quiz_id는 결과에서 자동으로 빠짐(호출부가 이
+//차이(요청한 개수 대비 결과 개수)로 "더 이상 사용할 수 없는 항목" 개수를 계산한다).
+exports.selectQuizInfoByIds = async (quiz_id_list: number[]): Promise<any> =>
+{
+  const query_string =
+  `select quiz_id, quiz_title
+    from tb_quiz_info
+    where is_use = true and is_private = false and quiz_id = ANY($1::int[])`;
+
+  return db_core.sendQuery(query_string, [quiz_id_list]);
+};
+
 exports.insertQuizInfo = async (key_fields: string, value_fields: any[]): Promise<any> =>
 {
 

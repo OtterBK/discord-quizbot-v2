@@ -1,0 +1,17 @@
+[Unit]
+Description=bgutil-ytdlp-pot-provider (yt-dlp PO Token HTTP server)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bgutil-ytdlp-pot-provider/server
+ExecStart=/usr/bin/node build/main.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bgutil-pot-provider
+
+[Install]
+WantedBy=multi-user.target

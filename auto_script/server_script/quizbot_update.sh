@@ -99,6 +99,11 @@ sudo cp -R custom_node_modules/* node_modules/
 echo "🎵 Re-fetching standalone yt-dlp (npm install just restored the python-dependent build)..."
 sudo sh "$QUIZBOT_PATH/auto_script/server_script/update_yt-dlp.sh"
 
+# 아직 설치 안 된 서버(설치 스크립트가 이 기능 도입 전에 돌았던 경우)에만 실제로 설치가 일어남 -
+# 이미 있으면 setup_pot_provider.sh가 스스로 감지해서 조용히 스킵함(idempotent).
+echo "🔑 Ensuring yt-dlp PO Token provider is installed..."
+sh "$QUIZBOT_PATH/auto_script/server_script/setup_pot_provider.sh" || echo "⚠️  PO Token provider setup failed - yt-dlp will still work without it, just without this fallback."
+
 # TS로 전환된 소스는 dist/ 로 빌드해야 node가 바로 require할 수 있음(.ts는 직접 못 읽음) - 이 단계를
 # 건너뛰면 낡은 dist/가 그대로 남아 업데이트가 반영 안 된 것처럼 보이거나, 최악의 경우 require 시점에
 # 크래시할 수 있음(전환된 매니저는 원본 .js가 이미 삭제돼 있음)

@@ -9,7 +9,6 @@ const assert = require('node:assert/strict');
 
 const { WebHandoffUI } = require('../../quizbot/quiz_ui/web-handoff-ui');
 const { OmakaseQuizRoomUI } = require('../../quizbot/quiz_ui/omakase-quiz-room-ui');
-const { QuizInfoUI } = require('../../quizbot/quiz_ui/quiz-info-ui');
 
 const fakeInteraction = () => ({
   guild: { id: 'guild_test', name: '테스트길드', iconURL: () => '' },
@@ -38,7 +37,6 @@ test('WebHandoffUI.buildOmakaseQuizInfoUI: 웹 payload를 기본 omakase_quiz_in
   assert.equal(result.quiz_info['custom_quiz_tags'], 8);
   assert.equal(result.quiz_info['certified_filter'], false);
   assert.equal(result.quiz_info['selected_question_count'], 50);
-  assert.equal(QuizInfoUI.BASKET_CACHE['guild_test'], result.quiz_info['basket_items']); //BASKET_CACHE도 같이 갱신됨
 });
 
 test('WebHandoffUI.buildOmakaseQuizInfoUI: selected_question_count가 quiz_size(100)를 넘으면 클램프된다', () =>
@@ -67,7 +65,6 @@ test('OmakaseQuizRoomUI.onReceivedWebSessionSignal: 확정 후 웹에서 설정�
   assert.equal(ui.quiz_info['basket_mode'], true);
   assert.deepEqual(ui.quiz_info['basket_items'], basket_items);
   assert.equal(ui.quiz_info['selected_question_count'], 15);
-  assert.equal(QuizInfoUI.BASKET_CACHE['guild_test'], basket_items);
 });
 
 test('OmakaseQuizRoomUI.onReceivedWebSessionSignal: applied가 아닌 이벤트는 무시한다', () =>

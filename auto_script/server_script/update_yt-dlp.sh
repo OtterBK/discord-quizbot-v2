@@ -7,6 +7,21 @@ if [ -z "$QUIZBOT_PATH" ]; then
     exit 1
 fi
 
+# 인자 없이 실행하면 stable(기본, 운영 권장). "nightly"를 인자로 주면 yt-dlp-nightly-builds
+# 저장소에서 받는다 - stable에만 있는 회귀 버그(예: 2026-08-18 android_vr 클라이언트 403 이슈,
+# yt-dlp#17456)를 다음 stable 릴리스 전까지 임시로 우회해야 할 때만 1회성으로 쓰는 용도.
+RELEASE_CHANNEL="stable"
+if [ "$1" == "nightly" ]; then
+    RELEASE_CHANNEL="nightly"
+fi
+
+if [ "$RELEASE_CHANNEL" == "nightly" ]; then
+    DOWNLOAD_URL="https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp_linux"
+    echo "nightly 채널로 받습니다 (임시 우회용, 평소엔 인자 없이 stable로 실행할 것)"
+else
+    DOWNLOAD_URL="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
+fi
+
 # Define the target path using QUIZBOT_PATH
 TARGET_PATH="$QUIZBOT_PATH/node_modules/youtube-dl-exec/bin"
 
@@ -28,8 +43,8 @@ fi
 # 자체가 안 됨 - standalone 바이너리는 시스템 python3 버전과 완전히 무관해서 이 문제를 원천 차단한다.
 # 저장 파일명은 그대로 "yt-dlp"로 유지(youtube-dl-exec/audio_cache_manager.ts가 이 경로를 그대로
 # 참조하므로 다른 코드 변경 불필요 - 내용물만 바뀔 뿐 경로는 그대로).
-echo "Downloading the latest version of yt-dlp (standalone binary)..."
-curl -Lo "$TARGET_PATH/yt-dlp" https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux
+echo "Downloading the latest $RELEASE_CHANNEL version of yt-dlp (standalone binary)..."
+curl -Lo "$TARGET_PATH/yt-dlp" "$DOWNLOAD_URL"
 
 # Grant 777 permissions to the yt-dlp file
 echo "Granting 777 permissions to yt-dlp"

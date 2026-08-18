@@ -139,6 +139,11 @@ print_emphasized "QUIZBOT_PATH is set to: $QUIZBOT_PATH (system-wide)"
 print_emphasized "Fetching latest yt-dlp..."
 sh "$INSTALL_PATH/auto_script/server_script/update_yt-dlp.sh"
 
+# yt-dlp가 봇 탐지에 막힌 클라이언트를 만났을 때만 보조로 쓰는 PO Token provider(2026-08-18 도입) -
+# 없어도 기존 다운로드 동작엔 영향 없는 순수 보강 수단이라 설치 실패해도 스크립트를 중단하진 않는다.
+print_emphasized "Installing yt-dlp PO Token provider..."
+sh "$INSTALL_PATH/auto_script/server_script/setup_pot_provider.sh" || echo "⚠️  PO Token provider setup failed - yt-dlp will still work without it, just without this fallback."
+
 # Restore DB after Git clone
 if [ -z "$BACKUP_FILE" ]; then
     DEFAULT_BACKUP="$INSTALL_PATH/auto_script/db_backup/base.sql"

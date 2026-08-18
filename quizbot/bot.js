@@ -517,6 +517,21 @@ const handle_cancel_clear_quiz = (interaction) =>
   interaction.update({ content: `\`\`\`🔸 취소했어요.\`\`\``, components: [] });
 };
 
+//Public UI 소유자 전용 제한(바로 아래 참고)의 예외 목록 - 소유자가 아니어도 상호작용을 허용해야 하는
+//customId 접두사를 여기 등록한다. 원래 이 제한은 "다른 유저가 남의 /퀴즈 화면을 함부로 조작하지 못하게"
+//막는 용도인데, 퀴즈함 관리+프리셋(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18)처럼 애초에
+//"소유자 외 다른 유저도 참여 가능"하게 설계된 기능은 이 제한에 걸려 아예 시작도 못 하는 설계 미스가
+//있었음(실사용 중 발견) - 세부 권한(방장만 가능한 액션 vs 누구나 가능한 액션)은 각 기능 자체가
+//책임지고 판단하므로(예: basket-manage-flow.ts의 room_owner 체크), 여기서는 "이 기능의 진입 자체는
+//소유자가 아니어도 막지 않는다"는 것만 결정한다.
+const PUBLIC_UI_OWNER_CHECK_EXEMPT_PREFIXES = ['basket_manage_', 'modal_basket_preset_'];
+
+const isExemptFromPublicUIOwnerCheck = (interaction) =>
+{
+  return typeof interaction.customId === 'string'
+    && PUBLIC_UI_OWNER_CHECK_EXEMPT_PREFIXES.some((prefix) => interaction.customId.startsWith(prefix));
+};
+
 // 상호작용 이벤트
 client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) => 
 {
@@ -621,9 +636,9 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   const holder_id =
     interaction.guild == undefined ? interaction.user.id : interaction.guild.id;
   const uiHolder = quizbot_ui.getUIHolder(holder_id);
-  if (uiHolder != undefined) 
+  if (uiHolder != undefined)
   {
-    if (interaction.user.id != uiHolder.getOwnerId() && uiHolder.isPublicUI() && (quiz_session === undefined || (quiz_session.isMultiplayerSession() && !quiz_session.isIngame())))
+    if (interaction.user.id != uiHolder.getOwnerId() && uiHolder.isPublicUI() && (quiz_session === undefined || (quiz_session.isMultiplayerSession() && !quiz_session.isIngame())) && !isExemptFromPublicUIOwnerCheck(interaction))
     {
       //이제 Public UI 조작은 주인만 가능~
       interaction.reply({
