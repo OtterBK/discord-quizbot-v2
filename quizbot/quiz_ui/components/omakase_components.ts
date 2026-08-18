@@ -40,6 +40,37 @@ const request_basket_reopen_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Primary),
   );
 
+//퀴즈함 관리 + 프리셋(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18 신설) - OmakaseQuizRoomUI
+//전용(멀티플레이 로비는 스코프 밖, request_basket_reopen_comp를 그대로 계속 씀 - 위 컴포넌트는 그대로
+//둔 채 이 화면 전용으로 별도 컴포넌트를 새로 만든 이유). "최근 퀴즈함으로 덮어쓰기"(BASKET_CACHE 기반)
+//버튼을 "🧺 퀴즈함 보기"로 교체 - 이 버튼이 basket-manage-flow.ts의 독립 ephemeral 화면을 연다.
+const omakase_basket_manage_open_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('use_basket_mode')
+      .setLabel('퀴즈함에 퀴즈 더 담기')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('basket_manage_open')
+      .setLabel('🧺 퀴즈함 보기')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+const modal_basket_preset_save = new ModalBuilder()
+  .setCustomId('modal_basket_preset_save')
+  .setTitle('프리셋으로 저장')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_basket_preset_name')
+          .setLabel('프리셋 이름 (최대 30자)')
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(1)
+          .setMaxLength(30)
+      ),
+  );
+
 //오마카세 퀴즈용
 const omakase_quiz_info_tag_comp = new ActionRowBuilder()
   .addComponents(
@@ -206,6 +237,8 @@ const omakase_basket_select_row = new ActionRowBuilder()
 module.exports = {
   modal_quiz_setting,
   request_basket_reopen_comp,
+  omakase_basket_manage_open_comp,
+  modal_basket_preset_save,
   omakase_quiz_info_tag_comp,
   omakase_quiz_info_basket_comp,
   modal_omakase_quiz_setting,

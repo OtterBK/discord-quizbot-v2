@@ -15,7 +15,7 @@ const db_random_quiz_preset = require('../../quizbot/managers/db/db_random_quiz_
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 45개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 48개 이름으로 재수출한다', () =>
 {
   // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
   // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
@@ -28,6 +28,10 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 45개 이름으�
   // selectSeasonList/selectArchivedTop50Scoreboard/selectArchivedGuildScoreboard/endCurrentSeason은
   // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md) 구현 중 신설됨(selectTop10Scoreboard도
   // 이때 selectTop50Scoreboard로 개명 - TOP50 노출 요청, 2026-08-15 같은 날 후속)
+  // selectQuizInfoByIds는 퀴즈함 관리+프리셋 UI(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18)
+  // 구현 중 신설됨 - 프리셋에 저장된 quiz_id 목록을 제목과 함께 일괄 조회
+  // updateRandomQuizPresetName/deleteRandomQuizPresetItem은 같은 날 후속(프리셋 관리 화면 - 이름변경/
+  // 항목제거)으로 신설됨 - 웹 UI엔 아직 없는 기능
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -40,7 +44,7 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 45개 이름으�
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 45);
+  assert.equal(actual_names.length, 48);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -92,6 +96,22 @@ test('selectOwnedQuizInfoById: quiz_id/creator_id를 파라미터로 넘기고 i
   assert.match(captured.query_string, /creator_id = \$2 and quiz_id = \$1/);
   assert.doesNotMatch(captured.query_string, /is_private/); //비공개 퀴즈도 본인이면 조회돼야 함
   assert.deepEqual(captured.values, [42, 'user_1']);
+});
+
+//퀴즈함 관리+프리셋 UI(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18 신설) - 프리셋 불러오기
+//화면이 저장된 quiz_id 목록을 제목과 함께 보여주기 위해 씀. selectRandomQuestionListByBasket과 동일한
+//ANY($1::int[]) 파라미터화 패턴(문자열 보간 없음) + 공개/사용중인 것만 걸러지는지 확인.
+test('selectQuizInfoByIds: quiz_id_list를 파라미터로 넘기고 is_private=false/is_use=true 조건을 포함한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.selectQuizInfoByIds([1, 2, 3]);
+
+  assert.match(captured.query_string, /quiz_id = ANY\(\$1::int\[\]\)/);
+  assert.match(captured.query_string, /is_private = false/);
+  assert.match(captured.query_string, /is_use = true/);
+  assert.deepEqual(captured.values, [[1, 2, 3]]);
 });
 
 //2026-08-12(웹 API 보안 점검) - quiz_id_list를 문자열로 이어붙여 IN절에 직접 삽입하던 방식은
@@ -362,6 +382,33 @@ test('deleteRandomQuizPreset: preset_id와 user_id를 둘 다 조건에 넣어 �
 
   assert.match(captured.query_string, /where preset_id = \$1 and user_id = \$2/);
   assert.deepEqual(captured.values, [7, 'user_1']);
+});
+
+//퀴즈함 관리+프리셋 UI(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18 같은 날 후속) - 프리셋
+//이름변경/항목제거. 웹 UI엔 아직 없는 기능이라(저장/불러오기/삭제 3개뿐) 디스코드가 먼저 갖게 됨.
+test('updateRandomQuizPresetName: preset_id/user_id로 소유권을 강제하고 이름을 갱신한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.updateRandomQuizPresetName(7, 'user_1', '새 이름');
+
+  assert.match(captured.query_string, /where preset_id = \$1 and user_id = \$2/);
+  assert.match(captured.query_string, /set preset_name = \$3/);
+  assert.deepEqual(captured.values, [7, 'user_1', '새 이름']);
+});
+
+test('deleteRandomQuizPresetItem: preset_id/user_id/quiz_id로 소유권까지 강제해서 항목 하나만 제거한다', async (t) =>
+{
+  let captured = undefined;
+  t.mock.method(db_core, 'sendQuery', async (query_string, values) => { captured = { query_string, values }; return undefined; });
+
+  await db_manager.deleteRandomQuizPresetItem(7, 'user_1', 42);
+
+  assert.match(captured.query_string, /using tb_random_quiz_preset p/);
+  assert.match(captured.query_string, /p\.user_id = \$2/);
+  assert.match(captured.query_string, /i\.quiz_id = \$3/);
+  assert.deepEqual(captured.values, [7, 'user_1', 42]);
 });
 
 test('sendQuery: is_initialized가 false면 실제 pool.query를 호출하지 않고 undefined를 반환한다', async () =>

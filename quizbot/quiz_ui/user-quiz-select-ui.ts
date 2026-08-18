@@ -28,7 +28,11 @@ const { QuizInfoUI } = require("./quiz-info-ui");
 /** 유저 퀴즈 선택 UI */
 class UserQuizSelectUI extends QuizBotControlComponentUI
 {
-  constructor(basket_items: any = undefined)
+  //max_basket_size(퀴즈함 50개 확장, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md Phase A) - 기본값 25는
+  //그대로 두고(멀티플레이 로비는 여전히 basket_select_component가 25개 표시 한도라 여길 건드리면
+  //그쪽에서 select menu가 깨질 수 있음 - 이번 확장은 오마카세 한정, 멀티플레이는 별도 작업으로 미룸),
+  //오마카세 쪽 호출부(omakase-quiz-room-ui.ts)만 50을 명시적으로 넘긴다.
+  constructor(basket_items: any = undefined, max_basket_size: number = 25)
   {
     super();
 
@@ -39,7 +43,7 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
     this.basket_items = basket_items;
     this.use_basket_mode = this.basket_items !== undefined;
-    this.max_basket_size = 25;
+    this.max_basket_size = max_basket_size;
 
     this.initializeEmbed();
     this.initializeComponents();

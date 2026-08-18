@@ -109,3 +109,34 @@ exports.deleteRandomQuizPreset = async (preset_id: number, user_id: string): Pro
   return db_core.sendQuery(query_string, [preset_id, user_id]);
 
 };
+
+//디스코드 프리셋 관리 UI(2026-08-18 신설, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md) 전용 - 이름 변경.
+//웹 UI엔 아직 이 기능이 없음(저장/불러오기/삭제 3개뿐) - 디스코드가 먼저 갖게 된 기능.
+exports.updateRandomQuizPresetName = async (preset_id: number, user_id: string, preset_name: string): Promise<any> =>
+{
+
+  let query_string =
+  `update tb_random_quiz_preset
+    set preset_name = $3, modified_time = now()
+    where preset_id = $1 and user_id = $2
+    returning preset_id`;
+
+  return db_core.sendQuery(query_string, [preset_id, user_id, preset_name]);
+
+};
+
+//디스코드 프리셋 관리 UI 전용 - 저장된 프리셋에서 항목 하나만 제거(프리셋 자체는 안 지움, 웹 UI엔 아직
+//없는 기능). tb_random_quiz_preset_item엔 user_id가 없어 tb_random_quiz_preset과 조인해서 소유권을
+//강제한다(deleteRandomQuizPreset과 동일한 "다른 유저 소유면 0 row" 관행).
+exports.deleteRandomQuizPresetItem = async (preset_id: number, user_id: string, quiz_id: number): Promise<any> =>
+{
+
+  let query_string =
+  `delete from tb_random_quiz_preset_item i
+    using tb_random_quiz_preset p
+    where i.preset_id = p.preset_id and i.preset_id = $1 and p.user_id = $2 and i.quiz_id = $3
+    returning i.preset_id`;
+
+  return db_core.sendQuery(query_string, [preset_id, user_id, quiz_id]);
+
+};

@@ -1539,3 +1539,171 @@ import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 �
 확인(UI 클래스라 관례상 유닛테스트 대상 아님). 셸 스크립트 2개는 `bash -n`으로 문법만 확인 — 실제
 서버 반영/재검증(다운로드된 바이너리가 실제로 python 없이 동작하는지)은 사용자가 직접 진행 예정.
 `quizbot/quiz_ui/CLAUDE.md`/`auto_script/정석 사용법.txt` 갱신.
+
+## 2026-08-18 — 퀴즈함 관리+프리셋 UI 신설(오마카세 한정) + 계획서 2건
+
+사용자 요청: 웹 UI엔 이미 있는 프리셋(저장/불러오기/삭제) 기능을 디스코드에도 추가, 겸사겸사 퀴즈함
+표시 한도도 25→50개로 확장. 설계 중 메인 화면(`OmakaseQuizRoomUI`)의 컴포넌트 행 예산이 5/5로 꽉 차는
+문제를 발견해, 퀴즈함 관련 기능 전체를 독립 ephemeral 화면으로 분리하는 방향으로 재설계(사용자 결정) —
+`docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md`에 계획서 작성 후 다음 세션에 구현.
+
+- **`basket-manage-flow.ts`**(신규) — `QuizbotUI`/`UIHolder`를 상속하지 않는 독립 ephemeral 화면.
+  `admin-panel-ui.ts`의 `report_manual_processing.sendReportLog`(호출만 하고 자체적으로 응답 처리)와
+  같은 계열 패턴을 처음으로 명시적인 재사용 모듈로 확립 — `interaction.reply()`로 최초 응답을 만들고
+  이후 컴포넌트는 `interaction.update()`(discord.js가 제공하는, 그 컴포넌트가 속한 메시지 자체를
+  편집하는 API, `quiz_ui/` 전체에서 이 파일이 처음 씀)로 자기 자신만 갱신. `OmakaseQuizRoomUI.
+  onInteractionCreate`는 `isBasketManageEvent`/`handleBasketManageEvent`로 위임만 하고 화면 전환을
+  전혀 안 함 — `handleBasketManageEvent`는 내부 핸들러가 async여도 항상 `undefined`를 동기 반환하도록
+  설계(2026-08-15 `admin-season-ui.ts`에서 실제로 겪은 "async 핸들러가 Promise를 그대로 반환해서
+  프레임워크가 새 화면으로 오인해 크래시" 버그와 동일 함정을 의도적으로 피함 - 이번엔 처음부터 이
+  패턴으로 설계해서 재발 안 함). 메인 화면과 완전히 독립된 메시지라 퀴즈함이 바뀔 때마다
+  `room_ui.refreshUI()`+`room_ui.update()`를 명시적으로 호출해 동기화(설계 중 발견한 핵심 함정).
+- **퀴즈함 50개 확장**: `UserQuizSelectUI` 생성자에 `max_basket_size` 파라미터 추가(기본값 25 유지),
+  오마카세 호출부만 50을 명시적으로 넘김. 표시 select는 25개 넘으면 2행으로 분할(Discord API가 select
+  menu 하나당 25개 하드캡이라).
+- **프리셋 기능**: `db_random_quiz_preset.ts`(2026-08-13, 원래 웹 전용)가 순수 `user_id` 파라미터라
+  수정 없이 그대로 재사용됨 — 웹에서 만든 프리셋을 디스코드에서 불러오거나 반대도 정상 동작(유저 단위
+  저장이라 설계 의도 그대로). 신규 `db_quiz.ts`의 `selectQuizInfoByIds`는 프리셋의 quiz_id 목록을
+  제목과 함께 조회 - `selectRandomQuestionListByBasket`과 동일한 `ANY($1::int[])` 패턴, 삭제/비공개
+  전환된 항목은 자동으로 빠지고 그 차이로 "N개 제외됨" 안내. 저장 시 이름 길이(30자)/중복/10개 한도는
+  웹(`web_express_app.ts`)과 동일 기준.
+- **범위를 오마카세로 한정한 이유**: 구현 착수 전 `multiplayer-quiz-lobby-ui.js`도 동일한 `BASKET_CACHE`
+  로직을 별도로 복사해서 쓰고 있고, 바구니 변경 시 IPC 브로드캐스트(`sendEditLobbySignal`)까지
+  필요해서 오마카세보다 위험하다는 걸 발견 — 사용자와 상의해 오마카세만 먼저 진행, 멀티플레이는 별도
+  작업으로 명시적으로 미룸. `QuizInfoUI.BASKET_CACHE` static 필드는 완전 제거하지 않고 유지(멀티플레이가
+  계속 read/write) — 오마카세 쪽 read/write(2곳: `omakase-quiz-room-ui.ts`의 `handleLoadBasketItems`,
+  `web-handoff-ui.ts`의 `buildOmakaseQuizInfoUI`)만 제거. 공유 컴포넌트 `request_basket_reopen_comp`도
+  그대로 두고(멀티플레이가 계속 씀) 오마카세 전용으로 `omakase_basket_manage_open_comp`를 새로 만듦 -
+  공유 싱글턴을 직접 고쳤으면 멀티플레이 쪽 버튼까지 같이 깨졌을 지점.
+- **`docs/plans/DISCORD_UI_SEPARATION_AUDIT_PLAN.md`**(같은 날 신규, 방법론만) — 이번에 확립한 "독립
+  ephemeral 화면 분리" 패턴을 다른 화면에도 적용할 만한지 전수 점검하기 위한 계획서. 실제 순회/판정은
+  미착수, 기존 `quiz_ui/CLAUDE.md`에 이미 "복잡하다"고 적혀있던 화면들(`multiplayer-quiz-lobby-ui.js`
+  등) 위주로 1차 예비 후보만 정리해둠.
+
+검증: 신규 `test/quiz_ui/basket_manage_flow.test.js`(3개, `handleBasketManageEvent`가 절대 Promise를
+반환하지 않는다는 계약 집중 검증) + `test/managers/db_manager.test.js`에 `selectQuizInfoByIds` 테스트
+1개 추가(46개 export). `test/quiz_ui/omakase_web_apply.test.js`의 기존 `BASKET_CACHE` 갱신 검증
+2건은 이번 변경으로 더 이상 유효하지 않아 제거(제거된 동작 자체를 검증하던 테스트라 남겨두면 항상
+실패함). `test/quiz_ui/components.test.js` export 개수 78→80. `npm test`(396 pass)/`npm run lint`
+(0 error)/`npx tsc --noEmit`(0 error) 통과. 컴포넌트 행 예산(30개 담기+프리셋 선택 시 최대 5/5행)과
+"항목 제거 시 메인 화면 동기화" 두 핵심 지점은 `node -e` 스모크 테스트로 직접 확인. 관련 `CLAUDE.md`
+3개(`quiz_ui/`, `quiz_ui/components/`, `managers/db/`) 갱신, `docs/TEST_CHECKLIST.md` AG섹션 신설.
+**실사용(실제 Discord+DB) 미검증** — 사용자가 직접 봇으로 확인 예정.
+
+## 2026-08-18 — (같은 날 후속) 퀴즈함 관리+프리셋에 방장 권한 모델 + 프리셋 편집(이름변경/항목제거) 추가
+
+바로 위 기능을 사용자가 리뷰하며 더 구체적인 플로우를 요청 — 실제 작업 전 확인 요청에 따라 전체
+플로우를 재확인받고 진행:
+
+- **권한 모델 신설**: 라이브 퀴즈함(공유 상태)을 건드리는 액션(항목 제거/저장/불러오기)은 이제
+  `quiz_info.room_owner`(방장)만 가능 — 이전 버전은 아무나 제거/저장/불러오기가 가능했던 게 실제
+  버그성 허점이었음(공유 채널 메시지라 아무나 클릭 가능). 방장이 아니면 항목 select가
+  `.setDisabled(true)`로 뜨고 "🔒 방장만..." 안내 + "📋 프리셋 관리" 버튼만 보임. "프리셋 관리"는
+  라이브 상태와 무관한 순수 개인 기능이라 방장 여부 무관하게 허용. 방장이 항목을 지워도 이미
+  열려있는 다른 사람의 조회 화면엔 실시간 반영 안 함(설계 확정 - ephemeral 특성상 자연스러움, 새로
+  열면 최신 상태로 보임).
+- **"프리셋 관리" 화면 신설**(기존엔 "불러오기"/"삭제"만 있었음): 내 프리셋 목록 선택 → 같은 화면이
+  그 프리셋의 항목 목록으로 in-place 갱신 → 항목 선택 시 **저장된 프리셋에서만** 제거(라이브
+  퀴즈함과 무관) → 프리셋 이름 변경(모달, 현재 이름 프리필)/전체 삭제(2단계 확인)도 이 화면에서.
+  "불러오기"는 별도의 더 단순한 화면으로 분리(내 프리셋 목록 → 선택 즉시 라이브 퀴즈함에 로드).
+- **신규 DB 함수 2개**(`db_random_quiz_preset.ts`): `updateRandomQuizPresetName`(이름 변경),
+  `deleteRandomQuizPresetItem`(프리셋에서 항목 하나만 제거, `tb_random_quiz_preset_item`에
+  `user_id`가 없어 `tb_random_quiz_preset`과 `USING` 조인으로 소유권 강제) — **둘 다 웹 UI엔 아직
+  없는 기능**(웹은 저장/불러오기/전체삭제 3개뿐), 디스코드가 먼저 갖게 됨.
+- **행 예산 재검토**: 프리셋 자체는 웹에서 최대 100개까지 저장 가능(라이브 퀴즈함 한도 50보다 큼) -
+  "프리셋 관리" 화면에서 항목 제거 UI가 select 2행(최대 50개) 예산을 넘을 수 있다는 걸 설계 중 발견,
+  앞 50개만 표시하고 넘으면 "웹 UI를 이용해주세요" 안내로 대응(행 예산 초과 방지, 사용자가 애초에
+  원했던 "웹에서 편집하면 더 편해요" 멘트와 자연스럽게 맞물림).
+- **버그 하나 자체 발견/수정**: 리팩터 중 `OmakaseQuizRoomUI.onInteractionCreate`가 새 모달 제출
+  customId(`modal_basket_preset_save`/`modal_basket_preset_rename:*`)를 안 걸러내서 모달 제출이
+  조용히 무시되는 걸 타이핑 중 발견 - `isBasketManageEvent`(버튼/셀렉트, `basket_manage_` 접두사)와
+  별도로 `isBasketManageModalEvent`(모달, `modal_basket_preset_` 접두사) 체크를 추가해서 수정.
+
+검증: `test/quiz_ui/basket_manage_flow.test.js`에 4개 추가(host 권한 분기, 비-host 프리셋관리 접근
+허용, modal 이벤트 판별) — 기존 3개와 합쳐 7개. `test/managers/db_manager.test.js`에 신규 함수 2개
+테스트 추가(export 개수 46→48). `npm test`(402 pass)/`npm run lint`(0 error)/`npx tsc --noEmit`
+(0 error) 통과. 프리셋 상세 화면 렌더링(customId에 preset_id 인코딩, 이름 prefill, 항목 제거)은
+`node -e`로 실제 discord.js 빌더 호출까지 스모크 테스트. 관련 `CLAUDE.md` 2개(`quiz_ui/`,
+`managers/db/`) 갱신, `docs/TEST_CHECKLIST.md` AG섹션 전면 갱신(방장 권한 분기 + 프리셋 관리 세부
+플로우 체크리스트 추가). **실사용 미검증** — 사용자가 직접 봇으로 확인 예정.
+
+## 2026-08-18 — (같은 날 네 번째 후속) 프리셋 관리 페이지네이션(100개 지원) + 실사용 버그 2건 수정
+
+### 프리셋 관리 페이지네이션으로 100개까지 지원
+
+사용자가 "이 페이지네이션 방식을 쓰면 프리셋 최대 100개(웹 상한)도 디스코드에서 다 지원되지 않냐"고
+제안 — 기존엔 select 2행(최대 50개)에 다 안 들어가면 "웹 UI를 이용해주세요"로 안내만 하고 앞 50개로
+잘랐었는데, `scoreboard-ui.ts`의 TOP50 페이지네이션과 동일한 패턴(select 1행 + prev/next 버튼 1행,
+25개씩 페이지 이동)으로 교체 — 이제 상한 없이 전부 디스코드에서 편집 가능. 페이지 번호도 다른 상태
+값들과 동일하게 customId에 인코딩(`basket_manage_manage_item_select:${preset_id}:${page}`,
+`basket_manage_manage_page_prev/next:${preset_id}:${page}`)해서 무상태 유지, 항목 제거 후 같은
+페이지에 머무르되(`Math.min(Math.max(page,0), total_pages-1)`로 clamp) 마지막 페이지가 통째로 비면
+자동으로 이전 페이지로 보정됨. 이름변경/삭제 요청도 페이지 번호를 같이 실어 날라서, 완료 후 원래
+보던 페이지로 정확히 돌아가게 함.
+
+### 실사용 중 발견한 버그 2건
+
+사용자가 실제 봇으로 "불러오기"/"프리셋 관리" 버튼을 눌러보고 바로 2건을 리포트:
+
+1. **`DiscordAPIError[40060]: Interaction has already been acknowledged`** — `renderPresetLoadList`
+   등 DB 조회가 필요한 여러 핸들러가 `interaction.explicit_replied = true`를 **첫 `await` 이후에나**
+   설정하고 있었음. `handleBasketManageEvent`가 이 async 핸들러들을 fire-and-forget으로 호출하고
+   나면(Promise를 그대로 반환하면 안 되니까) `onInteractionCreate` 체인이 곧바로 `undefined`를 반환하며
+   빠져나가는데, 그 시점에 `bot.js` 전역 fallback이 `!interaction.explicit_replied`를 보고 먼저
+   `deferUpdate()`를 불러버림 — DB 조회가 끝나고 핸들러가 뒤늦게 진짜 `interaction.update()`를 부르면
+   이미 응답된 인터랙션이라 40060 에러. **`user-question-info-ui.ts`의 `duplicateQuestion`에 이미
+   문서화돼 있던 것과 정확히 같은 함정**("첫 줄에서 설정할 것, await 이후로 미루면 안 됨")인데 이번에
+   새로 만든 핸들러 8개 중 다수에서 놓쳤던 것 — `basket-manage-flow.ts`의 async 핸들러 전부를 다시
+   훑어서 `interaction.explicit_replied = true`를 예외 없이 각 함수의 첫 줄(첫 `await` 이전)로 이동.
+2. **방장이 아닌 유저가 "🧺 퀴즈함 보기"를 누르면 "해당 UI를 생성한 OOO님만이 조작할 수 있어요"로
+   막힘** — `bot.js`에 이번에 처음 발견한, 훨씬 근본적인 게이트가 있었음: PUBLIC UI(길드 채널)에서는
+   `uiHolder.getOwnerId()`(그 UI를 만든 사람)가 아니면 `uiHolder.on(...)`을 아예 호출하지 않고 화면
+   코드에 도달하기도 전에 막아버리는 전역 로직이 원래부터 있었음(예외는 멀티플레이 로비뿐). 이번
+   기능은 "방장 외 다른 유저도 참여 가능"하게 설계했는데 이 게이트를 전혀 몰랐던 게 진짜 설계
+   미스였음 — 사용자가 "이 버튼만 예외 둘지, 예외 버튼 목록을 만들지" 제안, 후자로 결정.
+   `bot.js`에 `PUBLIC_UI_OWNER_CHECK_EXEMPT_PREFIXES`(customId 접두사 화이트리스트) +
+   `isExemptFromPublicUIOwnerCheck` 헬퍼를 신설해서 게이트 조건에 추가 — `basket_manage_`/
+   `modal_basket_preset_` 접두사는 소유자가 아니어도 화면 진입 자체는 통과시키고, 세부 권한(방장만
+   가능한 액션)은 여전히 `basket-manage-flow.ts` 내부의 `room_owner` 체크가 책임짐. 앞으로 PUBLIC UI
+   안에 "소유자 아닌 사람도 눌러야 하는 버튼"을 또 만들면 이 화이트리스트에 추가해야 한다는 걸
+   `quiz_ui/CLAUDE.md`에 명시해둠(다음에 또 놓치지 않도록).
+
+검증: `test/quiz_ui/basket_manage_flow.test.js`에 2개 추가(100개 프리셋 4페이지 페이지네이션 경계값,
+"DB 조회 완료 전에 이미 explicit_replied가 설정돼 있는지"를 직접 검증하는 회귀 테스트 — 두 번째는
+방금 겪은 사고를 그대로 재현하는 테스트라 앞으로 같은 실수를 하면 바로 잡힘) — 기존 7개와 합쳐 9개.
+`npm test`(404 pass)/`npm run lint`(0 error)/`npx tsc --noEmit`(0 error) 통과. `bot.js`는 관례상
+유닛테스트 대상이 아니라(Discord Client 연결 등 부수효과) 코드 리뷰로만 검증. 관련 `CLAUDE.md`
+(`quiz_ui/`) 갱신, `docs/TEST_CHECKLIST.md` AG섹션 갱신(페이지네이션 체크리스트로 50개 상한 항목
+교체). **`bot.js`의 실제 동작(권한 게이트 우회)은 여전히 실사용 검증 필요** — 이번엔 사용자가 실제로
+겪은 에러를 재현/수정한 것이라 이전보다 신뢰도는 높지만, 두 버그 다 실제 Discord로 다시 확인 권장.
+
+### 같은 날 다섯 번째 후속 — 방장 권한 모델 재조정(실사용 확인 중 발견)
+
+위 두 버그를 고친 뒤 사용자가 직접 다시 확인하다가 권한 모델 자체의 세부 조정이 필요함을 발견:
+
+1. 방장이 아닌 사람이 "🧺 퀴즈함 보기"에 정상 진입은 하게 됐지만(바로 위 버그 수정 덕분), 항목
+   select가 `.setDisabled(true)`로 떠서 **드롭다운을 열어볼 수조차 없어 조회마저 막혀있었음** —
+   원래(이 기능이 생기기 전)는 방장이 아니어도 목록 조회는 가능했던 동작인데, 최초 설계 때
+   "방장만 제거 가능"을 구현하면서 select 자체를 비활성화해버려 조회 기능이 같이 죽어버린 게
+   설계 실수였음. `buildItemSelectRows`에서 `.setDisabled()` 호출을 제거해 방장이 아니어도 항상
+   select를 열어볼 수 있게 하고, 대신 실제로 항목을 선택해서 제출하면(`handleBasketManageEvent`의
+   `basket_manage_item_select_*` 분기) `is_host`가 아닐 때 제거 대신 "🔒 퀴즈함에서 제거하는 건
+   방장만 할 수 있어요" 안내만 띄우고 원래 화면으로 되돌리도록 수정.
+2. "현재 퀴즈함을 프리셋으로 저장"도 방장이 아니어도 가능해야 한다는 요청 — 저장은 라이브
+   퀴즈함을 읽기만 할 뿐 공유 상태를 전혀 바꾸지 않으므로, 굳이 방장 전용으로 막을 이유가 없었음.
+   `basket_manage_save_request`/`modal_basket_preset_save` 두 분기의 `if(is_host)` 게이트를
+   제거하고, `handleSaveSubmit`이 메인 화면으로 복귀할 때 쓰던 하드코딩된 `true`(항상 방장인 것처럼
+   렌더링하던 버그 — 방장이 아닌 사람이 저장하면 불러오기 버튼까지 잘못 보이게 됐을 것)도
+   `interaction.user.id === room_ui.quiz_info['room_owner']`로 다시 계산하도록 수정.
+   `buildMainViewPayload`도 버튼 구성을 "저장(항상)+불러오기(방장만)+관리(항상)"로 재조립.
+
+최종 권한 모델: 라이브 퀴즈함을 실제로 "바꾸는" 액션(항목 제거, 불러오기 — 통째로 덮어씀)만 방장
+전용이고, 조회/저장/프리셋 관리는 전부 방장 여부 무관.
+
+검증: `test/quiz_ui/basket_manage_flow.test.js`의 기존 "방장이 아니면 제거를 무시한다" 테스트를
+"제거는 안 되지만 안내와 함께 원래 화면으로 돌아온다"로 갱신하고, "방장이 아니어도 프리셋 저장이
+가능하다" 테스트를 신규 추가 — 9개→10개(정확히는 교체 1 + 신규 1). `npm test`(405 pass)/
+`npm run lint`(0 error)/`npx tsc --noEmit`(0 error)/`npm run build` 전부 통과. `docs/TEST_CHECKLIST.md`
+AG섹션의 메인 화면 진입 체크리스트를 새 권한 모델에 맞게 갱신, `quiz_ui/CLAUDE.md`의 권한 모델
+설명도 갱신. **실사용 재확인 권장** — 사용자가 실사용 중 순차적으로 발견한 피드백을 반영한 것이라
+로직상으로는 이전보다 신뢰도가 높지만, 실제 Discord에서 방장/비방장 두 계정으로 직접 확인 필요.
