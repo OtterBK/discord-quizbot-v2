@@ -152,4 +152,171 @@
     return true;
   }
   ```
+
+### 구 퀴즈함 표시/불러오기 메커니즘(`BASKET_CACHE`, `basket_select_component` 계열) — 멀티플레이 이식으로 완전히 죽은 코드가 됨
+
+- 원본 위치: `quizbot/quiz_ui/quiz-info-ui.ts`(`static BASKET_CACHE`, `this.basket_select_component` 초기화, `quiz_info_ui_handler`의 `load_basket_items`/`basket_select_menu`/`basket_readonly_select_menu` 3개 엔트리, `handleLoadBasketItems`/`setupBasketSelectMenu`/`handleBasketSelected` 3개 메서드), `quizbot/quiz_ui/components/omakase_components.ts`(`request_basket_reopen_comp`, `omakase_basket_readonly_select_menu`, `omakase_basket_select_menu`, `omakase_basket_select_row`), `quizbot/quiz_ui/multiplayer-quiz-lobby-ui.js`(`handleLoadBasketItems` 오버라이드, `onReceivedWebSessionSignal`의 `BASKET_CACHE` 기록 블록), `quizbot/quiz_ui/user-quiz-select-ui.ts`(`QuizInfoUI.BASKET_CACHE[guild_id] = this.basket_items;` 기록 라인)
+- 삭제일: 2026-08-19
+- 죽은 코드 판단 근거: 퀴즈함 관리+프리셋 UI(`docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md`)가 2026-08-18에 먼저 오마카세(`OmakaseQuizRoomUI`)에만 적용되면서 오마카세 쪽 소비는 이미 없어졌었고(당시엔 멀티플레이 로비가 유일한 남은 소비처라 그대로 뒀음, `omakase_basket_manage_open_comp` 추가 당시 주석 참고), 2026-08-19에 같은 기능이 멀티플레이 로비까지 이식되며 마지막 소비처도 사라짐. `grep -rn "BASKET_CACHE\|basket_select_component\|setupBasketSelectMenu\|handleBasketSelected\|handleLoadBasketItems\|request_basket_reopen_comp\|omakase_basket_select_menu\|omakase_basket_readonly_select_menu\|omakase_basket_select_row"` 결과 삭제 후 코드베이스 어디에도 남은 참조 없음(주석 제외).
+- 원문:
+  ```ts
+  // quiz-info-ui.ts - 클래스 필드
+  static BASKET_CACHE: Record<string, any> = {}; //guild id, basket item
+  ```
+  ```ts
+  // quiz-info-ui.ts - 생성자
+  this.basket_select_component = cloneDeep(omakase_basket_select_row);
+  ```
+  ```ts
+  // quiz-info-ui.ts - initializeQuizInfoUIEventHandler 핸들러 맵
+  'load_basket_items': this.handleLoadBasketItems.bind(this),
+  'basket_select_menu': this.handleBasketSelected.bind(this),
+  'basket_readonly_select_menu': () => this, //읽기 전용 조회 메뉴, 선택해도 상태 변화 없음(의도된 동작)
+  ```
+  ```ts
+  // quiz-info-ui.ts
+  handleLoadBasketItems(interaction: any)
+  {
+    //일반적으로 지원하지 않음
+  }
+
+  setupBasketSelectMenu()
+  {
+    const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
+    if(use_basket_mode === false)
+    {
+      return;
+    }
+
+    const basket_items = this.quiz_info['basket_items'] ?? {};
+    const basket_select_menu_for_current = cloneDeep(this.readonly ? omakase_basket_readonly_select_menu : omakase_basket_select_menu);
+
+    const basket_keys = Object.keys(basket_items);
+    if(basket_keys.length === 0)
+    {
+      const option = { label: `퀴즈함이 비어있습니다.`, value: `basket_select_temp` };
+      basket_select_menu_for_current.addOptions(option);
+      this.basket_select_component.components[0] = basket_select_menu_for_current;
+      return;
+    }
+
+    basket_select_menu_for_current.setMaxValues(basket_keys.length > 24 ? 24 : basket_keys.length);
+    for (const key of basket_keys)
+    {
+      const basket_item = basket_items[key];
+
+      const quiz_id = basket_item.quiz_id;
+      const quiz_title = basket_item.title;
+
+      let option;
+      if(this.readonly)
+      {
+        option = { label: `${quiz_title}`, value: `${quiz_id}` };
+      }
+      else
+      {
+        option = { label: `${quiz_title}`, description: `선택하여 퀴즈함에서 제거`, value: `${quiz_id}` };
+      }
+
+      basket_select_menu_for_current.addOptions(option);
+    }
+
+    this.basket_select_component.components[0] = basket_select_menu_for_current;
+  }
+
+  handleBasketSelected(interaction: any)
+  {
+    const selected_values = interaction.values;
+
+    const basket_items = this.quiz_info['basket_items'] ?? {};
+    let remove_count = 0;
+    for(const key of selected_values)
+    {
+      const quiz_id = parseInt(key);
+      if(isNaN(quiz_id))
+      {
+        continue;
+      }
+
+      delete basket_items[quiz_id];
+      ++remove_count;
+    }
+
+    interaction.explicit_replied = true;
+    interaction.reply({content: `\`\`\`🔸 퀴즈함에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
+
+    this.refreshUI();
+    return this;
+  }
+  ```
+  ```js
+  // omakase_components.ts
+  const request_basket_reopen_comp = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('use_basket_mode')
+        .setLabel('퀴즈함에 퀴즈 더 담기')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('load_basket_items')
+        .setLabel('최근 퀴즈함으로 덮어쓰기')
+        .setStyle(ButtonStyle.Primary),
+    );
+
+  const omakase_basket_readonly_select_menu = new StringSelectMenuBuilder().
+    setCustomId('basket_readonly_select_menu').
+    setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기');
+
+  const omakase_basket_select_menu = new StringSelectMenuBuilder().
+    setCustomId('basket_select_menu').
+    setPlaceholder('선택하여 퀴즈함에서 제거하기');
+
+  const omakase_basket_select_row = new ActionRowBuilder()
+    .addComponents(
+      new StringSelectMenuBuilder().
+        setCustomId('basket_select_row').
+        setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기')
+        .addOptions(
+          new StringSelectMenuOptionBuilder()
+            .setLabel('퀴즈함이 비어있습니다.')
+            .setValue('basket_select_temp'),
+        )
+    );
+  ```
+  ```js
+  // multiplayer-quiz-lobby-ui.js
+  handleLoadBasketItems(interaction)
+  {
+    const guild_id = interaction.guild.id;
+    const cached_basket_items = QuizInfoUI.BASKET_CACHE[guild_id];
+
+    if(!cached_basket_items)
+    {
+      interaction.explicit_replied = true;
+      interaction.reply({content: `\`\`\`🔸 최근 퀴즈함 데이터가 없어요...\n🔸 퀴즈함 데이터는 서버가 재시작 될 때까지만 유효합니다.\n🔸 웹 UI에서 프리셋 기능을 사용해보세요.\`\`\``, flags: MessageFlags.Ephemeral});
+      return;
+    }
+
+    this.quiz_info['basket_items'] = cloneDeep(cached_basket_items);
+
+    interaction.explicit_replied = true;
+    interaction.reply({content: `\`\`\`🔸 ${Object.keys(this.quiz_info.basket_items).length} 개의 퀴즈함 데이터를 불러왔어요.\`\`\``, flags: MessageFlags.Ephemeral});
+
+    this.sendEditLobbySignal(interaction);
+  }
+  ```
+  ```js
+  // multiplayer-quiz-lobby-ui.js - onReceivedWebSessionSignal 내부
+  const guild_id = this.holder?.guild_id;
+  if(guild_id !== undefined)
+  {
+    QuizInfoUI.BASKET_CACHE[guild_id] = this.quiz_info['basket_items'];
+  }
+  ```
+  ```ts
+  // user-quiz-select-ui.ts - 바구니에 항목 추가 직후
+  const guild_id = interaction.guild.id;
+  QuizInfoUI.BASKET_CACHE[guild_id] = this.basket_items;
+  ```
+- 관련 커밋: (다음 커밋에서 반영 예정)
 - 관련 커밋: (미커밋, `develop-claude` 작업 중)

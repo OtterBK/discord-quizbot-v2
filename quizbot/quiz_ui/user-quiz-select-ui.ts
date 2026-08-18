@@ -22,16 +22,15 @@ const {
 } = require("./common-ui");
 
 const { UserQuizInfoUI } = require("./user-quiz-info.ui");
-const { QuizInfoUI } = require("./quiz-info-ui");
 //#endregion
 
 /** 유저 퀴즈 선택 UI */
 class UserQuizSelectUI extends QuizBotControlComponentUI
 {
-  //max_basket_size(퀴즈함 50개 확장, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md Phase A) - 기본값 25는
-  //그대로 두고(멀티플레이 로비는 여전히 basket_select_component가 25개 표시 한도라 여길 건드리면
-  //그쪽에서 select menu가 깨질 수 있음 - 이번 확장은 오마카세 한정, 멀티플레이는 별도 작업으로 미룸),
-  //오마카세 쪽 호출부(omakase-quiz-room-ui.ts)만 50을 명시적으로 넘긴다.
+  //max_basket_size(퀴즈함 100개 확장, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md Phase A, 25→50(오마카세만)
+  //→100(오마카세+멀티 둘 다, 2026-08-19)) - 기본값 25는 바구니 모드가 아닌 호출부(브라우징 전용,
+  //basket_items 없이 생성)용으로만 남겨두고, 담기 모드로 쓰는 호출부(오마카세/멀티플레이)는 전부
+  //`OMAKASE_MAX_BASKET_SIZE`/`MULTIPLAYER_MAX_BASKET_SIZE`(둘 다 100)를 명시적으로 넘긴다.
   constructor(basket_items: any = undefined, max_basket_size: number = 25)
   {
     super();
@@ -315,9 +314,10 @@ class UserQuizSelectUI extends QuizBotControlComponentUI
 
       interaction.reply({content: `\`\`\`🔸 [${user_quiz_info.data.quiz_title}] 퀴즈를 퀴즈함에 담았습니다. (${Object.keys(this.basket_items).length}개 / ${this.max_basket_size}개)\`\`\``, flags: MessageFlags.Ephemeral});
 
-      const guild_id = interaction.guild.id;
-      QuizInfoUI.BASKET_CACHE[guild_id] = this.basket_items;
-
+      //this.basket_items는 room_ui.quiz_info['basket_items']를 그대로 참조로 넘겨받은 것이라(호출부
+      //handleRequestUseBasketMode 참고) 여기서 mutate하면 room_ui 쪽도 즉시 같이 바뀐다 - 별도 캐시나
+      //동기화 호출이 필요 없음. 멀티플레이는 이 화면에서 돌아갈 때 onAwaked()가 sendEditLobbySignal()을
+      //호출해 참가 길드에 브로드캐스트한다(기존 동작, 이 파일과 무관).
       return;
     }
 

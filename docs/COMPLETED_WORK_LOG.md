@@ -1707,3 +1707,113 @@ import가 없어 완전히 무음. 명문화된 로깅 정책 문서도 없음 �
 AG섹션의 메인 화면 진입 체크리스트를 새 권한 모델에 맞게 갱신, `quiz_ui/CLAUDE.md`의 권한 모델
 설명도 갱신. **실사용 재확인 권장** — 사용자가 실사용 중 순차적으로 발견한 피드백을 반영한 것이라
 로직상으로는 이전보다 신뢰도가 높지만, 실제 Discord에서 방장/비방장 두 계정으로 직접 확인 필요.
+
+## 2026-08-19 — 퀴즈함 관리+프리셋 UI 멀티플레이 로비 이식
+
+오마카세(`OmakaseQuizRoomUI`)에만 있던 퀴즈함 관리+프리셋 UI(`basket-manage-flow.ts`)를 멀티플레이
+로비(`MultiplayerQuizLobbyUI`)까지 이식 — 코드 중복 없이 `basket-manage-flow.ts`를 두 화면이 그대로
+공용(room_ui 인자 자리에 둘 중 아무 인스턴스나 넘겨도 동작). 사용자가 사전에 지적한 구조적 차이 3가지를
+전부 반영해서 설계:
+
+1. **권한 모델이 오마카세보다 한 단계 더 필요함** — 멀티플레이는 로비를 만든 "호스트 길드"와 나중에
+   참가만 한 "참가 길드"가 길드별로 별도 `MultiplayerQuizLobbyUI` 인스턴스를 가짐(`this.readonly`:
+   호스트=false, 참가=true). `room_owner`(방장 멤버 id) 비교만으론 "방장 본인이 다른 서버(참가
+   길드)에도 속해 있어서 그 서버로 참가했을 때도 조작 권한이 생겨버리는" 구멍이 생겨서, `is_host`
+   판별을 `interaction.user.id === room_owner && room_ui.readonly !== true` 두 조건 AND로 강화 —
+   오마카세는 `readonly`가 항상 `false`라 기존 동작 그대로 유지됨.
+2. **상태 동기화가 IPC 브로드캐스트 기반** — 오마카세는 로컬 화면만 갱신하면 되지만, 멀티플레이는
+   참가 길드 전체에 화면이 복제돼 있어서 항목 제거/불러오기 후 `room_ui.sendEditLobbySignal()`로
+   `CLIENT_SIGNAL.EDIT_LOBBY` 신호를 브로드캐스트해야 다른 길드 화면도 같이 갱신됨. `syncRoomUI(room_ui)`
+   헬퍼를 신설해 `room_ui.sendEditLobbySignal`이 있으면(duck typing, `MultiplayerQuizLobbyUI`만 가짐)
+   그쪽으로, 없으면(오마카세) 기존 로컬 `refreshUI()`+`update()`로 분기.
+3. **컴포넌트 행 예산 압축이 필수** — 멀티플레이 호스트 로비는 이미 컴포넌트 5행이 꽉 차 있어서,
+   기존 "바구니 select+최근 퀴즈함으로 덮어쓰기"(2행)를 오마카세와 동일하게 "🧺 퀴즈함 보기" 등
+   버튼 1행으로 압축(`multiplayer_basket_manage_open_comp`, 호스트 전용 2버튼 "퀴즈함에 퀴즈 더
+   담기"+"🧺 퀴즈함 보기"). 참가 길드는 항목 추가/제거 권한이 없어 조회+프리셋 저장/관리만 가능하므로
+   "🧺 퀴즈함 보기" 1버튼만(`multiplayer_basket_view_comp`) — 기존 자체 읽기전용 뷰어를 대체.
+
+이식으로 구 메커니즘(`BASKET_CACHE`, `basket_select_component`, `setupBasketSelectMenu`,
+`handleBasketSelected`, `handleLoadBasketItems`, `request_basket_reopen_comp`,
+`omakase_basket_readonly_select_menu`/`omakase_basket_select_menu`/`omakase_basket_select_row`)의
+마지막 소비처(멀티플레이)가 사라져 전부 완전히 삭제(원문은 `docs/archive/DEPRECATED_CODE_REMOVED.md`
+보존) — 오마카세는 2026-08-18에 이미 뗐었고, 그땐 멀티플레이가 유일한 남은 소비처라 남겨뒀던 것.
+멀티플레이 담기 상한(`UserQuizSelectUI`의 `max_basket_size`)은 이번 이식 범위 밖이라 25개 그대로
+유지(오마카세만 50 — 사용자가 요청한 적 없어 스코프 확대 안 함, 필요하면 추후 오마카세와 동일하게
+호출부에서 50을 넘기기만 하면 됨).
+
+검증: `test/quiz_ui/basket_manage_flow.test.js`에 2개 추가 — (1) room_owner가 같아도 참가 길드
+(`readonly:true`)면 제거를 막는 회귀 테스트(사용자가 직접 지적한 시나리오를 그대로 재현), (2)
+`sendEditLobbySignal`을 가진 room_ui(멀티플레이)에서는 로컬 `refreshUI`/`update` 대신 그쪽으로
+브로드캐스트하는지 검증 — 기존 10개와 합쳐 12개. `test/quiz_ui/components.test.js`의 export 개수
+회귀 테스트를 80→78로 갱신(4개 삭제+2개 신설). `npm test`(407 pass)/`npm run lint`(0 error, 기존
+57개 warning 유지)/`npx tsc --noEmit`(0 error)/`npm run build` 전부 통과. `dist/` 컴파일 산출물로
+`multiplayer-quiz-lobby-ui.js`/`omakase-quiz-room-ui.js`/`basket-manage-flow.js`/`components.js`를
+직접 require해 신규 컴포넌트 존재 + 구 컴포넌트 완전 제거를 스모크 확인. 관련 `CLAUDE.md` 3개
+(`quiz_ui/`, `quiz_ui/components/`) 갱신, `docs/TEST_CHECKLIST.md` AG섹션에 멀티플레이 전용
+체크리스트 신설(호스트/참가 길드 권한 분기, "같은 계정으로 참가 길드 참가" 핵심 회귀 시나리오, IPC
+브로드캐스트 동기화). **실사용 전혀 미검증** — 특히 "같은 계정으로 참가 길드에서도 참가했을 때 권한이
+안 생기는지"와 "호스트의 변경이 참가 길드 화면에 실시간 반영되는지" 두 가지는 실제 멀티 서버 환경
+에서만 확인 가능한 지점이라 반드시 실사용 테스트 필요.
+
+## 2026-08-19 — (같은 날 후속) 퀴즈함 100개로 재확장 + 실사용 피드백 3건
+
+바로 위 멀티플레이 이식 직후 사용자 피드백 반영:
+
+1. **퀴즈함 담기 상한 50→100 (오마카세+멀티플레이 둘 다)**: "페이지네이션 없이도 100개 정도는 UI상
+   문제없지 않냐"는 사용자 제안 확인 후 적용. `basket-manage-flow.ts`의 메인 화면(`buildItemSelectRows`)
+   은 이미 25개씩 select를 필요한 만큼 나눠 그리는 구조라 로직 변경은 불필요 — `OMAKASE_MAX_BASKET_SIZE`
+   (50→100)/신설 `MULTIPLAYER_MAX_BASKET_SIZE`(100, 멀티는 기존 기본값 25였던 걸 명시적으로 100으로)
+   두 상수만 올리면 끝. 단 100개면 select 4행+버튼 1행=정확히 Discord 5행 한도를 다 쓰게 돼 여유가
+   없어짐 — 사용자가 "지금은 페이지네이션 안 해도 된다, 나중에 버튼 행이 부족해지면 그때 프리셋 관리
+   화면과 동일한 prev/next 페이지네이션으로 바꾸면 된다"고 확인해 그 방향으로 결정, 코드에 근거를
+   주석으로 남겨둠(`basket-manage-flow.ts`/`omakase-quiz-room-ui.ts`/`multiplayer-quiz-lobby-ui.js`
+   상단).
+2. **웹 UI의 "디스코드는 25개까지만 지원" 안내 문구 제거**: 위 확장으로 이제 사실이 아니게 돼서
+   `OmakaseTab.jsx`/`MultiplayerTab.jsx`의 `qd-limit-badge`/`qd-limit-note`(25개 초과 시 노출되던
+   배지+안내문)를 완전히 제거, 사용처가 없어진 관련 CSS(`styles.css`의 `.qd-limit-note`/
+   `.qd-limit-badge`)도 같이 정리.
+3. **프리셋 삭제 확인 화면에 프리셋 이름 표시**: 기존엔 "정말 이 프리셋을 삭제하시겠어요?"만 떠서
+   뭘 지우는지 확인이 안 됐음 — `handleManageDeleteRequest`가 (이름변경 요청 핸들러와 동일한 패턴으로)
+   DB를 재조회해 `"${preset_name}" 프리셋을 정말 삭제하시겠어요?`로 이름을 채워 넣도록 수정(동기
+   함수였던 걸 async로 바꾸고 `interaction.explicit_replied = true`를 첫 `await` 이전으로 배치 — 이
+   파일의 다른 async 핸들러들과 동일 규칙).
+
+방장이 아닌 유저에게 뜨는 "🔒 방장만 ~ 할 수 있어요" 계열 안내 문구를 없애자는 네 번째 피드백은
+범위가 모호해(상시 노출되는 안내 문구만 뺄지, 실제로 시도했을 때 뜨는 안내까지 다 뺄지) 사용자에게
+직접 확인 중 — 아직 미반영.
+
+검증: `test/quiz_ui/basket_manage_flow.test.js`에 3개 추가 — 100개 select 행 수(4+1=5) 경계값 확인,
+삭제 확인 화면에 프리셋 이름이 포함되는지, `explicit_replied` 회귀 테스트 대상에
+`basket_manage_manage_delete_request`(방금 async로 바뀐 핸들러) 추가 — 기존 12개와 합쳐 15개(파일
+전체 신규 테스트 기준 재계산). `npm test`(409 pass)/`npm run lint`(0 error)/`npx tsc --noEmit`
+(0 error)/`npm run build` 전부 통과. `node -e`로 dist 산출물을 직접 require해 100개 기준 정확히
+5행(4 select+1 버튼)이 나오는지 스모크 확인. 관련 `CLAUDE.md`(`quiz_ui/`), `docs/TEST_CHECKLIST.md`
+AG섹션(100개 기준 select 행 수, 101번째 차단, 삭제 확인 문구) 갱신. **실사용 미검증**.
+
+### 같은 날 후속 — "방장만 할 수 있어요" 상시 안내 문구 제거(위에서 보류했던 4번째 피드백 확정)
+
+범위를 확인한 결과: **상시 노출되는 안내 문구만 제거, 실제로 시도했을 때만 뜨는 반응형 안내는 유지**로
+확정. `buildMainViewPayload`의 메인 화면 설명("🔒 방장만 여기서 퀴즈를 제거하거나 프리셋을 불러올 수
+있어요...")과 `buildItemSelectRows`의 select placeholder("조회 전용 - 제거는 방장만 가능...")를
+제거/중립 문구("퀴즈함 목록")로 교체 — `handleBasketManageEvent`가 비방장의 실제 제거 시도에 대해
+띄우는 "🔒 퀴즈함에서 제거하는 건 방장만 할 수 있어요" 안내는 그대로 유지(안 그러면 왜 안 됐는지 알
+길이 없어짐).
+
+검증: 기존 테스트가 정확한 문자열을 assert하지 않아 회귀 없이 통과(`npm test` 409 pass 유지,
+`npm run lint`/`npx tsc --noEmit`/`npm run build` 전부 통과). 관련 `CLAUDE.md`(`quiz_ui/`),
+`docs/TEST_CHECKLIST.md` AG섹션 갱신.
+
+### 같은 날 후속 — 퀴즈함 모드 메인 화면에 담긴 개수 표시
+
+영구 메시지(오마카세 방 설정/멀티플레이 로비)의 "📗 유저 퀴즈 설정 / 🔸 퀴즈함 모드 사용 중" 문구가
+몇 개 담겼는지 안 보여줘서 가시성이 떨어진다는 피드백 — `quiz-info-ui.ts`의 `getTagInfoText()`(오마카세/
+멀티 공용 베이스, 각자 `refreshUI()`에서 호출)의 바구니 모드 분기에 `this.quiz_info['basket_items']`
+개수를 세서 `🔸 \`퀴즈함 모드 사용 중\` (N개 담김)`으로 표시. 공용 베이스 하나만 고치면 오마카세/
+멀티플레이 둘 다 자동 반영됨(중복 구현 없음). `basket-manage-flow.ts`의 `syncRoomUI`가 이미 항목
+제거/불러오기 시 `refreshUI()`(오마카세)/`sendEditLobbySignal()`→`applyMultiplayerLobbyInfo`→
+`refreshUI()`(멀티)를 태우고 있어서 별도 동기화 로직 추가 없이도 개수가 실시간으로 맞음.
+
+검증: 이 파일은 관례상 유닛테스트 대상이 아니라(UI 텍스트 조립) `node -e`로 dist 산출물의
+`getTagInfoText()`를 직접 호출해 출력 확인(`🔸 \`퀴즈함 모드 사용 중\` (3개 담김)` 정상 출력).
+`npm test`(409 pass, 회귀 없음)/`npm run lint`(0 error)/`npx tsc --noEmit`(0 error)/`npm run build`
+전부 통과. 관련 `CLAUDE.md`(`quiz_ui/`) 갱신.

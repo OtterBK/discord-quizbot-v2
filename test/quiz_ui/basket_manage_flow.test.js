@@ -108,6 +108,71 @@ test('handleBasketManageEvent: 방장이 아니어도 현재 퀴즈함을 프리
   assert.equal(modal_shown, true);
 });
 
+//멀티플레이 이식(2026-08-19) - 호스트 길드와 참가 길드는 각자 별도 MultiplayerQuizLobbyUI 인스턴스를
+//갖고, room_owner는 호스트를 만든 멤버의 id다. 방장 본인이 다른 서버(참가 길드)에도 속해 있어서 그
+//길드에서 참가하면 interaction.user.id가 room_owner와 우연히 같아지는데, 그 길드는 "참가만 한 길드"라
+//라이브 퀴즈함을 건드릴 권한이 없어야 한다 - room_owner 비교만으론 이 구멍을 못 막고 room_ui.readonly
+//체크가 반드시 같이 있어야 함을 검증(사용자가 직접 지적한 시나리오).
+test('handleBasketManageEvent: room_owner와 user id가 같아도 참가 길드(readonly=true)면 제거를 허용하지 않는다', () =>
+{
+  const basket_items = { 1: { quiz_id: 1, title: 'A' } };
+  let captured;
+
+  const interaction = {
+    customId: 'basket_manage_item_select_1',
+    user: { id: 'owner_1' }, //호스트 본인과 같은 계정
+    values: ['1'],
+    isButton: () => false,
+    isStringSelectMenu: () => true,
+    isModalSubmit: () => false,
+    update: (payload) => { captured = payload; },
+  };
+
+  const room_ui = { quiz_info: { basket_items, room_owner: 'owner_1' }, readonly: true, sendEditLobbySignal: () => {} };
+  basket_manage_flow.handleBasketManageEvent(interaction, room_ui);
+
+  assert.deepEqual(basket_items, { 1: { quiz_id: 1, title: 'A' } }); //제거되지 않아야 함
+  assert.ok(captured.embeds[0].description.includes('방장만 할 수 있어요'));
+});
+
+//멀티플레이는 참가 길드 전체에 화면이 복제돼 있어서, 오마카세처럼 로컬 refreshUI/update만으론
+//다른 길드가 낡은 상태로 남는다 - room_ui가 sendEditLobbySignal을 가지면(MultiplayerQuizLobbyUI만
+//가짐) 로컬 refreshUI/update 대신 그쪽으로 IPC 브로드캐스트를 태워야 한다(syncRoomUI 참고).
+test('handleBasketManageEvent: 멀티플레이(room_ui.sendEditLobbySignal 보유)에서 항목 제거 시 로컬 refreshUI 대신 sendEditLobbySignal로 브로드캐스트한다', () =>
+{
+  const basket_items = { 1: { quiz_id: 1, title: 'A' }, 2: { quiz_id: 2, title: 'B' } };
+  let refresh_ui_called = false;
+  let local_update_called = false;
+  let edit_signal_sent = false;
+
+  const interaction = {
+    customId: 'basket_manage_item_select_1',
+    user: { id: 'owner_1' },
+    values: ['1'],
+    isButton: () => false,
+    isStringSelectMenu: () => true,
+    isModalSubmit: () => false,
+    update: async () => {},
+  };
+
+  const room_ui = {
+    quiz_info: { basket_items, room_owner: 'owner_1' },
+    readonly: false, //호스트 길드
+    refreshUI: () => { refresh_ui_called = true; },
+    update: () => { local_update_called = true; },
+    sendEditLobbySignal: () => { edit_signal_sent = true; },
+  };
+
+  basket_manage_flow.handleBasketManageEvent(interaction, room_ui);
+
+  return new Promise((resolve) => setTimeout(() => {
+    assert.equal(edit_signal_sent, true);
+    assert.equal(refresh_ui_called, false); //로컬 refreshUI/update는 안 불림 - IPC 브로드캐스트 쪽으로 대체됨
+    assert.equal(local_update_called, false);
+    resolve();
+  }, 50));
+});
+
 test('handleBasketManageEvent: 방장이면 퀴즈함 항목 제거가 정상 처리되고 메인 화면이 동기화된다', () =>
 {
   const basket_items = { 1: { quiz_id: 1, title: 'A' }, 2: { quiz_id: 2, title: 'B' } };
@@ -246,6 +311,7 @@ test('DB 조회가 필요한 모든 핸들러는 첫 await 전에 explicit_repli
   const cases = [
     { customId: 'basket_manage_load_request', isButton: true, room_owner: 'u1' },
     { customId: 'basket_manage_manage_request', isButton: true, room_owner: 'someone_else' },
+    { customId: 'basket_manage_manage_delete_request:1:0', isButton: true, room_owner: 'someone_else' },
   ];
 
   for(const test_case of cases)
@@ -268,4 +334,55 @@ test('DB 조회가 필요한 모든 핸들러는 첫 await 전에 explicit_repli
 
   resolve_db_call({ rows: [] });
   await new Promise((resolve) => setTimeout(resolve, 50)); //남은 프로미스 체인 정리
+});
+
+//2026-08-19 피드백 - 삭제 확인 문구에 프리셋 이름이 없으면 뭘 지우는지 헷갈릴 수 있어서 이름을
+//보여주도록 수정. handleManageDeleteRequest가 DB에서 다시 조회해 이름을 채워 넣는지 검증.
+test('handleBasketManageEvent: 프리셋 삭제 확인 화면에 프리셋 이름이 표시된다', (t) =>
+{
+  t.mock.method(db_manager, 'selectRandomQuizPresetsByUser', async () => ({
+    rows: [{ preset_id: 1, preset_name: '내가 좋아하는 퀴즈', quiz_id_list: [1, 2] }],
+  }));
+
+  let captured;
+  const interaction = {
+    customId: 'basket_manage_manage_delete_request:1:0',
+    user: { id: 'u1' },
+    isButton: () => true,
+    isStringSelectMenu: () => false,
+    isModalSubmit: () => false,
+    update: (payload) => { captured = payload; },
+  };
+
+  basket_manage_flow.handleBasketManageEvent(interaction, { quiz_info: { room_owner: 'owner_1' } });
+
+  return new Promise((resolve) => setTimeout(() => {
+    assert.ok(captured.embeds[0].description.includes('"내가 좋아하는 퀴즈"'));
+    resolve();
+  }, 50));
+});
+
+//퀴즈함 100개 확장(2026-08-19) - buildItemSelectRows가 100개를 25개씩 4개 select 행으로 나누고,
+//버튼 1행(저장/불러오기/관리)과 합쳐 정확히 Discord의 5행 한도를 꽉 채우는지 확인(여유가 없다는
+//전제로 페이지네이션 없이 가기로 한 결정의 전제 조건이라 회귀로 반드시 잡아야 함).
+test('메인 화면: 퀴즈함 100개는 select 4행 + 버튼 1행 = 정확히 5행으로 표시된다', () =>
+{
+  const basket_items = {};
+  for(let i = 1; i <= 100; ++i) { basket_items[i] = { quiz_id: i, title: `Q${i}` }; }
+
+  let captured;
+  const interaction = {
+    customId: 'basket_manage_open',
+    user: { id: 'owner_1' },
+    isButton: () => true,
+    isStringSelectMenu: () => false,
+    isModalSubmit: () => false,
+    reply: (payload) => { captured = payload; },
+  };
+
+  basket_manage_flow.handleBasketManageEvent(interaction, { quiz_info: { basket_items, room_owner: 'owner_1' } });
+
+  assert.equal(captured.components.length, 5);
+  assert.equal(captured.components[0].components[0].options.length, 25);
+  assert.equal(captured.components[3].components[0].options.length, 25); //4번째 select(76~100번째)
 });

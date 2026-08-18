@@ -18,7 +18,7 @@ const multiplayer_components = require('../../quizbot/quiz_ui/components/multipl
 const report_components = require('../../quizbot/quiz_ui/components/report_components');
 const web_handoff_components = require('../../quizbot/quiz_ui/components/web_handoff_components');
 
-test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 80개)', () =>
+test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 78개)', () =>
 {
   // 죽은 export였던 note_ui_component는 Phase 6에서 삭제됨 (DEPRECATED_CODE_REMOVED.md 참고)
   // quiz_delete_confirm_admin_comp/admin_panel_comp는 관리자 기능 추가로 신설됨
@@ -37,8 +37,12 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
   // 스코어보드 시즌 아카이브(docs/plans/SCOREBOARD_SEASON_PLAN.md, 2026-08-15) 구현 중
   // quizmgr 시즌 관리(AdminSeasonUI) 기능으로 신설됨
   // omakase_basket_manage_open_comp/modal_basket_preset_save는 퀴즈함 관리+프리셋 UI
-  // (docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18) 구현 중 신설됨 - request_basket_reopen_comp는
-  // 멀티플레이 로비가 계속 쓰고 있어서 그대로 두고, 오마카세 전용으로 별도 컴포넌트를 새로 만듦
+  // (docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18) 구현 중 신설됨 - 당시엔 request_basket_reopen_comp를
+  // 멀티플레이 로비가 계속 쓰고 있어서 그대로 두고 오마카세 전용으로 별도 컴포넌트를 새로 만들었으나,
+  // 2026-08-19 멀티플레이 로비까지 이식되며 request_basket_reopen_comp/omakase_basket_readonly_select_menu/
+  // omakase_basket_select_menu/omakase_basket_select_row 4개가 완전히 죽은 코드가 돼 삭제됨(원문은
+  // docs/archive/DEPRECATED_CODE_REMOVED.md 보존), 대신 multiplayer_basket_manage_open_comp(호스트
+  // 길드용)/multiplayer_basket_view_comp(참가 길드용) 2개가 멀티플레이 전용으로 신설됨(80 - 4 + 2 = 78)
   const expected_names = [
     ...Object.keys(base_components),
     ...Object.keys(custom_quiz_components),
@@ -50,7 +54,7 @@ test('components.js: 6개 도메인 파일의 export를 빠짐없이 재수출�
 
   const actual_names = Object.keys(components).sort();
 
-  assert.equal(actual_names.length, 80);
+  assert.equal(actual_names.length, 78);
   assert.deepEqual(actual_names, expected_names);
 });
 

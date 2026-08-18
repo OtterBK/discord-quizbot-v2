@@ -4,7 +4,7 @@
 //이 구역에 위치해 있던 것을 그대로 유지했다.
 //로직/주석은 원본과 동일 (동작 변경 없음).
 
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 
 const { QUIZ_TAG, DEV_QUIZ_TAG } = require('../../../config/system_setting.js');
 
@@ -28,22 +28,13 @@ const modal_quiz_setting = new ModalBuilder()
       ),
   );
 
-const request_basket_reopen_comp = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('use_basket_mode')
-      .setLabel('퀴즈함에 퀴즈 더 담기')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('load_basket_items')
-      .setLabel('최근 퀴즈함으로 덮어쓰기')
-      .setStyle(ButtonStyle.Primary),
-  );
-
-//퀴즈함 관리 + 프리셋(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18 신설) - OmakaseQuizRoomUI
-//전용(멀티플레이 로비는 스코프 밖, request_basket_reopen_comp를 그대로 계속 씀 - 위 컴포넌트는 그대로
-//둔 채 이 화면 전용으로 별도 컴포넌트를 새로 만든 이유). "최근 퀴즈함으로 덮어쓰기"(BASKET_CACHE 기반)
-//버튼을 "🧺 퀴즈함 보기"로 교체 - 이 버튼이 basket-manage-flow.ts의 독립 ephemeral 화면을 연다.
+//퀴즈함 관리 + 프리셋(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md, 2026-08-18 신설, 2026-08-19 멀티플레이
+//로비까지 이식) - OmakaseQuizRoomUI 전용(멀티플레이는 같은 형태를 multiplayer_components.js의
+//multiplayer_basket_manage_open_comp로 별도 싱글턴을 만들어 씀 - 이 디렉터리 관행상 화면 종류별로
+//컴포넌트 싱글턴을 공유하지 않음). 예전엔 여기 "최근 퀴즈함으로 덮어쓰기"(BASKET_CACHE 기반,
+//request_basket_reopen_comp) 버튼이 있었는데 "🧺 퀴즈함 보기"로 교체됨 - 이 버튼이
+//basket-manage-flow.ts의 독립 ephemeral 화면을 연다. request_basket_reopen_comp 자체는 멀티플레이
+//이식 완료로 더 이상 쓰는 곳이 없어져 삭제(원문은 docs/archive/DEPRECATED_CODE_REMOVED.md 보존).
 const omakase_basket_manage_open_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -214,29 +205,8 @@ const omakase_custom_quiz_tags_select_menu =  new ActionRowBuilder()
   omakase_custom_quiz_tags_select_menu.components[0].setMaxValues(total_menu_count);
 }
 
-const omakase_basket_readonly_select_menu = new StringSelectMenuBuilder().
-  setCustomId('basket_readonly_select_menu').
-  setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기');
-
-const omakase_basket_select_menu = new StringSelectMenuBuilder().
-  setCustomId('basket_select_menu').
-  setPlaceholder('선택하여 퀴즈함에서 제거하기');
-
-const omakase_basket_select_row = new ActionRowBuilder()
-  .addComponents(
-    new StringSelectMenuBuilder().
-      setCustomId('basket_select_row').
-      setPlaceholder('퀴즈함에 담긴 퀴즈 확인하기')
-      .addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel('퀴즈함이 비어있습니다.')
-          .setValue('basket_select_temp'),
-      )
-  );
-
 module.exports = {
   modal_quiz_setting,
-  request_basket_reopen_comp,
   omakase_basket_manage_open_comp,
   modal_basket_preset_save,
   omakase_quiz_info_tag_comp,
@@ -245,7 +215,4 @@ module.exports = {
   omakase_dev_quiz_tags_select_menu,
   omakase_custom_quiz_type_tags_select_menu,
   omakase_custom_quiz_tags_select_menu,
-  omakase_basket_readonly_select_menu,
-  omakase_basket_select_menu,
-  omakase_basket_select_row,
 };

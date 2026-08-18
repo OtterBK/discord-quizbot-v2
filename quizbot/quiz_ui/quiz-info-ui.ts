@@ -13,9 +13,6 @@ const ipc_manager = require('../managers/ipc_manager');
 const {
   quiz_info_comp,
   modal_quiz_setting,
-  omakase_basket_select_menu,
-  omakase_basket_readonly_select_menu,
-  omakase_basket_select_row,
 } = require("./components");
 
 const {
@@ -31,8 +28,6 @@ const { cloneDeep } = require('lodash');
 /** 퀴즈 정보 표시 UI, Dev퀴즈/User퀴즈 둘 다 사용 */
 class QuizInfoUI extends QuizbotUI
 {
-  static BASKET_CACHE: Record<string, any> = {}; //guild id, basket item
-
   quiz_info: any;
   max_quiz_count: number;
   need_tags: boolean;
@@ -64,7 +59,6 @@ class QuizInfoUI extends QuizbotUI
     this.components = [quiz_info_comp]; //여기서는 component를 바꿔서 해주자
 
     this.modal_quiz_setting = cloneDeep(modal_quiz_setting);
-    this.basket_select_component = cloneDeep(omakase_basket_select_row);
 
     this.initializeQuizInfoUIEventHandler();
 
@@ -81,9 +75,6 @@ class QuizInfoUI extends QuizbotUI
       'modal_quiz_setting': this.handleSubmitModalQuizSetting.bind(this),
       'use_tag_mode': this.handleRequestUseTagMode.bind(this),
       'use_basket_mode': this.handleRequestUseBasketMode.bind(this),
-      'load_basket_items': this.handleLoadBasketItems.bind(this),
-      'basket_select_menu': this.handleBasketSelected.bind(this),
-      'basket_readonly_select_menu': () => this, //읽기 전용 조회 메뉴, 선택해도 상태 변화 없음(의도된 동작)
     };
   }
 
@@ -136,7 +127,10 @@ class QuizInfoUI extends QuizbotUI
     }
     else
     {
-      tag_info_text += `🔸 \`퀴즈함 모드 사용 중\`\n\n`;
+      //퀴즈함에 몇 개 담겼는지 가시성 있게 표시(2026-08-19 피드백) - basket_items는 오마카세/멀티
+      //둘 다 quiz_info에 직접 들고 있어 room_ui 종류와 무관하게 여기서 바로 셀 수 있음.
+      const basket_item_count = Object.keys(this.quiz_info['basket_items'] ?? {}).length;
+      tag_info_text += `🔸 \`퀴즈함 모드 사용 중\` (${basket_item_count}개 담김)\n\n`;
     }
 
     return tag_info_text;
@@ -477,80 +471,6 @@ class QuizInfoUI extends QuizbotUI
   handleRequestUseTagMode(interaction: any)
   {
     //일반적으로 지원하지 않음
-  }
-
-  handleLoadBasketItems(interaction: any)
-  {
-    //일반적으로 지원하지 않음
-  }
-
-  setupBasketSelectMenu()
-  {
-    const use_basket_mode = this.quiz_info['basket_mode'] ?? true;
-    if(use_basket_mode === false)
-    {
-      return;
-    }
-
-    const basket_items = this.quiz_info['basket_items'] ?? {};
-    const basket_select_menu_for_current = cloneDeep(this.readonly ? omakase_basket_readonly_select_menu : omakase_basket_select_menu);
-
-    const basket_keys = Object.keys(basket_items);
-    if(basket_keys.length === 0)
-    {
-      const option = { label: `퀴즈함이 비어있습니다.`, value: `basket_select_temp` };
-      basket_select_menu_for_current.addOptions(option);
-      this.basket_select_component.components[0] = basket_select_menu_for_current;
-      return;
-    }
-
-    basket_select_menu_for_current.setMaxValues(basket_keys.length > 24 ? 24 : basket_keys.length);
-    for (const key of basket_keys)
-    {
-      const basket_item = basket_items[key];
-
-      const quiz_id = basket_item.quiz_id;
-      const quiz_title = basket_item.title;
-
-      let option;
-      if(this.readonly)
-      {
-        option = { label: `${quiz_title}`, value: `${quiz_id}` };
-      }
-      else
-      {
-        option = { label: `${quiz_title}`, description: `선택하여 퀴즈함에서 제거`, value: `${quiz_id}` };
-      }
-
-      basket_select_menu_for_current.addOptions(option);
-    }
-
-    this.basket_select_component.components[0] = basket_select_menu_for_current;
-  }
-
-  handleBasketSelected(interaction: any)
-  {
-    const selected_values = interaction.values;
-
-    const basket_items = this.quiz_info['basket_items'] ?? {};
-    let remove_count = 0;
-    for(const key of selected_values)
-    {
-      const quiz_id = parseInt(key);
-      if(isNaN(quiz_id))
-      {
-        continue;
-      }
-
-      delete basket_items[quiz_id];
-      ++remove_count;
-    }
-
-    interaction.explicit_replied = true;
-    interaction.reply({content: `\`\`\`🔸 퀴즈함에서 ${remove_count}개의 퀴즈를 제거했습니다.\`\`\``, flags: MessageFlags.Ephemeral});
-
-    this.refreshUI();
-    return this;
   }
 
 }

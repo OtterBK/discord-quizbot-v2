@@ -28,9 +28,13 @@ const { QuizInfoUI } = require('./quiz-info-ui');
 const { UserQuizSelectUI } = require("./user-quiz-select-ui");
 const basket_manage_flow = require('./basket-manage-flow');
 
-//퀴즈함 50개 확장(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md Phase A) - 오마카세 한정, UserQuizSelectUI의
-//기본값(25, 멀티플레이 로비용)과 분리.
-const OMAKASE_MAX_BASKET_SIZE = 50;
+//퀴즈함 100개 확장(docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md Phase A, 25→50→100, 2026-08-19 재확장) -
+//UserQuizSelectUI의 기본값(25, 그 외 담기 모드가 아닌 호출부용)과 분리. basket-manage-flow.ts의
+//buildItemSelectRows는 25개씩 select를 나눠 그리는데(ITEM_SELECT_PAGE_SIZE) 100개면 정확히 4행+버튼
+//1행=5행으로 행 예산이 꽉 참 - 지금 당장은 여유가 없어도 문제없다고 판단해 페이지네이션 없이 그대로
+//두기로 함(사용자 확인, 2026-08-19). 나중에 이 화면에 버튼 행을 더 추가해야 하는데 자리가 없으면,
+//scoreboard-ui.ts/프리셋 관리 화면과 동일한 prev/next 페이지네이션 패턴으로 바꾸면 됨.
+const OMAKASE_MAX_BASKET_SIZE = 100;
 
 //#endregion
 

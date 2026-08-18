@@ -1,21 +1,29 @@
 'use strict';
 
 //퀴즈함 관리 + 프리셋 저장/불러오기/관리(이름변경/항목제거/삭제) (docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md,
-//2026-08-18 신설, 같은 날 후속 설계 확장). OmakaseQuizRoomUI 전용(멀티플레이 로비는 스코프 밖 -
-//계획서 참고). QuizbotUI/UIHolder 프레임워크를 상속하지 않는 독립 ephemeral 플로우 - admin-panel-ui.ts가
+//2026-08-18 신설, 같은 날 후속 설계 확장, 2026-08-19 멀티플레이 로비까지 이식). OmakaseQuizRoomUI/
+//MultiplayerQuizLobbyUI 공용(room_ui 자리에 둘 중 아무거나 넘겨도 동작 - 뒤쪽 syncRoomUI 항목 참고).
+//QuizbotUI/UIHolder 프레임워크를 상속하지 않는 독립 ephemeral 플로우 - admin-panel-ui.ts가
 //report_manual_processing.sendReportLog를 호출만 하고 자체적으로 응답 처리하게 두는 기존 패턴과 같은
 //계열. interaction.reply()로 최초 ephemeral 응답을 만들고, 이후 그 메시지 위의 컴포넌트는
 //interaction.update()(discord.js가 제공하는 "이 컴포넌트가 속한 메시지 자체를 편집"하는 API)로 자기
-//자신만 갱신한다 - 메인 화면(OmakaseQuizRoomUI)의 UIHolder/persistent message와는 완전히 독립된
-//메시지라서, 퀴즈함 내용이 바뀔 때마다 room_ui.refreshUI() + room_ui.update()를 직접 호출해 메인 화면
+//자신만 갱신한다 - 메인 화면(OmakaseQuizRoomUI/MultiplayerQuizLobbyUI)의 UIHolder/persistent message와는
+//완전히 독립된 메시지라서, 퀴즈함 내용이 바뀔 때마다 syncRoomUI(room_ui)를 호출해 메인 화면
 //"퀴즈함 N개" 문구를 명시적으로 동기화해야 한다(설계 중 발견한 핵심 함정 - 두 메시지가 독립적이라
 //자동으로 안 맞춰짐).
 //
-//권한 모델(2026-08-18 설계 확정): 라이브 퀴즈함(공유 상태)을 건드리는 액션(항목 제거/저장/불러오기)은
-//방장(quiz_info.room_owner)만 가능 - 방장이 아니면 목록이 읽기 전용(select.setDisabled(true))으로
-//뜨고 "프리셋 관리" 버튼만 보인다. "프리셋 관리"(자기 프리셋 이름변경/항목제거/전체삭제)는 라이브
-//퀴즈함과 무관한 순수 개인 기능이라 방장 여부와 무관하게 누구나 접근 가능. 방장이 항목을 지워도 이미
-//열려있는 다른 사람의 조회 화면엔 실시간 반영 안 함(설계 확정 - ephemeral 메시지 특성상 자연스러움).
+//권한 모델(2026-08-18 설계 확정, 2026-08-19 멀티플레이 이식으로 세분화): 라이브 퀴즈함(공유 상태)을
+//실제로 "바꾸는" 액션(항목 제거/불러오기)만 방장 전용 - 조회와 "현재 퀴즈함을 프리셋으로 저장"은 방장
+//여부 무관 누구나 가능(라이브 상태를 읽기만 할 뿐 안 건드려서). 방장 판별은 `interaction.user.id ===
+//room_ui.quiz_info['room_owner'] && room_ui.readonly !== true` 두 조건 AND - 오마카세는 길드가 하나뿐이라
+//room_owner 비교만으로 충분하지만(readonly는 항상 false), 멀티플레이는 로비를 만든 "호스트 길드"와
+//나중에 참가만 한 "참가 길드"가 따로 있어서(각 길드마다 별도 MultiplayerQuizLobbyUI 인스턴스, 호스트
+//길드만 readonly=false) room_owner 하나만 보면 구멍이 생김 - 호스트 본인이 다른 서버(길드#2)에도
+//속해 있어서 그 길드에서 참가했을 때, `interaction.user.id`는 여전히 room_owner와 같지만 그 길드는
+//참가 길드일 뿐이라 조작 권한이 없어야 한다(readonly===true로 걸러짐). "프리셋 관리"(자기 프리셋
+//이름변경/항목제거/전체삭제)는 라이브 상태와 무관한 순수 개인 기능이라 이 판별과 무관하게 누구나 접근
+//가능. 방장이 항목을 지워도 이미 열려있는 다른 사람의 조회 화면엔 실시간 반영 안 함(설계 확정 -
+//ephemeral 메시지 특성상 자연스러움).
 //
 //화면 상태는 4가지(전부 이 하나의 ephemeral 메시지를 interaction.update()로 계속 다시 그리는 것 -
 //상태를 인스턴스로 안 들고 다니고 customId에 필요한 값(preset_id 등)을 직접 인코딩해서 무상태로 처리):
@@ -35,15 +43,21 @@ const { modal_basket_preset_save } = require('./components');
 const PRESET_MAX_COUNT = 10;
 const PRESET_NAME_MAX_LENGTH = 30;
 
-//StringSelectMenu 하나당 Discord API 하드캡(퀴즈함 25→50 확장, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md
-//Phase A) - 25개 넘으면 select 2행으로 나눈다. 라이브 퀴즈함(main 상태)은 최대 50개라 이 방식으로 충분.
+//StringSelectMenu 하나당 Discord API 하드캡(퀴즈함 25→50→100 확장, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md
+//Phase A) - 25개 넘으면 select 2행, 3행... 으로 나눈다(buildItemSelectRows가 entries 개수만큼 자동으로
+//행을 늘림). 라이브 퀴즈함(main 상태) 한도는 오마카세/멀티 둘 다 100개(OMAKASE_MAX_BASKET_SIZE/
+//MULTIPLAYER_MAX_BASKET_SIZE)라 최대 4행 + 버튼 1행 = 5행으로 정확히 꽉 참(2026-08-19, 여유 없음 -
+//당장은 문제없다고 판단해 페이지네이션 없이 이대로 두기로 함, 사용자 확인). **나중에 이 main 화면에
+//버튼 행을 하나라도 더 추가해야 하는데 자리가 없으면, 아래 "프리셋 관리" 화면과 동일한 prev/next
+//페이지네이션 패턴(buildItemSelectRows를 지금처럼 flat하게 여러 행으로 펼치는 대신 페이지 단위로
+//끊어서 1행만 쓰게 바꾸면 됨)으로 전환할 것 - 이미 검증된 패턴이라 새로 설계할 필요 없음.**
 const ITEM_SELECT_PAGE_SIZE = 25;
 
-//프리셋 자체는 웹에서 최대 100개까지 저장 가능(RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT, web_express_app.ts) -
-//라이브 퀴즈함 한도(50)보다 커서 select 2행(최대 50개)으로는 다 못 담는다. "프리셋 관리" 화면은 대신
+//프리셋 자체도 웹에서 최대 100개까지 저장 가능(RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT, web_express_app.ts) -
+//라이브 퀴즈함 한도(100, 위 참고)와 이제 같은 값이지만, "프리셋 관리" 화면은 라이브 퀴즈함과 달리
 //scoreboard-ui.ts의 TOP50 페이지네이션과 동일한 패턴(버튼으로 페이지 이동, 한 페이지에 25개씩)을 써서
-//100개든 그 이상이든 행 예산(select 1행 + prev/next 1행 + 이름변경/삭제 1행 + 뒤로가기 1행 = 4행)
-//안에서 전부 다룬다 - "웹에서만 편집 가능"한 상한이 없어짐.
+//상한과 무관하게 항상 행 예산(select 1행 + prev/next 1행 + 이름변경/삭제 1행 + 뒤로가기 1행 = 4행)
+//안에서 여유 있게 다룬다 - "웹에서만 편집 가능"한 상한이 없어짐.
 
 //#region 정적 컴포넌트(런타임 값 필요 없는 것만 - 나머지는 매번 동적으로 만듦, scoreboard-ui.ts와 동일 관행)
 
@@ -83,7 +97,10 @@ exports.isBasketManageModalEvent = (interaction: any): boolean =>
 //admin-season-ui.ts에서 겪은 버그와 동일 함정).
 exports.handleBasketManageEvent = (interaction: any, room_ui: any): undefined =>
 {
-  const is_host = interaction.user.id === room_ui.quiz_info['room_owner'];
+  //room_ui.readonly는 오마카세엔 없는 개념이라 항상 undefined !== true → true로 평가돼(QuizInfoUI
+  //기본값이 false라 실제로도 항상 false), room_owner 비교만으로 오마카세는 기존과 동일하게 동작한다.
+  //멀티플레이는 위 파일 상단 주석의 "참가 길드" 시나리오를 막기 위해 이 조건이 실제로 필요하다.
+  const is_host = interaction.user.id === room_ui.quiz_info['room_owner'] && room_ui.readonly !== true;
 
   if(interaction.isButton() && interaction.customId === 'basket_manage_open')
   {
@@ -232,11 +249,14 @@ function buildItemSelectRows(basket_items: any, is_host: boolean): any[]
   {
     const page_entries = entries.slice(page * ITEM_SELECT_PAGE_SIZE, (page + 1) * ITEM_SELECT_PAGE_SIZE);
 
+    //비방장용 문구는 상시 노출되는 안내(placeholder/설명)에는 안 넣는다 - 실제로 선택해서 제출했을
+    //때만 handleBasketManageEvent의 안내로 알려주면 충분하다는 게 사용자 판단(2026-08-19 피드백,
+    //"방장만 할 수 있어요" 류 문구가 화면 곳곳에 항상 떠 있을 필요는 없음).
     const menu = new StringSelectMenuBuilder()
       .setCustomId(`basket_manage_item_select_${page + 1}`)
       .setPlaceholder(is_host
         ? `선택하여 퀴즈함에서 제거하기 (${page * ITEM_SELECT_PAGE_SIZE + 1}~${page * ITEM_SELECT_PAGE_SIZE + page_entries.length}번째)`
-        : `조회 전용 - 제거는 방장만 가능 (${page * ITEM_SELECT_PAGE_SIZE + 1}~${page * ITEM_SELECT_PAGE_SIZE + page_entries.length}번째)`)
+        : `퀴즈함 목록 (${page * ITEM_SELECT_PAGE_SIZE + 1}~${page * ITEM_SELECT_PAGE_SIZE + page_entries.length}번째)`)
       .setMaxValues(page_entries.length);
 
     for(const [quiz_id, item] of page_entries)
@@ -271,6 +291,25 @@ function withNotice(description: string, notice: string | undefined): string
   return notice === undefined ? description : `${description}\n\n${notice}`;
 }
 
+//라이브 퀴즈함이 바뀐 뒤 메인 화면(OmakaseQuizRoomUI/MultiplayerQuizLobbyUI)을 동기화한다. 오마카세는
+//길드 하나짜리 로컬 화면이라 그 자리에서 새로고침만 하면 되지만, 멀티플레이는 참가 길드 전체에 화면이
+//복제돼 있어서 로컬 갱신만으론 다른 길드가 낡은 상태로 남는다 - room_ui가 sendEditLobbySignal을 갖고
+//있으면(MultiplayerQuizLobbyUI만 가짐, duck typing) 그쪽으로 IPC(CLIENT_SIGNAL.EDIT_LOBBY) 브로드캐스트를
+//태운다. interaction은 넘기지 않음 - 이 화면의 응답은 호출부가 곧이어 interaction.update()로 직접
+//처리하므로, sendEditLobbySignal이 자체적으로 또 응답하려 들면(성공 시 deferUpdate) 응답 충돌이 남.
+function syncRoomUI(room_ui: any): void
+{
+  if(typeof room_ui.sendEditLobbySignal === 'function')
+  {
+    room_ui.sendEditLobbySignal();
+  }
+  else
+  {
+    room_ui.refreshUI();
+    room_ui.update();
+  }
+}
+
 //#endregion
 
 //#region main 상태
@@ -292,11 +331,10 @@ function buildMainViewPayload(room_ui: any, is_host: boolean, notice: string | u
   const basket_items = room_ui.quiz_info['basket_items'] ?? {};
   const basket_item_count = Object.keys(basket_items).length;
 
+  //비방장에게 "방장만 제거/불러오기 가능"을 상시 안내하던 문구는 제거(2026-08-19 피드백) - 실제로
+  //제거를 시도했을 때만 handleBasketManageEvent가 안내하면 충분하다는 판단, 화면이 항상 그 설명을
+  //달고 있을 필요는 없음.
   let description = `🧺 현재 퀴즈함: **${basket_item_count}개**`;
-  if(is_host === false)
-  {
-    description += `\n🔒 방장만 여기서 퀴즈를 제거하거나 프리셋을 불러올 수 있어요. (조회/프리셋 저장은 누구나 가능)`;
-  }
   description = withNotice(description, notice);
 
   const components = [...buildItemSelectRows(basket_items, is_host)];
@@ -330,8 +368,7 @@ async function handleItemSelect(interaction: any, room_ui: any): Promise<void>
     ++remove_count;
   }
 
-  room_ui.refreshUI();
-  room_ui.update();
+  syncRoomUI(room_ui);
 
   renderMainView(interaction, room_ui, true, `🔸 퀴즈함에서 ${remove_count}개를 제거했습니다.`);
 }
@@ -437,8 +474,7 @@ async function handleLoad(interaction: any, room_ui: any): Promise<void>
   }
 
   room_ui.quiz_info['basket_items'] = new_basket_items;
-  room_ui.refreshUI();
-  room_ui.update();
+  syncRoomUI(room_ui);
 
   const dropped_count = preset.quiz_id_list.length - valid_rows.length;
   const notice = dropped_count > 0
@@ -647,13 +683,26 @@ async function handleRenameSubmit(interaction: any): Promise<void>
   await renderPresetManageDetail(interaction, preset_id, parseInt(page_str), `✅ 이름을 "${new_name}"(으)로 변경했습니다.`);
 }
 
-function handleManageDeleteRequest(interaction: any): void
+async function handleManageDeleteRequest(interaction: any): Promise<void>
 {
-  const [, preset_id, page] = interaction.customId.split(':');
+  interaction.explicit_replied = true; //첫 await 이전에 설정(renderPresetLoadList 주석 참고)
 
-  interaction.explicit_replied = true;
+  const [, preset_id_str, page] = interaction.customId.split(':');
+  const preset_id = parseInt(preset_id_str);
+
+  //확인 문구에 어떤 프리셋을 지우는지 이름을 보여주기 위해 재조회(2026-08-19 피드백 - 이름 없이
+  //"이 프리셋을 삭제하시겠어요?"만 뜨면 뭘 지우는지 헷갈릴 수 있음).
+  const presets_result = await db_manager.selectRandomQuizPresetsByUser(interaction.user.id);
+  const preset = (presets_result?.rows ?? []).find((p: any) => p.preset_id === preset_id);
+
+  if(preset === undefined)
+  {
+    await renderPresetManageList(interaction, `🔸 프리셋을 찾을 수 없어요(이미 삭제됐을 수 있어요).`);
+    return;
+  }
+
   interaction.update({
-    embeds: [{ color: 0xE74C3C, title: '📋 프리셋 관리', description: `🔸 정말 이 프리셋을 삭제하시겠어요? 되돌릴 수 없습니다.` }],
+    embeds: [{ color: 0xE74C3C, title: '📋 프리셋 관리', description: `🔸 "${preset.preset_name}" 프리셋을 정말 삭제하시겠어요? 되돌릴 수 없습니다.` }],
     components: [
       new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`basket_manage_manage_delete_cancel:${preset_id}:${page}`).setLabel('아니요, 삭제하지 않습니다.').setStyle(ButtonStyle.Success),

@@ -148,6 +148,32 @@ const multiplayer_lobby_host_basket_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Danger),
   );
 
+//퀴즈함 관리+프리셋(2026-08-19 멀티플레이 이식, docs/plans/QUIZ_BASKET_PRESET_UI_PLAN.md) - 호스트
+//길드 전용. 오마카세의 omakase_basket_manage_open_comp와 customId 쌍(use_basket_mode/basket_manage_open)은
+//동일하지만(둘 다 basket-manage-flow.ts/quiz-info-ui.ts의 공용 핸들러로 라우팅됨) 별도 싱글턴으로
+//만듦 - 이 디렉터리의 기존 관행(오마카세/멀티가 컴포넌트 싱글턴을 공유하지 않음)을 유지.
+const multiplayer_basket_manage_open_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('use_basket_mode')
+      .setLabel('퀴즈함에 퀴즈 더 담기')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('basket_manage_open')
+      .setLabel('🧺 퀴즈함 보기')
+      .setStyle(ButtonStyle.Primary),
+  );
+
+//참가(비방장) 길드 전용 - 항목 추가/제거 권한이 없어 조회+프리셋 저장/관리만 가능하므로 "퀴즈함에 퀴즈
+//더 담기" 버튼 없이 "🧺 퀴즈함 보기" 1개만.
+const multiplayer_basket_view_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('basket_manage_open')
+      .setLabel('🧺 퀴즈함 보기')
+      .setStyle(ButtonStyle.Primary),
+  );
+
 const multiplayer_lobby_participant_comp = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
@@ -224,6 +250,8 @@ module.exports = {
   multiplayer_select_control,
   multiplayer_lobby_host_tag_comp,
   multiplayer_lobby_host_basket_comp,
+  multiplayer_basket_manage_open_comp,
+  multiplayer_basket_view_comp,
   multiplayer_lobby_participant_comp,
   multiplayer_lobby_kick_select_menu,
   multiplayer_participant_select_menu,
