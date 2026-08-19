@@ -11,6 +11,7 @@ process.env.FFMPEG_PATH = pathToFfmpeg;
 const { SYSTEM_CONFIG, CUSTOM_EVENT_TYPE } = require('../../config/system_setting.js');
 const text_contents = require('../../config/text_contents.json')[SYSTEM_CONFIG.LANGUAGE];
 const logger = require('../../utility/logger.js')('QuizSystem');
+const utility = require('../../utility/utility.js');
 
 //session/quiz_session.js, session/multiplayer_session.js로 분리 (REFACTOR_PLAN.md Phase 2)
 //quiz_system.js는 이제 세션 생성/조회용 facade 함수만 갖고, 실제 세션 클래스 구현은
@@ -55,6 +56,19 @@ exports.checkReadyForStartQuiz = (guild: any, owner: any) =>
   if(!owner.voice.channel) //음성 채널 참가 중인 사람만 시작 가능
   {
     reason = text_contents.reason.no_in_voice_channel;
+    return { 'result': result, 'reason': reason };
+  }
+
+  //2026-08-19 신설 - 음성 채널 권한(Connect/Speak)이 없으면 createVoiceConnection()이 아무 에러 없이
+  //그냥 연결이 "Connecting" 상태로 무한정 멈춰버려서(quiz_session.ts 참고), 지금까지는 텍스트 메시지는
+  //정상 진행되는데 노래만 영원히 안 나오는 상태로 조용히 망가졌었음 - 시작 전에 미리 걸러낸다.
+  const missing_voice_permissions = utility.getMissingPermissionLabels(
+    owner.voice.channel.permissionsFor(guild.members.me),
+    utility.QUIZ_VOICE_CHANNEL_PERMISSIONS,
+  );
+  if(missing_voice_permissions.length > 0)
+  {
+    reason = text_contents.reason.no_voice_permission.replace('${missing_permissions}', missing_voice_permissions.join(', '));
     return { 'result': result, 'reason': reason };
   }
 

@@ -1883,3 +1883,44 @@ warning 유지)/`npm run build` 전부 통과. `node -e`로 dist 산출물의 `n
 
 검증: `npx tsc --noEmit`(0 error)/`npm test`(409 pass, 회귀 없음)/`npm run lint`(0 error)/
 `npm run build` 전부 통과.
+
+## 2026-08-19 — 퀴즈 시작 시 권한 부족 안내 강화
+
+사용자 지적: "퀴즈 시작할 때 메시지 전송 등 권한 체크하는 로직이 있지 않나? 문제 없나 점검해달라"에서
+출발한 조사→구현.
+
+**조사 과정에서 두 번 정정됨**: 처음엔 "권한 체크가 아예 없어서 실패하면 조용히 멈추고 세션이 좀비로
+남는다"고 잘못 진단했으나, 실제로는 `quiz_play_ui.ts`의 `QuizPlayUI.send()`가 이미
+`MissingPermissions`/`MissingAccess` 에러 코드를 감지해서 세션을 정리하고 방장에게 DM으로 이유를
+안내하는 견고한 처리가 있었음(사용자가 직접 지적해서 정정). 또한 `bot.js`의 `checkPermission`이
+이미 `/퀴즈` 진입 시점에 SendMessages/ViewChannel을 체크하고 있었던 것도 재조사 중 발견 — **실제로
+비어있던 건 음성 채널(Connect/Speak) 권한 체크뿐**이었음(`createVoiceConnection()`이 권한 부족 시
+에러 없이 그냥 연결이 "Connecting"에 멈춰서, 텍스트는 정상 진행되는데 노래만 영원히 안 나오는 상태로
+조용히 망가지는 문제).
+
+**구현**: 신규 `utility/util/discord_permission_utility.ts` — `QUIZ_TEXT_CHANNEL_PERMISSIONS`
+(ViewChannel/SendMessages/EmbedLinks/AttachFiles)/`QUIZ_VOICE_CHANNEL_PERMISSIONS`(Connect/Speak)
+두 상수 배열 + `getMissingPermissionLabels(permissions, required)`(부족한 권한의 한글 라벨만 배열로
+반환, permissions 자체가 없으면 required 전체를 부족하다고 취급) 하나만 노출. 두 곳이 이걸 공유:
+1. `bot.js`의 `checkPermission`(텍스트, `/퀴즈` 진입 시) — 기존엔 SendMessages/ViewChannel을 하나씩
+   순서대로 체크해서 "부족한 것 중 하나만" 알려주던 걸 한 번에 다 검사해서 전부 나열하도록 재작성.
+   **사용자 추가 요청으로 DM 백업도 추가** — ephemeral 응답(권한이 없어도 항상 성공)에 더해
+   `interaction.user.send(...)`로 명령어 입력자에게 동일 내용을 DM으로도 보냄(DM 실패는 조용히 무시,
+   ephemeral 응답 자체는 이미 갔으니 흐름을 막을 이유가 없음).
+2. `quiz_system.ts`의 `checkReadyForStartQuiz`(음성, 퀴즈 실제 시작 시) — **신설**: 음성 채널 참가
+   확인 다음, 진행 중 세션 확인 전에 `owner.voice.channel.permissionsFor(guild.members.me)`로
+   Connect/Speak를 체크, 부족하면 새 `text_contents.json` 키 `reason.no_voice_permission`(placeholder
+   `${missing_permissions}`)으로 안내하고 세션 생성 자체를 막는다. 이 함수는 4개 진입 경로(오마카세
+   `quiz-info-ui.ts`/멀티플레이 `multiplayer-quiz-select-ui.js`/유저 퀴즈 `user-quiz-info.ui.ts`/웹
+   연동 `web-handoff-ui.ts`)가 전부 공유해서 호출하므로, 이 함수 하나만 고치면 4곳 다 동일하게
+   적용됨(각 호출부는 `check_ready.reason`을 그대로 ephemeral 메시지에 꽂는 기존 패턴 그대로라 추가
+   수정 불필요 — 실제로 4곳 다 동일 패턴인지 코드로 확인함).
+
+검증: `npx tsc --noEmit`(0 error)/`npm test`(412 pass, 신규 `discord_permission_utility` 유닛테스트
+3개 포함)/`npm run lint`(0 error, 기존 57개 warning 유지)/`npm run build` 전부 통과. `node -e`로 dist
+산출물의 `checkReadyForStartQuiz`(음성 권한 부족 시 정확한 안내 문구 확인)와 `getMissingPermissionLabels`
+(실제 discord.js `PermissionsBitField` 인스턴스로 확인)를 직접 호출해 스모크 확인. 관련
+`utility/CLAUDE.md`(신규 파일 항목 + 오래전부터 잘못돼 있던 "4개 파일" 표기를 "6개"로 같이 수정),
+`quizbot/quiz_system/CLAUDE.md`(`checkReadyForStartQuiz`/`checkPermission` 관계 설명) 갱신,
+`docs/TEST_CHECKLIST.md`에 AH섹션 신설. **실사용 미검증** — 특히 음성 채널 권한을 실제로 뺏은 상태에서
+퀴즈가 정말 시작 전에 막히는지, DM이 실제로 도착하는지는 실제 서버에서 확인 필요.

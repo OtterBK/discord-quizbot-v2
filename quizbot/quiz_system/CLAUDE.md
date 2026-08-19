@@ -18,7 +18,7 @@
 ## 파일별 핵심 요약 + 위험 포인트
 
 **공유 상태/facade**
-- **`quiz_system.js`** — 얇은 facade. `startQuiz`/`getQuizSession`/`forceStopSession`/`relayMultiplayerSignal` 등만 노출. `ffmpegAgingManager()`가 여기 있는데 `ffmpeg_aging_map`을 채우는 코드가 이 파일에 없음(`docs/archive/PERFORMANCE_NOTES.md`에 죽은 코드로 기록됨, 게다가 `bot.js`에서 시작 호출 자체가 주석처리돼 있어 실행도 안 됨).
+- **`quiz_system.js`** — 얇은 facade. `startQuiz`/`getQuizSession`/`forceStopSession`/`relayMultiplayerSignal` 등만 노출. `ffmpegAgingManager()`가 여기 있는데 `ffmpeg_aging_map`을 채우는 코드가 이 파일에 없음(`docs/archive/PERFORMANCE_NOTES.md`에 죽은 코드로 기록됨, 게다가 `bot.js`에서 시작 호출 자체가 주석처리돼 있어 실행도 안 됨). `checkReadyForStartQuiz(guild, owner)`(음성 채널 참가 여부 + 진행 중 세션 여부 체크, `quiz-info-ui.ts`/`multiplayer-quiz-select-ui.js`/`user-quiz-info.ui.ts`/`web-handoff-ui.ts` 4곳이 "시작" 시점에 호출)는 **2026-08-19 신설로 음성 채널 권한(Connect/Speak) 체크가 추가됨** — `utility/util/discord_permission_utility.ts`의 `getMissingPermissionLabels`로 부족한 권한 전부를 나열. 이게 없으면 `quiz_session.ts`의 `createVoiceConnection()`이 에러 없이 그냥 연결이 "Connecting"에 멈춰서, 텍스트는 정상 진행되는데 노래만 영원히 안 나오는 상태로 조용히 망가지는 문제가 있었음. 텍스트 채널 권한(ViewChannel/SendMessages/EmbedLinks/AttachFiles)은 여기가 아니라 `bot.js`의 `checkPermission`이 `/퀴즈` 명령어 진입 시점에 별도로 체크(같은 유틸 공유) — 부족하면 ephemeral 응답 + 명령어 입력자에게 DM까지 보냄.
 - **`constants.js`** — `CYCLE_TYPE`/`QUIZ_SESSION_TYPE`/`MULTIPLAYER_COMMON_OPTION`. `CYCLE_TYPE.FORCEFINISH`는 정의만 되고 어디서도 안 쓰이는 죽은 값으로 보임.
 - **`session_registry.js`** — `quiz_session_map`(guild_id → 세션, 일반 객체) + `bot_client`. 순환참조 방지를 위해 일부러 분리됨 — lifecycle 클래스들이 `quiz_system.js` facade를 거치지 않고 여길 직접 참조하는 경우 있음(`quiz_play_ui.js` 등).
 - **`quiz_play_ui.js`** — 현재 진행 중인 문제의 embed+버튼 메시지 래퍼(`QuizPlayUI`). 로컬 dev 퀴즈 이미지는 `attachment://`로 첨부, 나머지는 URL 직접. `update()`가 파일 첨부 있으면 `send(true)`로 재라우팅(Discord edit API가 새 파일첨부를 못 함).

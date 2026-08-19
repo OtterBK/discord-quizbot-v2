@@ -15,6 +15,7 @@ const audio_utility = require('./util/audio_utility');
 const network_utility = require('./util/network_utility');
 const misc_utility = require('./util/misc_utility');
 const web_token_utility = require('./util/web_token_utility');
+const discord_permission_utility = require('./util/discord_permission_utility');
 
 module.exports = {
   ...quiz_content_loader,
@@ -22,4 +23,5 @@ module.exports = {
   ...network_utility,
   ...misc_utility,
   ...web_token_utility,
+  ...discord_permission_utility,
 };

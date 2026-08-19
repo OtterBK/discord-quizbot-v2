@@ -1,6 +1,6 @@
 # utility/
 
-범용 유틸. `utility.js`가 `util/` 하위 4개 파일을 재수출하는 facade — 22개+ 소비 파일이 `const utility = require(".../utility.js")` 형태로 whole-object로 쓰기 때문에(구조분해 아님) facade 스타일이 자유로움.
+범용 유틸. `utility.js`가 `util/` 하위 6개 파일을 재수출하는 facade — 22개+ 소비 파일이 `const utility = require(".../utility.js")` 형태로 whole-object로 쓰기 때문에(구조분해 아님) facade 스타일이 자유로움.
 
 ## `util/` (facade가 재수출하는 도메인 파일)
 
@@ -9,6 +9,7 @@
 - **`network_utility.js`** — `getIPv4Address`/`getIPv6Address` (OS 네트워크 인터페이스 조회).
 - **`misc_utility.js`** — 나머지 전부: `getRandom`, `sleep`, `sortDictByValue`/`sortMapByProperty`, `isImageFile`/`isValidURL`, `convertTagsValueToString`(비트플래그 태그 → 문자열), `extractYoutubeVideoID`, `generateUUID`, `calcTagsValue`, `removeMarkdownSpecialChars`, `sanitizeName`(멘션/마크다운 인젝션 방지).
 - **`web_token_utility.js`** (신규, 2026-08-08) — 퀴즈 선택 웹 연동(`docs/plans/WEB_INTEGRATION_PLAN.md`)용 세션 토큰 생성. `generateWebSessionToken()`은 `crypto.randomBytes(32).toString('hex')` 기반 — `misc_utility.generateUUID()`는 `Math.random()` 기반이라 암호학적으로 안전하지 않아 세션 토큰 용도로는 재사용하지 않았다.
+- **`discord_permission_utility.ts`**(신규, 2026-08-19) — 퀴즈 진행에 필요한 Discord 권한 체크 공용 헬퍼. `QUIZ_TEXT_CHANNEL_PERMISSIONS`(ViewChannel/SendMessages/EmbedLinks/AttachFiles, 한글 라벨 포함)/`QUIZ_VOICE_CHANNEL_PERMISSIONS`(Connect/Speak) 두 상수 배열 + `getMissingPermissionLabels(permissions, required)`(부족한 권한의 한글 라벨만 뽑아 배열로 반환, `permissions`가 없으면 required 전체를 부족하다고 취급) 하나만 노출. `quizbot/bot.js`의 `checkPermission`(`/퀴즈` 명령어 진입 시 텍스트 채널 권한)과 `quizbot/quiz_system/quiz_system.ts`의 `checkReadyForStartQuiz`(퀴즈 시작 시 음성 채널 권한)가 공유해서 쓴다 — 기존엔 권한을 하나씩 순서대로 체크해서 "부족한 것 중 하나만" 알려줬는데, 한 번에 다 검사해서 전부 나열하기 위해 도입됨.
 
 facade(`utility.js`) 자체에 죽은 import 5개(`EmbedBuilder`/`axios`/`PRIVATE_CONFIG`/`CUSTOM_EVENT_TYPE`/`orderBy`)가 남아있음 — 원본에도 있던 미사용 import라 lint 경고 개수를 그대로 유지하려고 일부러 지우지 않음.
 

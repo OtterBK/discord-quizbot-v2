@@ -288,39 +288,37 @@ const syncAdmin = () =>
     });
 };
 
+//2026-08-19 재작성 - 기존엔 SendMessages/ViewChannel을 하나씩 순서대로 체크해서 부족한 권한 중
+//"딱 하나만" 알려줬음(둘 다 없으면 SendMessages만 안내되고 ViewChannel은 재확인 전까지 영영 안
+//알려짐). utility.QUIZ_TEXT_CHANNEL_PERMISSIONS 기준으로 한 번에 다 검사해서 부족한 권한 전부를
+//나열하고, ephemeral 응답(채널 권한이 없어도 항상 성공함)에 더해 명령어를 입력한 사람에게 DM으로도
+//동일 내용을 보낸다(ephemeral 메시지를 놓치거나, 나중에 서버 관리자에게 그대로 캡처해서 보여줘야
+//할 수도 있어서 - quiz_play_ui.ts가 퀴즈 도중 권한 부족을 감지했을 때 방장에게 DM하는 것과 동일 패턴).
 const checkPermission = (interaction) =>
 {
-  if (
-    interaction.guild.members.me
-      .permissionsIn(interaction.channel.id)
-      .has(PermissionsBitField.Flags.SendMessages) == false
-  ) 
+  const missing_permissions = utility.getMissingPermissionLabels(
+    interaction.guild.members.me.permissionsIn(interaction.channel.id),
+    utility.QUIZ_TEXT_CHANNEL_PERMISSIONS,
+  );
+
+  if(missing_permissions.length === 0)
   {
-    interaction.explicit_replied = true; 
-    interaction.reply({
-      content:
-        `\`\`\`⚠️ 이 채널에 메시지를 보낼 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
-      flags: MessageFlags.Ephemeral,
-    });
-    return false;
+    return true;
   }
 
-  if (
-    interaction.guild.members.me
-      .permissionsIn(interaction.channel.id)
-      .has(PermissionsBitField.Flags.ViewChannel) == false
-  ) 
-  {
-    interaction.explicit_replied = true; 
-    interaction.reply({
-      content:
-        `\`\`\`⚠️ 이 채널의 속성을 확인할 수 있는 권한이 없습니다.😥\n봇에게 필요한 권한을 부여하거나 서버 관리자에게 봇을 추방하고 다시 초대하도록 요청해보세요.\`\`\``,
-      flags: MessageFlags.Ephemeral,
-    });
-    return false;
-  }
+  const message =
+    `\`\`\`⚠️ 봇에게 이 채널에서 퀴즈를 진행할 권한이 없습니다.😥\n`
+    + `부족한 권한: ${missing_permissions.join(', ')}\n\n`
+    + `서버 관리자에게 봇 권한을 확인해달라고 요청하거나, 봇을 추방한 뒤 다시 초대해보세요.\`\`\``;
 
-  return true;
+  interaction.explicit_replied = true;
+  interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
+
+  //DM은 실패해도(DM 차단 등) 위 ephemeral 응답은 이미 갔으니 조용히 무시 - 실패 자체가 이 흐름을
+  //막을 이유는 아님.
+  interaction.user.send({ content: message }).catch(() => {});
+
+  return false;
 };
 
 //명령어별 처리
