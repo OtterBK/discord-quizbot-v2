@@ -1,4 +1,8 @@
 #!/bin/bash
+# 반드시 bash로 실행할 것: `bash quizbot_update.sh`(또는 `./quizbot_update.sh`) - `sh`로 직접 실행하면
+# Ubuntu의 /bin/sh(dash)가 셔뱅을 무시하고 이 파일을 해석하는데, dash는 POSIX 전용이라 아래
+# PROTECTED_PATHS 배열 같은 bash 전용 문법에서 곧바로 syntax error가 남(2026-08-19 실사용 중 발견 -
+# auto_script/server_script/ 전체를 sh 대신 bash로 실행하는 관례로 통일하기로 결정, `정석 사용법.txt` 참고).
 . /etc/profile.d/quizbot_path.sh
 
 if [ -z "$QUIZBOT_PATH" ]; then
@@ -73,6 +77,9 @@ if [ $? -ne 0 ]; then
     rm -rf "$BACKUP_DIR"
     exit 1
 fi
+# 최종 요약에 쓸 커밋 해시/제목 - "정말 새 코드로 갱신됐는지"를 로그 맨 위로 스크롤하지 않고도
+# 마지막 요약에서 바로 확인할 수 있게 함(2026-08-19 로깅 보강).
+NEW_COMMIT_SUMMARY="$(git log -1 --format='%h %s')"
 
 echo "🔒 Restoring local 운영 데이터(config/system_setting.js, current_notice.txt, banned_user.txt, current_season_name.txt)..."
 for path in "${PROTECTED_PATHS[@]}"; do
@@ -88,21 +95,42 @@ if [ $? -ne 0 ]; then
     echo "❌ npm install failed. Aborting without restarting the service."
     exit 1
 fi
+echo "   → npm install ✅"
 
 echo "🩹 Reapplying custom_node_modules patches..."
 sudo cp -R custom_node_modules/* node_modules/
+echo "   → custom_node_modules patches applied ✅"
 
 # npm install이 방금 youtube-dl-exec의 자체 postinstall로 python 의존 zipapp("yt-dlp" 자산)을 다시
 # 받아써서, update_yt-dlp.sh(standalone yt-dlp_linux로 덮어쓰는 크론 작업)가 고쳐둔 걸 매번 되돌려
 # 놓음 - 다음 크론 실행(9시/21시)까지 최대 12시간 동안 시스템 python 버전에 따라 노래 퀴즈가 깨질 수
 # 있어서, 여기서 바로 한 번 더 받아 최신 상태로 맞춘다.
 echo "🎵 Re-fetching standalone yt-dlp (npm install just restored the python-dependent build)..."
-sudo sh "$QUIZBOT_PATH/auto_script/server_script/update_yt-dlp.sh"
+sudo bash "$QUIZBOT_PATH/auto_script/server_script/update_yt-dlp.sh"
+# 방금 받은 바이너리가 실제로 실행 가능한 상태인지까지 확인 - curl 다운로드가 조용히 깨진 파일을
+# 받아도(네트워크 에러를 못 잡는 경우 등) 이전엔 "완료했다"는 echo만 믿고 넘어갔음(2026-08-19 로깅
+# 보강 - 사용자가 실제로 이 단계 로그가 스크롤에 묻혀 안 보인다고 지적한 것과 동일한 문제).
+YT_DLP_BIN="$QUIZBOT_PATH/node_modules/youtube-dl-exec/bin/yt-dlp"
+if [ -x "$YT_DLP_BIN" ]; then
+    YT_DLP_STATUS="✅ $("$YT_DLP_BIN" --version 2>/dev/null || echo '설치는 됐지만 --version 실행 실패')"
+else
+    YT_DLP_STATUS="❌ 바이너리를 찾을 수 없음 ($YT_DLP_BIN)"
+fi
+echo "   → yt-dlp: $YT_DLP_STATUS"
 
 # 아직 설치 안 된 서버(설치 스크립트가 이 기능 도입 전에 돌았던 경우)에만 실제로 설치가 일어남 -
-# 이미 있으면 setup_pot_provider.sh가 스스로 감지해서 조용히 스킵함(idempotent).
+# 이미 있으면 setup_pot_provider.sh가 스스로 감지해서 조용히 스킵함(idempotent). 아래에서 systemd
+# 서비스 상태까지 직접 확인해서 명확한 한 줄로 남김 - "🔑 Ensuring..." echo 하나만 있으면 그 아래
+# setup_pot_provider.sh 자체의 출력(길면 여러 줄, 이미 설치돼 있으면 한 줄뿐)이 앞뒤 로그에 묻혀서
+# 실제로 설치/구동됐는지 한눈에 확인이 안 된다는 실사용 피드백으로 추가(2026-08-19).
 echo "🔑 Ensuring yt-dlp PO Token provider is installed..."
-sh "$QUIZBOT_PATH/auto_script/server_script/setup_pot_provider.sh" || echo "⚠️  PO Token provider setup failed - yt-dlp will still work without it, just without this fallback."
+bash "$QUIZBOT_PATH/auto_script/server_script/setup_pot_provider.sh" || echo "⚠️  PO Token provider setup failed - yt-dlp will still work without it, just without this fallback."
+if systemctl is-active --quiet bgutil-pot-provider 2>/dev/null; then
+    PO_TOKEN_STATUS="✅ bgutil-pot-provider.service active"
+else
+    PO_TOKEN_STATUS="⚠️  bgutil-pot-provider.service가 active 상태가 아님 (sudo systemctl status bgutil-pot-provider로 확인)"
+fi
+echo "   → PO Token provider: $PO_TOKEN_STATUS"
 
 # TS로 전환된 소스는 dist/ 로 빌드해야 node가 바로 require할 수 있음(.ts는 직접 못 읽음) - 이 단계를
 # 건너뛰면 낡은 dist/가 그대로 남아 업데이트가 반영 안 된 것처럼 보이거나, 최악의 경우 require 시점에
@@ -113,6 +141,7 @@ if [ $? -ne 0 ]; then
     echo "❌ npm run build failed. 서비스를 시작하지 않고 종료합니다 - dist/는 이전 빌드 상태로 남아있으니, 빌드 에러를 고친 뒤 이 스크립트를 다시 실행하세요."
     exit 1
 fi
+echo "   → TypeScript build ✅"
 
 # web-frontend/는 루트와 별개의 독립 프로젝트(React+Vite, 별도 package.json)라 위 루트 npm run build로는
 # 안 만들어짐 - 건너뛰면 웹 UI가 이전 빌드 그대로 남거나(신규 설치 직후엔 아예 없어서) "Cannot GET /"만
@@ -129,6 +158,7 @@ if [ $? -ne 0 ]; then
     echo "❌ web-frontend npm run build failed. 서비스를 시작하지 않고 종료합니다 - web-frontend/dist/는 이전 빌드 상태로 남아있으니, 빌드 에러를 고친 뒤 이 스크립트를 다시 실행하세요."
     exit 1
 fi
+echo "   → web-frontend build ✅"
 cd "$QUIZBOT_PATH" || { echo "❌ Failed to cd back into $QUIZBOT_PATH"; exit 1; }
 
 # git fetch/reset/npm install/npm run build를 전부 sudo로 실행해서 여기까지 손댄 파일이 root 소유로
@@ -140,8 +170,20 @@ sudo chown -R ubuntu:ubuntu "$QUIZBOT_PATH"
 
 # 업데이트 직후 자동 재시작하지 않음(2026-08-15 변경) - 빌드/설정에 문제가 없는지 확인할 시간 없이
 # 바로 재시작되던 게 위험하다는 피드백. 확인 후 quizbot_start.sh로 직접 시작할 것.
-echo "✅ Update complete (branch: $TARGET_BRANCH)."
+#
+# 전체 로그를 스크롤해서 다시 찾지 않아도 되게, 이번 실행에서 확인한 핵심 상태를 한 번에 요약함
+# (2026-08-19 로깅 보강 - PO Token 설치 여부처럼 중간에 조용히 지나가는 단계가 로그에 묻혀서 실제로
+# 잘 됐는지 확인이 안 된다는 실사용 피드백).
+echo ""
+echo "======================================================"
+echo "✅ Update complete (branch: $TARGET_BRANCH)"
+echo "------------------------------------------------------"
+echo "   commit         : $NEW_COMMIT_SUMMARY"
+echo "   yt-dlp         : $YT_DLP_STATUS"
+echo "   PO Token       : $PO_TOKEN_STATUS"
+echo "======================================================"
+echo ""
 echo "   서비스는 자동으로 시작되지 않습니다 - 확인 후 아래 명령으로 직접 시작하세요:"
-echo "   sh $QUIZBOT_PATH/auto_script/server_script/quizbot_start.sh"
+echo "   bash $QUIZBOT_PATH/auto_script/server_script/quizbot_start.sh"
 echo "   (또는: sudo systemctl start quizbot3)"
 echo "   로그 확인: journalctl -u quizbot3 -f"
