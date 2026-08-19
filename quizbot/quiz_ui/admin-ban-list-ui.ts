@@ -140,7 +140,7 @@ class AdminBanListUI extends QuizbotUI
     }
     this.pending_unban_id = undefined;
 
-    ban_manager.unbanId(selected_id);
+    ban_manager.unbanId(selected_id, `${interaction.user.tag}(${interaction.user.id})`);
     this.refreshList();
 
     interaction.explicit_replied = true;

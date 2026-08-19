@@ -126,7 +126,7 @@ class AdminMaintenanceUI extends QuizbotUI
   {
     const content = interaction.fields.getTextInputValue('txt_input_maintenance_notice');
 
-    maintenance_mode_manager.enableMaintenanceMode(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH, content);
+    maintenance_mode_manager.enableMaintenanceMode(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH, content, `${interaction.user.tag}(${interaction.user.id})`);
     this.refreshStatus();
 
     interaction.explicit_replied = true;
@@ -145,7 +145,7 @@ class AdminMaintenanceUI extends QuizbotUI
 
   confirmDisable(interaction: any)
   {
-    maintenance_mode_manager.disableMaintenanceMode(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH);
+    maintenance_mode_manager.disableMaintenanceMode(SYSTEM_CONFIG.MAINTENANCE_NOTICE_PATH, `${interaction.user.tag}(${interaction.user.id})`);
     this.refreshStatus();
 
     interaction.explicit_replied = true;

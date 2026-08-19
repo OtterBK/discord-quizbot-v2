@@ -6,6 +6,7 @@
 //켜고 끌 수 있도록 순수 함수로 추출(2026-08-15 신설).
 
 const fs = require('fs');
+const logger = require('../../utility/logger.js')('MaintenanceModeManager');
 
 exports.isMaintenanceModeOn = (maintenance_notice_path: string): boolean =>
 {
@@ -22,12 +23,17 @@ exports.getMaintenanceNotice = (maintenance_notice_path: string): string =>
   return fs.readFileSync(maintenance_notice_path, { encoding: 'utf8', flag: 'r' }).trim();
 };
 
-exports.enableMaintenanceMode = (maintenance_notice_path: string, content: string): void =>
+//점검 모드는 관리자 외 전 유저의 인터랙션을 막는 파급력 큰 기능이라(bot.js 전역 핸들러) warn 레벨로
+//로깅 - 2026-08-19 로깅 감사로 추가, actor는 호출부(admin-maintenance-ui.ts)가 interaction.user 기준
+//으로 넘겨주는 선택값.
+exports.enableMaintenanceMode = (maintenance_notice_path: string, content: string, actor?: string): void =>
 {
   fs.writeFileSync(maintenance_notice_path, content, { encoding: 'utf8' });
+  logger.warn(`점검 모드 켜짐/문구 갱신${actor ? ` by ${actor}` : ''}: ${content}`);
 };
 
-exports.disableMaintenanceMode = (maintenance_notice_path: string): void =>
+exports.disableMaintenanceMode = (maintenance_notice_path: string, actor?: string): void =>
 {
   fs.unlinkSync(maintenance_notice_path);
+  logger.warn(`점검 모드 꺼짐${actor ? ` by ${actor}` : ''}`);
 };

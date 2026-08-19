@@ -398,6 +398,10 @@ class UserQuizInfoUI extends QuizInfoUI
       interaction.reply({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
+      //퀴즈 CRUD 로깅 감사(2026-08-19) - 삭제는 되돌릴 수 없는 데이터 손실이라 이 화면의 다른
+      //액션(Edited Quiz info 등)과 동일하게 로깅. 이 버튼은 본인 소유 퀴즈 삭제 또는 어드민의 전체
+      //퀴즈 관리(admin_panel_quiz_manage) 양쪽에서 다 쓰이므로 interaction.user가 곧 실행자.
+      logger.info(`Deleted Quiz... quiz_id: ${user_quiz_info.quiz_id}, title: ${user_quiz_info.data.quiz_title}, by: ${interaction.user.tag}(${interaction.user.id})`);
       return;
     }
 
@@ -408,13 +412,14 @@ class UserQuizInfoUI extends QuizInfoUI
         return;
       }
 
-      ban_manager.banId(user_quiz_info.data.creator_id);
+      ban_manager.banId(user_quiz_info.data.creator_id, `${interaction.user.tag}(${interaction.user.id}) via quiz_delete_confirmed_and_ban(quiz_id:${user_quiz_info.data.quiz_id})`);
 
       this.freeHolder(); //더 이상 UI 못 쓰도록
       interaction.explicit_replied = true;
       interaction.reply({ content: "```" + `${text_contents.quiz_maker_ui.quiz_deleted_and_banned}${user_quiz_info.data.quiz_title}` + "```", flags: MessageFlags.Ephemeral });
       interaction.message.delete();
       user_quiz_info.delete();
+      logger.info(`Deleted Quiz(with creator ban)... quiz_id: ${user_quiz_info.quiz_id}, title: ${user_quiz_info.data.quiz_title}, creator_id: ${user_quiz_info.data.creator_id}, by: ${interaction.user.tag}(${interaction.user.id})`);
       return;
     }
 

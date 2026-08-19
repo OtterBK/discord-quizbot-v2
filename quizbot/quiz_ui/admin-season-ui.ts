@@ -104,7 +104,7 @@ class AdminSeasonUI extends QuizbotUI
   {
     const new_season_name = interaction.fields.getTextInputValue('txt_input_new_season_name');
 
-    const result = await scoreboard_season_manager.endSeasonAndStartNew(SYSTEM_CONFIG.CURRENT_SEASON_NAME_PATH, new_season_name);
+    const result = await scoreboard_season_manager.endSeasonAndStartNew(SYSTEM_CONFIG.CURRENT_SEASON_NAME_PATH, new_season_name, `${interaction.user.tag}(${interaction.user.id})`);
 
     interaction.explicit_replied = true;
 

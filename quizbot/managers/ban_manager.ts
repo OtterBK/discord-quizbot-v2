@@ -48,7 +48,10 @@ exports.isBanned = (id_list: string[]): boolean =>
   return id_list.some(id => banned_id_set.has(id));
 };
 
-exports.banId = (id: string): boolean =>
+//actor(2026-08-19 로깅 감사로 추가, 선택값) - 호출부(admin-ban-list-ui.ts/user-quiz-info.ui.ts/
+//report_manual_processing.ts)가 넘겨주는 "누가/왜 했는지" 표시 문자열. 자동 신고 처리 경로 등
+//interaction이 없는 곳도 있어 필수값으로는 못 만듦.
+exports.banId = (id: string, actor?: string): boolean =>
 {
   if(banned_id_set.has(id))
   {
@@ -61,7 +64,7 @@ exports.banId = (id: string): boolean =>
   });
   banned_id_set.add(id);
 
-  logger.info(`${id} is banned`);
+  logger.info(`${id} is banned${actor ? ` by ${actor}` : ''}`);
   return true;
 };
 
@@ -70,7 +73,7 @@ exports.getBannedIdList = (): string[] =>
   return Array.from(banned_id_set);
 };
 
-exports.unbanId = (id: string): boolean =>
+exports.unbanId = (id: string, actor?: string): boolean =>
 {
   if(!banned_id_set.has(id))
   {
@@ -83,6 +86,6 @@ exports.unbanId = (id: string): boolean =>
     encoding: 'utf8',
   });
 
-  logger.info(`${id} is unbanned`);
+  logger.info(`${id} is unbanned${actor ? ` by ${actor}` : ''}`);
   return true;
 };

@@ -154,7 +154,7 @@ class AdminNoticeListUI extends QuizbotUI
     const title = interaction.fields.getTextInputValue('txt_input_notice_title');
     const content = interaction.fields.getTextInputValue('txt_input_notice_content');
 
-    notice_manager.writeNoticeFile(SYSTEM_CONFIG.NOTICES_PATH, title, content);
+    notice_manager.writeNoticeFile(SYSTEM_CONFIG.NOTICES_PATH, title, content, `${interaction.user.tag}(${interaction.user.id})`);
     this.loadList();
 
     interaction.explicit_replied = true;
