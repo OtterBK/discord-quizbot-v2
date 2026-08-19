@@ -7,6 +7,7 @@
 
 const fs = require('fs');
 const db_manager = require('./db_manager');
+const logger = require('../../utility/logger.js')('ScoreboardSeasonManager');
 
 exports.getCurrentSeasonName = (current_season_name_path: string): string =>
 {
@@ -24,17 +25,21 @@ exports.setCurrentSeasonName = (current_season_name_path: string, season_name: s
 };
 
 //시즌 종료 + 새 시즌 시작을 한 동작으로 묶는다("시즌 종료" 버튼 한 번으로 완결) - 현재 파일에 적힌
-//이름으로 아카이브하고, 성공하면 새 이름을 그 자리에 이어서 저장한다.
-exports.endSeasonAndStartNew = async (current_season_name_path: string, new_season_name: string): Promise<any> =>
+//이름으로 아카이브하고, 성공하면 새 이름을 그 자리에 이어서 저장한다. 되돌릴 수 없는 DB 작업이라
+//성공/실패 둘 다 로깅(2026-08-19 로깅 감사로 추가) - actor는 호출부(admin-season-ui.ts)가
+//interaction.user 기준으로 넘겨주는 선택값.
+exports.endSeasonAndStartNew = async (current_season_name_path: string, new_season_name: string, actor?: string): Promise<any> =>
 {
   const ended_season_name = exports.getCurrentSeasonName(current_season_name_path);
 
   const result = await db_manager.endCurrentSeason(ended_season_name);
   if(result == undefined)
   {
+    logger.warn(`시즌 종료 실패: "${ended_season_name}" → "${new_season_name}"${actor ? ` by ${actor}` : ''}`);
     return undefined;
   }
 
   exports.setCurrentSeasonName(current_season_name_path, new_season_name);
+  logger.info(`시즌 종료: "${ended_season_name}" → "${new_season_name}"${actor ? ` by ${actor}` : ''}`);
   return result;
 };

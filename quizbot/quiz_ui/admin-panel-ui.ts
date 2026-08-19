@@ -113,7 +113,7 @@ class AdminPanelUI extends QuizbotUI
   {
     const content = interaction.fields.getTextInputValue('txt_input_current_notice');
 
-    notice_manager.writeCurrentNotice(SYSTEM_CONFIG.CURRENT_NOTICE_PATH, content);
+    notice_manager.writeCurrentNotice(SYSTEM_CONFIG.CURRENT_NOTICE_PATH, content, `${interaction.user.tag}(${interaction.user.id})`);
 
     interaction.explicit_replied = true;
     interaction.reply({ content: `\`\`\`📢 실시간 공지를 저장했습니다.\`\`\``, flags: MessageFlags.Ephemeral });

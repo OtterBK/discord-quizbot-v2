@@ -1817,3 +1817,69 @@ AG섹션(100개 기준 select 행 수, 101번째 차단, 삭제 확인 문구) �
 `getTagInfoText()`를 직접 호출해 출력 확인(`🔸 \`퀴즈함 모드 사용 중\` (3개 담김)` 정상 출력).
 `npm test`(409 pass, 회귀 없음)/`npm run lint`(0 error)/`npx tsc --noEmit`(0 error)/`npm run build`
 전부 통과. 관련 `CLAUDE.md`(`quiz_ui/`) 갱신.
+
+## 2026-08-19 — quizmgr 관리자 행동 로깅 감사 및 추가
+
+사용자 요청: "QUIZMGR 쪽 기능 관련해서 로그 찍는게 없네, 시스템 운용할 때 정말 중요하니깐 추가"
++ "공지 수정 모달에 기존 내용이 안 채워진다"는 지적 2건.
+
+**로깅 감사 결과 및 조치**: `quizbot/quiz_ui/admin-*.ts` 5개 파일(패널/공지 목록·상세/점검모드/시즌
+관리) 전부 `logger` 호출이 단 한 건도 없었고, 이들이 위임하는 매니저 3개(`notice_manager.ts`,
+`maintenance_mode_manager.ts`, `scoreboard_season_manager.ts`)도 마찬가지로 무로깅이었음(이미
+`ACTIVE_PLAN.md`에 "매니저마다 들쭉날쭉함, 수정 보류"로 기록돼 있던 항목 — 이번에 해소). 아래 함수에
+`logger.info`(또는 파급력 큰 항목은 `logger.warn`)를 추가하고, 전부 마지막 인자로 선택적 `actor:
+string`(호출부가 `${interaction.user.tag}(${interaction.user.id})` 형태로 넘김)을 받아 "무엇이/누가"
+둘 다 로그에 남도록 함:
+- `notice_manager.ts`: `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile`/`writeCurrentNotice`
+- `maintenance_mode_manager.ts`: `enableMaintenanceMode`/`disableMaintenanceMode`(warn — 전 유저
+  인터랙션을 차단하는 기능이라)
+- `scoreboard_season_manager.ts`: `endSeasonAndStartNew`(성공 info/실패 warn — 되돌릴 수 없는 DB
+  아카이브 작업)
+
+이미 로깅이 있던 `ban_manager.js`(`banId`/`unbanId`)도 같은 관례로 actor 인자를 추가(기존엔 "무엇이
+바뀌었는지"만 있고 "누가"는 없었음) — 호출부 3곳(`admin-ban-list-ui.ts`, `user-quiz-info.ui.ts`의
+"퀴즈 삭제+제작자 영구밴", `report_manual_processing.ts`)은 신고 처리 경로에만 이미 자체
+`result_message` 로그가 있어 그대로 두고 나머지 2곳만 actor를 넘기도록 수정.
+
+**"공지 수정 모달 프리필" 건**: 코드 조사 + `node -e` 스모크 테스트로 확인한 결과, quizmgr 공지
+게시판(`AdminNoticeDetailUI.requestEditModal`)/점검 모드 문구(`AdminMaintenanceUI.requestEditModal`)/
+실시간 공지(`AdminPanelUI.requestCurrentNoticeEdit`) **세 곳 모두 이미 `.setValue()`로 기존 내용을
+정상적으로 채워주고 있었음**(전부 2026-08-15 커밋에 이미 포함돼 있던 기존 구현) — 코드 변경 없음.
+실제 버그가 아니라 사용자가 테스트한 배포본이 그 이후로 재빌드/재배포되지 않았을 가능성이 높다고
+판단해 그대로 안내함(루트 `CLAUDE.md`의 "소스만 고치고 재빌드 안 하면 반영 안 됨" 경고와 부합).
+
+검증: `npx tsc --noEmit`(0 error)/`npm test`(409 pass, 회귀 없음)/`npm run lint`(0 error, 기존 57개
+warning 유지)/`npm run build` 전부 통과. `node -e`로 dist 산출물의 `notice_manager`/
+`maintenance_mode_manager`/`ban_manager`를 직접 호출해 로그 포맷(레벨/문구/actor 포함 여부)과 실제
+파일 쓰기가 정상 동작하는지 스모크 확인(밴/언밴 테스트는 실제 `resources/banned_user.txt`에
+잔여 데이터가 안 남았는지도 재확인). 관련 `quizbot/managers/CLAUDE.md` 4개 항목 갱신,
+`docs/ACTIVE_PLAN.md`의 기존 보류 항목을 완료로 갱신. **실사용 미검증** — 특히 로그 포맷이 실제
+운영 로그 파일에서 보기 편한지는 사용자가 직접 확인 필요.
+
+### 같은 날 후속 — 관리자 기능 밖 로깅 실태 점검 + 유저 퀴즈 삭제 로그 누락 수정
+
+사용자 질문: "관리자 기능 이외에도 주요 기능들에 대해 로깅 처리가 잘 돼있는게 확실한가?" — 전수
+확인 결과를 보고하고, 발견된 유일한 실제 공백 하나를 수정.
+
+**점검 방법**: `quizbot/managers/`, `quizbot/quiz_system/` 전체와 `quiz_ui/`의 관련 파일들을 대상으로
+파일별 `logger.` 호출 횟수를 세고, 의심스러운 지점(0건인 파일들)을 하나씩 확인해서 "의도적으로 없는
+것"과 "빠뜨린 것"을 구분.
+
+**결론 — 전반적으로 잘 돼있음, 구멍 하나 발견**:
+- 퀴즈 진행 엔진(`quiz_system/`)/멀티플레이(`multiplayer_session.js` 등)는 세션 시작·종료·승패
+  MMR 증감까지 꼼꼼히 로깅돼 있음(문제 단위 세부 상태 전환만 의도적으로 무로깅 — 매 문제마다 찍히면
+  로그가 감당 안 됨).
+- DB 쿼리 실패는 `db_core.ts`의 `sendQuery` 한 곳에서 전부 중앙집중 로깅되므로 개별 `db_*.ts` 파일에
+  로그가 없는 게 정상(누락 아님).
+- 신고 처리(수동/자동), 유저 퀴즈 CRUD 중 생성/수정/문제 CRUD는 이미 잘 로깅돼 있었음(`user-quiz-list-ui.ts`
+  의 "Created New Quiz", `user-quiz-info.ui.ts`의 "Edited Quiz ..." 3종, `user-question-info-ui.ts`의
+  생성/복제/수정/삭제 4종, 웹 쪽(`web_quiz_editor_routes.ts`)도 `[Web]` 접두사로 동일하게 전부 대응).
+- **실제 발견된 공백**: `user-quiz-info.ui.ts`의 `quiz_delete_confirmed`(일반 삭제)와
+  `quiz_delete_confirmed_and_ban`(어드민 삭제+영구밴) 두 버튼 핸들러가 `user_quiz_info.delete()`를
+  호출하면서 로그를 전혀 안 남기고 있었음 — 생성/수정/문제 단위는 다 로깅되는데 유독 "퀴즈 삭제"라는
+  되돌릴 수 없는 액션만 빠져 있었음(웹 쪽 삭제 라우트는 이미 로깅돼 있었어서 더 눈에 띄는 비대칭).
+  두 핸들러 다 `logger.info`로 quiz_id/제목/실행자(`interaction.user.tag(id)`) 로깅 추가(밴 버전은
+  creator_id도 같이).
+
+검증: `npx tsc --noEmit`(0 error)/`npm test`(409 pass, 회귀 없음)/`npm run lint`(0 error)/
+`npm run build` 전부 통과.

@@ -12,6 +12,7 @@
 //레거시 파일은 mtime으로 폴백 정렬되고, 수정(updateNoticeFile)을 거치면 접두사가 부여된다.
 
 const fs = require('fs');
+const logger = require('../../utility/logger.js')('NoticeManager');
 
 const NOTICE_TIMESTAMP_PREFIX_RE = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})_/;
 const NOTICE_FILENAME_FORBIDDEN_CHARS_RE = /[\\/:*?"<>|]/g;
@@ -89,20 +90,24 @@ exports.readNoticeFile = (note_path: string): { title: string, content: string, 
 };
 
 //quizmgr 공지 작성(2026-08-15 신설) - 파일명에 현재 시각 접두사를 붙여 새로 만든다.
-exports.writeNoticeFile = (notices_folder_path: string, title: string, content: string): { name: string, file_name: string, note_path: string } =>
+//actor(2026-08-19 로깅 감사로 추가, 선택값) - 호출부(admin-notice-list-ui.ts 등)가 interaction.user
+//기준으로 넘겨주는 "누가 했는지" 표시 문자열. 관리자 전용 기능이지만 운영 중 무슨 변경이 있었는지
+//로그로 추적 가능해야 한다는 피드백 - 이 파일의 다른 쓰기 함수들도 동일 관례.
+exports.writeNoticeFile = (notices_folder_path: string, title: string, content: string, actor?: string): { name: string, file_name: string, note_path: string } =>
 {
   const safe_title = sanitizeNoticeTitle(title);
   const file_name = `${formatNoticeTimestampPrefix(new Date())}_${safe_title}.txt`;
   const note_path = `${notices_folder_path}/${file_name}`;
 
   fs.writeFileSync(note_path, content, { encoding: 'utf8' });
+  logger.info(`공지 작성: "${safe_title}" (${file_name})${actor ? ` by ${actor}` : ''}`);
 
   return { name: safe_title, file_name, note_path };
 };
 
 //quizmgr 공지 수정(2026-08-15 신설) - 내용을 덮어쓰고, 제목이 바뀌면 기존 접두사(작성 순서)는
 //유지한 채 파일명만 새로 짓는다. 접두사가 없던 레거시 파일을 수정하면 이번에 접두사가 새로 부여됨.
-exports.updateNoticeFile = (notices_folder_path: string, old_file_name: string, title: string, content: string): { name: string, file_name: string, note_path: string } =>
+exports.updateNoticeFile = (notices_folder_path: string, old_file_name: string, title: string, content: string, actor?: string): { name: string, file_name: string, note_path: string } =>
 {
   const safe_title = sanitizeNoticeTitle(title);
   const existing_prefix_match = old_file_name.match(NOTICE_TIMESTAMP_PREFIX_RE);
@@ -118,13 +123,16 @@ exports.updateNoticeFile = (notices_folder_path: string, old_file_name: string, 
     fs.renameSync(old_path, new_path);
   }
 
+  logger.info(`공지 수정: "${safe_title}" (${old_file_name} → ${new_file_name})${actor ? ` by ${actor}` : ''}`);
+
   return { name: safe_title, file_name: new_file_name, note_path: new_path };
 };
 
 //quizmgr 공지 삭제(2026-08-15 신설)
-exports.deleteNoticeFile = (note_path: string): void =>
+exports.deleteNoticeFile = (note_path: string, actor?: string): void =>
 {
   fs.unlinkSync(note_path);
+  logger.info(`공지 삭제: ${note_path}${actor ? ` by ${actor}` : ''}`);
 };
 
 //실시간 공지(resources/current_notice.txt, /퀴즈 최초 진입 화면(select-ui-mode-ui.ts)에서만 노출) -
@@ -140,7 +148,8 @@ exports.readCurrentNotice = (current_notice_path: string): string =>
   return fs.readFileSync(current_notice_path, { encoding: 'utf8', flag: 'r' }).trim();
 };
 
-exports.writeCurrentNotice = (current_notice_path: string, content: string): void =>
+exports.writeCurrentNotice = (current_notice_path: string, content: string, actor?: string): void =>
 {
   fs.writeFileSync(current_notice_path, content, { encoding: 'utf8' });
+  logger.info(`실시간 공지 수정${actor ? ` by ${actor}` : ''}`);
 };

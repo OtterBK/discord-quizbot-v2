@@ -101,7 +101,7 @@ class AdminNoticeDetailUI extends QuizbotUI
     const title = interaction.fields.getTextInputValue('txt_input_notice_title');
     const content = interaction.fields.getTextInputValue('txt_input_notice_content');
 
-    this.notice_info = notice_manager.updateNoticeFile(SYSTEM_CONFIG.NOTICES_PATH, this.notice_info['file_name'], title, content);
+    this.notice_info = notice_manager.updateNoticeFile(SYSTEM_CONFIG.NOTICES_PATH, this.notice_info['file_name'], title, content, `${interaction.user.tag}(${interaction.user.id})`);
     this.refreshDetail();
 
     interaction.explicit_replied = true;
@@ -120,7 +120,7 @@ class AdminNoticeDetailUI extends QuizbotUI
 
   confirmDelete(interaction: any)
   {
-    notice_manager.deleteNoticeFile(this.notice_info['note_path']);
+    notice_manager.deleteNoticeFile(this.notice_info['note_path'], `${interaction.user.tag}(${interaction.user.id})`);
 
     interaction.explicit_replied = true;
     interaction.reply({ content: `\`\`\`📢 공지를 삭제했습니다.\`\`\``, flags: MessageFlags.Ephemeral });

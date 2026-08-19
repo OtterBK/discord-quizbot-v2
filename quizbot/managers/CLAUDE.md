@@ -31,6 +31,12 @@
   최초 진입 화면(`quiz_ui/select-ui-mode-ui.ts`의 `buildNoticeFields()`)에서만 노출) 읽기/쓰기.
   `quiz_ui/admin-panel-ui.ts`가 목록/상세 화면 없이 관리자 패널에서 바로 모달로 편집하는 데 사용 —
   기존엔 서버 파일을 직접 편집하는 방식뿐이었음.
+  **로깅 감사(2026-08-19)**: `writeNoticeFile`/`updateNoticeFile`/`deleteNoticeFile`/`writeCurrentNotice`
+  4개 전부 원래 아무 로그도 안 남기고 있었음(quizmgr 기능 전반의 로깅 누락을 사용자가 지적) —
+  `logger.info(...)`를 추가하고, 마지막 인자로 선택적 `actor` 문자열(호출부가 `${interaction.user.tag}
+  (${interaction.user.id})` 형태로 넘김)을 받아 로그에 "누가 했는지"도 같이 남김. 밴 관리(`ban_manager.js`)
+  가 이미 쓰던 관례(로그는 남기되 actor 없이 무엇이 바뀌었는지만)에서 한 단계 더 나아간 것 — 운영 중
+  quizmgr로 뭘 바꿨는지 사후 추적이 가능해야 한다는 게 목적.
 - **`maintenance_mode_manager.ts`**(quizmgr 점검 모드 관리, 2026-08-15 신설) —
   `isMaintenanceModeOn`/`getMaintenanceNotice`/`enableMaintenanceMode`/`disableMaintenanceMode` 4개
   순수 함수. `resources/maintenance_notice.txt`(공지사항 게시판/실시간 공지와 무관한 별도 파일) 존재
@@ -43,7 +49,10 @@
   이유 — 파일 존재 자체가 서버별 운영 상태(점검 모드 on/off)라 실수로 커밋되면 다른 배포본이 점검
   모드가 켜진 채로 넘어갈 수 있음). 점검 모드 차단 안내(`bot.js`)에는 `support_link_component`(지원센터
   Link 버튼, `guildCreate` 환영 메시지와 공유)도 같이 붙어서, 막힌 유저가 문의할 곳을 바로 찾을 수
-  있음(2026-08-15 추가).
+  있음(2026-08-15 추가). **로깅 감사(2026-08-19)**: `enableMaintenanceMode`/`disableMaintenanceMode`가
+  원래 무로깅이었음 — 전 유저 인터랙션을 차단하는 파급력 큰 기능이라 `logger.warn(...)`(info가 아니라
+  warn — 운영자가 로그를 훑을 때 놓치면 안 되는 상태 변화라서)으로 켜짐/꺼짐 + `actor`(선택, notice_manager와
+  동일 패턴)를 남기도록 추가.
 
 ## 스코어보드 시즌
 
@@ -55,11 +64,13 @@
   순수 함수. `endSeasonAndStartNew(path, new_season_name)`는 "시즌 종료" 버튼 한 번으로 끝나는 합성
   동작 — 현재 파일에 적힌 이름으로 `db_manager.endCurrentSeason`을 호출해 스냅샷+라이브 테이블 초기화를
   맡기고, 성공했을 때만 파일에 새 이름을 이어 쓴다(실패 시 파일은 건드리지 않음). `quiz_ui/admin-season-ui.ts`
-  (quizmgr "시즌 관리")가 호출부.
+  (quizmgr "시즌 관리")가 호출부. **로깅 감사(2026-08-19)**: 되돌릴 수 없는 DB 아카이브 작업인데도 원래
+  무로깅이었음 — 성공(`logger.info`)/실패(`logger.warn`) 둘 다 이전 시즌 이름→새 시즌 이름 +
+  `actor`(선택)를 남기도록 추가.
 
 ## 밴 관리
 
-- **`ban_manager.js`** — `resources/banned_user.txt`를 메모리 `Set`으로 캐싱(10분 주기 재조회, `unref()`된 타이머). `isBanned(id_list)`, `banId(id)`, `unbanId(id)`, `getBannedIdList()`. **길드ID(멀티플레이 밴)와 유저ID(퀴즈 생성 영구밴)를 같은 목록으로 관리** — 의도된 설계(둘 다 "이 ID는 문제 있음"이라는 같은 의미). `banId`/`unbanId`는 파일에 쓰는 동시에 캐시도 즉시 갱신해 다음 재조회 주기를 기다리지 않음. 원래 이름은 `multiplayer_ban_manager.js`였는데 유저ID 밴도 겸하게 되면서 일반화된 이름으로 리네임됨. 파일 기반 싱글턴이라 Discord client 의존이 없어(2026-08-10 확인) `initialize()`가 클러스터(`bot.js`)뿐 아니라 마스터(`index.js`)에서도 호출됨 — 멀티플레이 웹 연동(Phase 4)의 `/api/session/confirm`(mode:multiplayer)이 로비 생성/참가 브로드캐스트 전에 마스터에서 바로 밴 체크를 하기 위함.
+- **`ban_manager.js`** — `resources/banned_user.txt`를 메모리 `Set`으로 캐싱(10분 주기 재조회, `unref()`된 타이머). `isBanned(id_list)`, `banId(id, actor?)`, `unbanId(id, actor?)`, `getBannedIdList()`. **길드ID(멀티플레이 밴)와 유저ID(퀴즈 생성 영구밴)를 같은 목록으로 관리** — 의도된 설계(둘 다 "이 ID는 문제 있음"이라는 같은 의미). `banId`/`unbanId`는 파일에 쓰는 동시에 캐시도 즉시 갱신해 다음 재조회 주기를 기다리지 않음. 원래 이름은 `multiplayer_ban_manager.js`였는데 유저ID 밴도 겸하게 되면서 일반화된 이름으로 리네임됨. 파일 기반 싱글턴이라 Discord client 의존이 없어(2026-08-10 확인) `initialize()`가 클러스터(`bot.js`)뿐 아니라 마스터(`index.js`)에서도 호출됨 — 멀티플레이 웹 연동(Phase 4)의 `/api/session/confirm`(mode:multiplayer)이 로비 생성/참가 브로드캐스트 전에 마스터에서 바로 밴 체크를 하기 위함. `banId`/`unbanId`는 원래부터 `logger.info`로 로깅하고 있었지만(다른 관리자 기능들과 달리 이미 로깅이 있던 몇 안 되는 곳) actor는 안 남기고 있었음 — **로깅 감사(2026-08-19)**로 마지막 인자에 선택적 `actor` 문자열을 추가(`admin-ban-list-ui.ts`/`user-quiz-info.ui.ts`가 넘김, `report_manual_processing.ts`의 자동/수동 신고 처리 경로는 이미 자체 `result_message` 로그가 있어 그대로 둠).
 
 ## 명령어/설정
 
