@@ -15,8 +15,9 @@ const audio_utility = require('../../utility/util/audio_utility');
 const network_utility = require('../../utility/util/network_utility');
 const misc_utility = require('../../utility/util/misc_utility');
 const web_token_utility = require('../../utility/util/web_token_utility');
+const discord_permission_utility = require('../../utility/util/discord_permission_utility');
 
-test('utility.js: 5개 도메인 파일의 export를 빠짐없이 재수출한다 (총 26개)', () =>
+test('utility.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 29개)', () =>
 {
   const expected_names = [
     ...Object.keys(quiz_content_loader),
@@ -24,11 +25,12 @@ test('utility.js: 5개 도메인 파일의 export를 빠짐없이 재수출한�
     ...Object.keys(network_utility),
     ...Object.keys(misc_utility),
     ...Object.keys(web_token_utility),
+    ...Object.keys(discord_permission_utility),
   ].sort();
 
   const actual_names = Object.keys(utility).sort();
 
-  assert.equal(actual_names.length, 26);
+  assert.equal(actual_names.length, 29);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -40,6 +42,7 @@ test('utility.js: 도메인 파일 사이에 이름이 겹치지 않는다', () 
     ...Object.keys(network_utility),
     ...Object.keys(misc_utility),
     ...Object.keys(web_token_utility),
+    ...Object.keys(discord_permission_utility),
   ];
 
   assert.equal(new Set(all_names).size, all_names.length);
@@ -125,4 +128,38 @@ test('audio_utility: playBGM은 audio_player가 없으면 아무것도 하지 �
 {
   const result = await audio_utility.playBGM(undefined, 'countdown_long');
   assert.equal(result, undefined);
+});
+
+test('discord_permission_utility: getMissingPermissionLabels는 has()가 false인 항목의 라벨만 반환한다', () =>
+{
+  const required = [
+    { flag: 1n, label: '메시지 보내기' },
+    { flag: 2n, label: '임베드 링크' },
+    { flag: 4n, label: '파일 첨부' },
+  ];
+
+  const permissions = { has: (flag) => flag !== 2n }; //임베드 링크만 없다고 가정
+
+  const missing = discord_permission_utility.getMissingPermissionLabels(permissions, required);
+
+  assert.deepEqual(missing, ['임베드 링크']);
+});
+
+test('discord_permission_utility: getMissingPermissionLabels는 permissions가 없으면 required 전체를 부족하다고 취급한다', () =>
+{
+  const required = [
+    { flag: 1n, label: '음성 채널 연결' },
+    { flag: 2n, label: '음성 채널에서 말하기' },
+  ];
+
+  assert.deepEqual(discord_permission_utility.getMissingPermissionLabels(undefined, required), ['음성 채널 연결', '음성 채널에서 말하기']);
+  assert.deepEqual(discord_permission_utility.getMissingPermissionLabels(null, required), ['음성 채널 연결', '음성 채널에서 말하기']);
+});
+
+test('discord_permission_utility: 전부 있으면 빈 배열을 반환한다', () =>
+{
+  const required = [{ flag: 1n, label: '채널 보기' }];
+  const permissions = { has: () => true };
+
+  assert.deepEqual(discord_permission_utility.getMissingPermissionLabels(permissions, required), []);
 });
