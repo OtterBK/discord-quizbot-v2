@@ -193,3 +193,53 @@ ALTER TABLE ONLY quizbot.tb_random_quiz_preset_item
 검증(재실행): `tsc`/`lint`(0 error)/`test`(362 pass)/`web-frontend` `build` 전부 통과. 백엔드
 `npm run build`는 `config/private_config.json`이 `dist/`로 복사되는 부작용을 피하려고 이번엔
 `tsc --noEmit`으로만 재검증(코드 정확성은 동일하게 확인됨) — 상세 경위는 `[[feedback_private_config_json_build_caution]]` 메모리 참고.
+
+## ✅ `/프리셋관리` 개인 명령어(웹 전용) 추가 (2026-08-20, 신규 세션)
+
+**배경**: 사용자가 "프리셋 기능을 개인 명령어로도 관리할 수 있게 할 수 있나?"라고 문의 — 조사 결과
+디스코드 "프리셋 관리" 화면(`basket-manage-flow.ts`)의 이름변경/항목제거/전체삭제 4개 상태 함수는
+이미 `room_ui`를 전혀 받지 않는 순수 `user_id` 기반이라 개인 명령어로 뽑아내는 것 자체는 쉬웠지만,
+"퀴즈를 프리셋에 **추가**하는 기능도 있어야 하지 않나"라는 사용자의 후속 지적으로 범위가 커짐 —
+퀴즈를 고르는 화면(`UserQuizSelectUI`)은 `QuizbotUI`/`UIHolder` 화면 전환 스택에 올라타는 걸 전제로
+설계돼 있어, 화면 전환 체계를 안 쓰는 `basket-manage-flow.ts`(독립 ephemeral 플로우)에 그대로 못
+끼워 넣는 구조적 문제 발견. 반면 **웹 쪽은 "직접 담기" 모드(`OmakaseTab.jsx`)에 퀴즈 브라우징 UI가
+이미 있어서 새 화면이 필요 없었음** — 그래서 사용자가 "명령어로는 웹만 지원하자, DM 강제도 필요
+없지?"로 스코프를 확정.
+
+**DM 강제가 필요 없는 이유**: `/퀴즈만들기`가 DM 전용인 건 `UIHolder`(`ui_holder_map`)를 만들어서
+후속 인터랙션(버튼 클릭 등)을 같은 클러스터 프로세스가 받아야 하는데, 길드에서 요청하면 그 길드를
+담당하는 클러스터와 DM을 받는 클러스터가 샤딩 때문에 다를 수 있어서다(`create_quiz_handler`의
+"샤딩돼 있어서..." 주석). `/프리셋관리`는 Link 버튼(URL, 인터랙션 미발생) 하나로 끝나는 1회성
+에페메럴 응답이라 `UIHolder`를 아예 안 만들고, 그래서 이 제약 자체가 적용되지 않음 — 길드/DM 어디서
+호출해도 동일하게 동작.
+
+**구현**:
+- **DB**: `db_random_quiz_preset.ts`에 `replaceRandomQuizPresetItems(preset_id, user_id, quiz_id_list)`
+  신설 — 항목 목록을 통째로 교체(`insertRandomQuizPreset`의 item 삽입부와 동일한
+  `unnest ... with ordinality` 패턴). "추가"와 "정리" 둘 다 최종 목록을 클라이언트가 계산해서
+  넘기는 방식으로 통일 — 개별 추가 API를 따로 만들지 않음.
+- **REST**(`web_express_app.ts`, `requireWebSession`만 — 기존 프리셋 라우트와 동일하게 스코프 제한
+  없음): `PUT /api/random-quiz-presets/:preset_id`(이름변경, `updateRandomQuizPresetName` 재사용),
+  `PUT /api/random-quiz-presets/:preset_id/items`(항목 통째 교체), `DELETE
+  /api/random-quiz-presets/:preset_id/items/:quiz_id`(항목 하나 제거, `deleteRandomQuizPresetItem`
+  재사용 — 디스코드 "프리셋 관리" 화면과 동일 함수).
+- **디스코드 진입점**: `command_manager.ts`에 `/프리셋관리` 슬래시커맨드 신설, `bot.js`에
+  `preset_manage_handler`(owner-scoped 웹 세션 발급 후 Link 버튼 1개 에페메럴 응답, `UIHolder` 없음).
+- **웹 페이지**: `editor.html`/`editor-main.jsx`/`QuizEditorApp.jsx`(퀴즈 편집기)와 대칭되는 신규
+  진입점 `presets.html`/`presets-main.jsx`/`PresetManagerApp.jsx` — Vite 멀티페이지 빌드에 세 번째
+  진입점으로 추가(`vite.config.js`), `web_express_app.ts`가 `/editor`와 동일한 방식으로 `/presets`
+  정적 서빙. 하위 라우트가 없는 단일 화면이라(퀴즈 편집기와 달리 `react-router-dom` 불필요) 로컬
+  state로만 목록⟷상세를 전환. 목록 화면은 프리셋 생성(이름+퀴즈 검색 피커로 담을 항목 미리 선택 후
+  한 번에 `POST`, 빈 프리셋 생성은 허용 안 함 — 기존 "퀴즈함이 비어있어요" 정책 유지)/삭제(2클릭
+  확인, `OmakaseTab.jsx`/`QuizDetailPage.jsx`와 동일 관례), 상세 화면은 이름변경/항목 개별
+  제거(디스코드와 동일하게 삭제/비공개 전환된 항목은 자리를 남기고 "더 이상 사용할 수 없는 퀴즈"로
+  표시)/**퀴즈 추가**(검색 피커에서 클릭 즉시 `PUT .../items`로 반영, 별도 저장 버튼 없음 — 클릭=즉시
+  반영이라는 이 앱의 기존 관례를 따름). 신규 CSS 없음 — `OmakaseTab.jsx`의 `qd-row`/`qd-list` 등
+  드로워 관용구, `QuizListPage.jsx`의 `section-block`/`text-field`/`toolbar-cta` 등 폼 관용구를
+  그대로 재사용.
+
+검증: `npx tsc --noEmit`(0 error)/`npm run lint`(0 error, 기존 57 warning 수준 유지)/`npm test`(421
+pass — 신규 PUT/DELETE 라우트 테스트 8건 포함, `db_manager.js` export 개수 회귀 테스트 48→49
+갱신)/`npm run build`(백엔드)/`npm run build`(프론트엔드, `presets.html` 정상 산출 확인) 전부 통과.
+**미검증** — 실제 Discord+브라우저로 아직 안 돌려봄, `docs/TEST_CHECKLIST.md` AI섹션(프리셋 관리 웹
+페이지) 신설.

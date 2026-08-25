@@ -21,6 +21,14 @@ const commands = [
     .setName('퀴즈만들기')
     .setDescription('직접 퀴즈를 만들 수 있는 퀴즈툴을 요청합니다.'),
 
+  //랜덤 퀴즈 프리셋(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md) 관리 전용 진입점(2026-08-20 신설) - 웹
+  //페이지로 바로 연결되는 링크 버튼 하나만 응답하고 끝(퀴즈만들기처럼 UIHolder를 만들지 않음 -
+  //bot.js의 preset_manage_handler 참고, DM 강제도 없음).
+  //TODO 아직 미완성 기능이라 주석 처리함.
+  // new SlashCommandBuilder()
+  //   .setName('프리셋관리')
+  //   .setDescription('저장한 랜덤 퀴즈 프리셋을 웹에서 관리합니다.'),
+
   //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 온보딩/도움말이 전혀 없어서, 새 유저는 디스코드가 보여주는
   //슬래시커맨드 한 줄 설명이 안내의 전부였음. bot.js의 help_handler와 짝(관리자 전용 명령어는
   //의도적으로 여기 안 나열함 - 루트 CLAUDE.md "관리자 전용 기능" 참고).

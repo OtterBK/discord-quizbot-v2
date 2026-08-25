@@ -74,7 +74,7 @@
 
 ## 명령어/설정
 
-- **`command_manager.js`** — `SlashCommandBuilder` 배열 + `registerCommands`(길드별)/`registerGlobalCommands`. 새 슬래시커맨드 추가 시 여기 등록.
+- **`command_manager.ts`** — `SlashCommandBuilder` 배열 + `registerCommands`(길드별)/`registerGlobalCommands`. 새 슬래시커맨드 추가 시 여기 등록. **`/프리셋관리`(2026-08-20 신설)** — 랜덤 퀴즈 프리셋 관리 웹 페이지로 연결하는 Link 버튼만 응답하는 명령어(위 "퀴즈 선택 웹 연동" 섹션의 "프리셋 관리 웹 페이지" 항목 참고), `bot.js`의 `preset_manage_handler`가 처리.
 
 ## 신고/피드백
 
@@ -191,7 +191,21 @@ DM은 봇-유저 1:1이라 하이재킹 개념이 없어 기존 세션이 있어
   목록만 저장하며, 목록 조회 응답도 필터링 없이 그대로 내려준다. 비공개 전환/삭제로 무효해진 quiz_id를
   거르는 책임은 서버가 아니라 프론트엔드(`OmakaseTab.jsx`)에 있음 — 이미 불러온 공개 퀴즈
   목록(`/api/user-quizzes`)과 대조해서 존재하는 항목만 퀴즈함에 채우고, 못 찾은 항목 수만큼 안내
-  문구를 보여준다. **스코어보드 웹 노출(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`)**:
+  문구를 보여준다. **프리셋 관리 웹 페이지(`/프리셋관리` 명령어, 2026-08-20 신설)**: 위
+  저장/불러오기/삭제와 별개로 이름변경/항목 개별 제거/**퀴즈 추가**까지 지원하는 전용 페이지 —
+  `PUT /api/random-quiz-presets/:preset_id`(이름변경, `updateRandomQuizPresetName` 재사용)/
+  `PUT .../items`(항목 목록 통째 교체, 신규 `replaceRandomQuizPresetItems` — "추가"도 최종 목록을
+  계산해서 이 엔드포인트로 보내는 방식)/`DELETE .../items/:quiz_id`(항목 하나 제거,
+  `deleteRandomQuizPresetItem` 재사용, 디스코드 "프리셋 관리" 화면과 동일 함수) 3개 라우트 추가. 이
+  라우트들도 `requireWebSession`만 사용(스코프 제한 없음, 위와 동일 근거). `bot.js`의
+  `preset_manage_handler`가 owner-scoped 세션(`create_owner_session`, `mode:'preset_manage'`)을 발급받아
+  `/presets?token=...` Link 버튼 하나만 응답하고 끝 — `/퀴즈만들기`(아래 항목)와 달리 **`UIHolder`를
+  전혀 만들지 않아 DM 강제가 없다**(Link 버튼은 discord.js가 인터랙션 없이 바로 브라우저로 여는 URL
+  버튼이라 후속 인터랙션 자체가 발생하지 않고, 그래서 "어느 클러스터가 후속 인터랙션을 받는가" 문제가
+  애초에 생기지 않음 — 아래 `/퀴즈만들기`가 DM을 강제하는 이유와 대조). 프론트엔드는 `editor.html` 계열과
+  대칭되는 신규 Vite 진입점 `presets.html`/`presets-main.jsx`/`PresetManagerApp.jsx`(디스코드 쪽
+  `quiz_ui/CLAUDE.md`엔 없음 — 이 페이지는 디스코드 UI 화면이 아니라 독립된 웹 전용 진입점이라 여기
+  managers/CLAUDE.md에 기록). **스코어보드 웹 노출(2026-08-15 신설, `docs/plans/SCOREBOARD_SEASON_PLAN.md`)**:
   `GET /api/scoreboard`(쿼리 `season_id` 없으면 현재 시즌 — `scoreboard_season_manager`+
   `selectGlobalScoreboard`/`selectTop50Scoreboard`, 있으면 해당 시즌 아카이브 —
   `selectArchivedGuildScoreboard`/`selectArchivedTop50Scoreboard`)/`GET /api/scoreboard/seasons`

@@ -140,3 +140,49 @@ exports.deleteRandomQuizPresetItem = async (preset_id: number, user_id: string, 
   return db_core.sendQuery(query_string, [preset_id, user_id, quiz_id]);
 
 };
+
+//기존 프리셋에 퀴즈를 "추가"하는 기능(웹 프리셋 관리 페이지, 2026-08-20 신설) 전용 - 항목 목록을
+//통째로 교체한다(개별 추가/제거 대신 클라이언트가 최종 quiz_id_list를 계산해 넘기는 방식,
+//insertRandomQuizPreset의 item 삽입부와 동일한 unnest with ordinality 패턴 재사용). 트랜잭션 없이
+//delete 후 insert 2단계라(이 코드베이스의 기존 관행, insertRandomQuizPreset 주석 참고) insert가
+//실패하면 그 프리셋은 일시적으로 빈 채로 남을 수 있음 - 항목 목록 저장이라는 낮은 위험도의 개인
+//데이터라 트랜잭션/락 인프라 도입까지는 과하다고 판단.
+//
+//먼저 preset_id/user_id 소유권을 확인해(다른 유저 소유면 undefined 반환, deleteRandomQuizPreset과
+//동일 관행) 없는 프리셋에 조용히 item을 꽂아넣는 일이 없게 한다.
+exports.replaceRandomQuizPresetItems = async (preset_id: number, user_id: string, quiz_id_list: number[]): Promise<any> =>
+{
+
+  const owner_check_query =
+  `select preset_id
+    from tb_random_quiz_preset
+    where preset_id = $1 and user_id = $2`;
+
+  const owner_check = await db_core.sendQuery(owner_check_query, [preset_id, user_id]);
+  if(owner_check == undefined || owner_check.rows.length == 0)
+  {
+    return undefined;
+  }
+
+  const delete_result = await db_core.sendQuery('delete from tb_random_quiz_preset_item where preset_id = $1', [preset_id]);
+  if(delete_result == undefined)
+  {
+    return undefined;
+  }
+
+  let insert_items_query =
+  `insert into tb_random_quiz_preset_item (preset_id, quiz_id, sort_order)
+    select $1, quiz_id, ordinality - 1
+    from unnest($2::int[]) with ordinality as t(quiz_id, ordinality)`;
+
+  const items_result = await db_core.sendQuery(insert_items_query, [preset_id, quiz_id_list]);
+  if(items_result == undefined)
+  {
+    return undefined;
+  }
+
+  await db_core.sendQuery('update tb_random_quiz_preset set modified_time = now() where preset_id = $1', [preset_id]);
+
+  return preset_id;
+
+};

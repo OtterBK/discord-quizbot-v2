@@ -15,7 +15,7 @@ const db_random_quiz_preset = require('../../quizbot/managers/db/db_random_quiz_
 const db_report = require('../../quizbot/managers/db/db_report');
 const db_scoreboard = require('../../quizbot/managers/db/db_scoreboard');
 
-test('db_manager.js: 도메인 파일들을 원본과 동일한 48개 이름으로 재수출한다', () =>
+test('db_manager.js: 도메인 파일들을 원본과 동일한 49개 이름으로 재수출한다', () =>
 {
   // selectChatInfoById는 B-4(채팅 정지 사유 알림) 구현 중 신설됨 - 후속 조치(취소/추가처벌) 시점에
   // 원본 신고 채팅 내용을 다시 조회하기 위함 (tb_chat_info는 처리 후에도 row가 남아있음)
@@ -32,6 +32,8 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 48개 이름으�
   // 구현 중 신설됨 - 프리셋에 저장된 quiz_id 목록을 제목과 함께 일괄 조회
   // updateRandomQuizPresetName/deleteRandomQuizPresetItem은 같은 날 후속(프리셋 관리 화면 - 이름변경/
   // 항목제거)으로 신설됨 - 웹 UI엔 아직 없는 기능
+  // replaceRandomQuizPresetItems는 프리셋 관리 웹 페이지(/프리셋관리 명령어, 2026-08-20) 구현 중
+  // 신설됨 - 항목 목록 통째 교체(퀴즈 추가 겸용)
   const expected_names = [
     'initialize',
     'executeQuery',
@@ -44,7 +46,7 @@ test('db_manager.js: 도메인 파일들을 원본과 동일한 48개 이름으�
 
   const actual_names = Object.keys(db_manager).sort();
 
-  assert.equal(actual_names.length, 48);
+  assert.equal(actual_names.length, 49);
   assert.deepEqual(actual_names, expected_names);
 });
 

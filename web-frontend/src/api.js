@@ -81,6 +81,15 @@ export const createRandomQuizPreset = (preset_name, quiz_id_list) =>
 export const deleteRandomQuizPreset = (preset_id) =>
   apiFetch(`/api/random-quiz-presets/${preset_id}`, { method: 'DELETE' });
 
+// 프리셋 관리 웹 페이지(/프리셋관리 명령어, docs/plans/RANDOM_QUIZ_PRESET_PLAN.md 후속) 전용 -
+// 이름 변경/항목 통째 교체(추가 겸용)/항목 하나 제거. 저장/불러오기 자체는 기존 3개 함수를 그대로 씀.
+export const renameRandomQuizPreset = (preset_id, preset_name) =>
+  apiFetch(`/api/random-quiz-presets/${preset_id}`, { method: 'PUT', body: JSON.stringify({ preset_name }) });
+export const replaceRandomQuizPresetItems = (preset_id, quiz_id_list) =>
+  apiFetch(`/api/random-quiz-presets/${preset_id}/items`, { method: 'PUT', body: JSON.stringify({ quiz_id_list }) });
+export const removeRandomQuizPresetItem = (preset_id, quiz_id) =>
+  apiFetch(`/api/random-quiz-presets/${preset_id}/items/${quiz_id}`, { method: 'DELETE' });
+
 // 나머지 화면 웹 포팅(docs/WEB_UI_REMAINING_SCREENS_PLAN.md) - 안내 페이지/공지사항/서버 설정.
 export const getQuizToolGuide = () => apiFetch('/api/quiz-tool-guide');
 export const getNotices = () => apiFetch('/api/notices');
