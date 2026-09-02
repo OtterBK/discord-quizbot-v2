@@ -221,7 +221,7 @@ export default function QuizDetailPage({ onSessionInvalid }) {
     <div className="panel active">
       <div className="card">
         <div className="breadcrumb section-block" style={{ justifyContent: 'space-between' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span className="breadcrumb-trail">
             <button type="button" onClick={() => navigate('/')}>📑 내 퀴즈</button>
             <span className="sep">/</span>
             <button type="button" className="current">{detail.title}</button>

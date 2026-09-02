@@ -322,6 +322,104 @@ exports.start = (): any =>
     res.json({ success: true });
   });
 
+  //프리셋 관리 웹 페이지(/프리셋관리 명령어 전용, 2026-08-20 신설, `docs/plans/RANDOM_QUIZ_PRESET_PLAN.md`
+  //후속) - 이름 변경. updateRandomQuizPresetName은 원래 디스코드 "프리셋 관리" 화면 전용이었으나
+  //owner_id 기반이라 웹 세션에도 그대로 재사용 가능.
+  app.put('/api/random-quiz-presets/:preset_id', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_id = parseInt(req.params.preset_id);
+    if(isNaN(preset_id))
+    {
+      res.status(400).json({ error: 'invalid_preset_id' });
+      return;
+    }
+
+    const preset_name = typeof req.body?.preset_name === 'string' ? req.body.preset_name.trim() : '';
+    if(preset_name.length === 0 || preset_name.length > RANDOM_QUIZ_PRESET_NAME_MAX_LENGTH)
+    {
+      res.status(400).json({ error: 'invalid_preset_name' });
+      return;
+    }
+
+    const owner_id = req.web_session.owner_id;
+
+    const existing = await db_manager.selectRandomQuizPresetByName(owner_id, preset_name);
+    if((existing?.rows?.length ?? 0) > 0 && existing.rows[0].preset_id !== preset_id)
+    {
+      res.status(400).json({ error: 'duplicate_name' });
+      return;
+    }
+
+    const result = await db_manager.updateRandomQuizPresetName(preset_id, owner_id, preset_name);
+    if((result?.rows?.length ?? 0) === 0)
+    {
+      res.status(404).json({ error: 'preset_not_found' });
+      return;
+    }
+
+    logger.info(`[Web] Renamed Random Quiz Preset... preset_id: ${preset_id}, owner_id: ${owner_id}`);
+    res.json({ success: true, preset_name });
+  });
+
+  //항목 목록 통째로 교체 - "퀴즈 추가"(기존 목록 + 새로 고른 항목)와 "항목 여러 개 한번에 정리" 둘 다
+  //이 한 엔드포인트로 처리한다(클라이언트가 최종 quiz_id_list를 계산해서 보냄, replaceRandomQuizPresetItems
+  //참고). 개수 상한은 POST(신규 생성)와 동일한 RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT를 재사용.
+  app.put('/api/random-quiz-presets/:preset_id/items', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_id = parseInt(req.params.preset_id);
+    if(isNaN(preset_id))
+    {
+      res.status(400).json({ error: 'invalid_preset_id' });
+      return;
+    }
+
+    const raw_quiz_id_list: any[] = Array.isArray(req.body?.quiz_id_list) ? req.body.quiz_id_list : [];
+    const quiz_id_list: number[] = Array.from(new Set<number>(
+      raw_quiz_id_list.map((v: any) => parseInt(v)).filter((v: number) => !isNaN(v)),
+    ));
+    if(quiz_id_list.length > RANDOM_QUIZ_PRESET_ITEM_MAX_COUNT)
+    {
+      res.status(400).json({ error: 'invalid_quiz_id_list' });
+      return;
+    }
+
+    const owner_id = req.web_session.owner_id;
+
+    const result = await db_manager.replaceRandomQuizPresetItems(preset_id, owner_id, quiz_id_list);
+    if(result === undefined)
+    {
+      res.status(404).json({ error: 'preset_not_found' });
+      return;
+    }
+
+    logger.info(`[Web] Updated Random Quiz Preset Items... preset_id: ${preset_id}, owner_id: ${owner_id}, count: ${quiz_id_list.length}`);
+    res.json({ success: true, quiz_id_list });
+  });
+
+  //항목 하나만 제거 - 디스코드 "프리셋 관리" 화면의 deleteRandomQuizPresetItem과 동일 함수 재사용.
+  app.delete('/api/random-quiz-presets/:preset_id/items/:quiz_id', requireWebSession, async (req: any, res: any) =>
+  {
+    const preset_id = parseInt(req.params.preset_id);
+    const quiz_id = parseInt(req.params.quiz_id);
+    if(isNaN(preset_id) || isNaN(quiz_id))
+    {
+      res.status(400).json({ error: 'invalid_params' });
+      return;
+    }
+
+    const owner_id = req.web_session.owner_id;
+
+    const result = await db_manager.deleteRandomQuizPresetItem(preset_id, owner_id, quiz_id);
+    if((result?.rows?.length ?? 0) === 0)
+    {
+      res.status(404).json({ error: 'item_not_found' });
+      return;
+    }
+
+    logger.info(`[Web] Removed Random Quiz Preset Item... preset_id: ${preset_id}, owner_id: ${owner_id}, quiz_id: ${quiz_id}`);
+    res.json({ success: true });
+  });
+
   //멀티플레이 웹 연동(Phase 4) - multiplayer_session_registry.multiplayer_sessions는 이미 마스터 프로세스
   //메모리에 있고(index.js가 MULTIPLAYER_SIGNAL을 multiplayer_manager.onSignalReceived로 인프로세스 처리),
   //REQUEST_LOBBY_LIST 핸들러도 이미 마스터에서 실행되므로 클러스터로 릴레이할 필요 없이 그대로 재사용한다.
@@ -670,6 +768,15 @@ exports.start = (): any =>
   app.get(['/editor', '/editor/*'], (req: any, res: any) =>
   {
     res.sendFile(path.join(SYSTEM_CONFIG.WEB_FRONTEND_DIST_PATH, 'editor.html'));
+  });
+
+  //프리셋 관리 웹 페이지(/프리셋관리 명령어, 2026-08-20 신설) - editor.html과 동일한 이유로 확장자
+  //없는 /presets 경로에 정적 파일을 매핑. 하위 경로 없이 단일 화면(react-router 미사용)이라
+  //와일드카드는 당장 불필요하지만, editor 쪽 선례(나중에 하위 라우트가 생기면 새로고침/딥링크가
+  //깨지는 문제)를 미리 피하기 위해 동일하게 잡아둔다.
+  app.get(['/presets', '/presets/*'], (req: any, res: any) =>
+  {
+    res.sendFile(path.join(SYSTEM_CONFIG.WEB_FRONTEND_DIST_PATH, 'presets.html'));
   });
 
   app.use(express.static(SYSTEM_CONFIG.WEB_FRONTEND_DIST_PATH));

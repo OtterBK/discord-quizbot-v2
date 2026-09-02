@@ -45,15 +45,18 @@ const select_btn_component = new ActionRowBuilder()
 //라벨을 의미가 드러나는 텍스트로 바꿔서, description의 안내문을 먼저 읽고 숫자에 매핑해야 했던 문제를
 //해결(2026-08-12 피드백). 3번째 버튼(지원센터)은 Link 스타일이라 customId 없이 바로 외부 URL로
 //이동함(2026-08-15 신설) - quiz-edit-select-ui-mode-ui.ts와 공유되는 컴포넌트라 두 화면 모두에 적용됨.
+//표시 순서만 웹 UI -> 디스코드 UI로 변경(2026-08-20 사용자 요청) - customId('1'=디스코드/'2'=웹)와
+//onInteractionCreate 라우팅(select-ui-mode-ui.ts/quiz-edit-select-ui-mode-ui.ts, 둘 다 위치가 아니라
+//customId로 분기)은 그대로 둔 채 버튼 배열 순서만 바꿈 - 라우팅 로직 수정 불필요.
 const select_ui_mode_btn_component = new ActionRowBuilder()
   .addComponents(
     new ButtonBuilder()
-      .setCustomId('1')
-      .setLabel('디스코드 UI')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
       .setCustomId('2')
       .setLabel('웹 UI')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('1')
+      .setLabel('디스코드 UI')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setLabel('❓ 지원센터')

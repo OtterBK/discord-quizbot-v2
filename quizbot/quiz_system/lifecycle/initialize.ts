@@ -743,6 +743,7 @@ class InitializeOmakaseQuiz extends Initialize
 
     let dev_quiz_count = 0;
     let custom_quiz_count = 0;
+    let basket_item_count = 0; //장바구니 모드일 때만 의미 있음 - 아래 로그에서 use_basket_mode=true일 때만 노출
 
     if(use_basket_mode === false) //장르 선택 모드
     {
@@ -776,6 +777,8 @@ class InitializeOmakaseQuiz extends Initialize
         .map((basket_item: any) => parseInt(basket_item?.quiz_id))
         .filter((quiz_id: number) => Number.isInteger(quiz_id));
 
+      basket_item_count = basket_quiz_ids.length;
+
       if(basket_quiz_ids.length > 0)
       {
         [total_custom_question_count, custom_question_list] = await loadQuestionListByBasket(basket_quiz_ids, limit);
@@ -797,7 +800,8 @@ class InitializeOmakaseQuiz extends Initialize
       // this.quiz_session.already_liked = false; //장바구니 모드면 추천하기를 무조건 띄운다. -> 안띄운다 우선
     }
 
-    logger.info(`Omakase Question count of this session. use_basket_mode=${use_basket_mode}, certified_filter=${certified_filter}, dev=${dev_quiz_count}, custom=${custom_quiz_count}, limit=${limit}`);
+    const basket_item_count_log = use_basket_mode ? `, basket_item_count=${basket_item_count}` : '';
+    logger.info(`Omakase Question count of this session. use_basket_mode=${use_basket_mode}, certified_filter=${certified_filter}, dev=${dev_quiz_count}, custom=${custom_quiz_count}, limit=${limit}${basket_item_count_log}`);
 
 
     //build dev questions

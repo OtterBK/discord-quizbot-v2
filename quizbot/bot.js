@@ -386,6 +386,45 @@ const create_quiz_handler = async (interaction) =>
   });
 };
 
+//랜덤 퀴즈 프리셋 관리(docs/plans/RANDOM_QUIZ_PRESET_PLAN.md 후속, 2026-08-20 신설) - 퀴즈만들기와
+//달리 UIHolder를 전혀 만들지 않는다(ui_holder_map 등록 없음). Link 버튼은 discord.js가 인터랙션 없이
+//바로 브라우저로 열어주므로 후속 인터랙션이 발생하지 않고, 그래서 "어느 클러스터가 이 상호작용을
+//이어받는가" 문제(퀴즈만들기가 DM을 강제하는 이유, create_quiz_handler의 "샤딩돼 있어서..." 주석
+//참고) 자체가 생기지 않는다 - 길드 채널이든 DM이든 무관하게 매 요청마다 즉석에서 에페메럴 응답 하나로
+//끝나기 때문에 DM 강제가 필요 없다.
+const preset_manage_handler = async (interaction) =>
+{
+  const reply = await ipc_manager.sendWebSessionRequest({
+    action: 'create_owner_session',
+    owner_id: interaction.user.id,
+    mode: 'preset_manage',
+    owner_name: interaction.user.displayName,
+    owner_icon_url: interaction.user.avatarURL(),
+  });
+
+  interaction.explicit_replied = true;
+
+  if(reply?.success !== true)
+  {
+    interaction.reply({ content: `\`\`\`⚠️ 웹 세션을 열 수 없습니다. 잠시 후 다시 시도해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+    return;
+  }
+
+  const web_url = `${SYSTEM_CONFIG.WEB_BASE_URL}/presets?token=${reply.token}`;
+  const link_button_component = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('🔗 웹에서 프리셋 관리하기')
+      .setURL(web_url)
+      .setStyle(ButtonStyle.Link)
+  );
+
+  interaction.reply({
+    content: `\`\`\`🧺 저장된 랜덤 퀴즈 프리셋을 웹에서 관리할 수 있어요.\`\`\``,
+    components: [link_button_component],
+    flags: MessageFlags.Ephemeral,
+  });
+};
+
 //2026-08-12(UI 개선 2라운드 B-1 [P2]) - 도움말/온보딩이 전혀 없던 문제 신설. 관리자 전용 명령어
 //(quizmgr, 2026-08-14부터 유일한 관리자 진입점 - /신고처리는 삭제됨)는 의도적으로 여기서 언급 안 함
 //(루트 CLAUDE.md "관리자 전용 기능" - 호기심 유발 방지 관례).
@@ -397,6 +436,7 @@ const help_handler = (interaction) =>
       `\`\`\`🔸 퀴즈봇 사용법\n\n`
       + `/퀴즈 - 퀴즈 메뉴를 열어요. 공식/유저 제작/랜덤 퀴즈를 고르고 시작할 수 있어요.\n`
       + `/퀴즈만들기 - 나만의 퀴즈를 직접 만들 수 있어요. (개인 메시지로 진행돼요)\n`
+      + `/프리셋관리 - 저장한 랜덤 퀴즈 프리셋을 웹에서 관리해요.\n`
       + `/답 [답안] - 진행 중인 문제의 정답을 제출해요. (서버 설정에 따라 채팅으로 바로 입력해도 인식될 수 있어요)\n`
       + `/챗 [메시지] - 멀티플레이 대결 중 상대 서버에 메시지를 보내요.\n`
       + `/채팅전환 - 멀티플레이 전체 채팅 기능을 켜고 꺼요.\n`
@@ -568,6 +608,12 @@ client.on(CUSTOM_EVENT_TYPE.interactionCreate, async (interaction) =>
   )
   {
     await create_quiz_handler(interaction);
+    return;
+  }
+
+  if (main_command === '프리셋관리')
+  {
+    await preset_manage_handler(interaction);
     return;
   }
 
