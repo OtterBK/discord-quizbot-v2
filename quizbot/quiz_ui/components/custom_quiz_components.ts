@@ -167,6 +167,35 @@ const admin_ban_unban_confirm_comp = new ActionRowBuilder()
       .setStyle(ButtonStyle.Danger),
   );
 
+//관리자 밴 목록 - ID 직접 등록 버튼(2026-09-28 신설, 목록에 아직 없는 새 유저ID/길드ID를 바로 밴할 때,
+//admin_notice_create_btn_comp와 동일 패턴)
+const admin_ban_register_btn_comp = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('admin_ban_register_request')
+      .setLabel('➕ ID 직접 등록')
+      .setStyle(ButtonStyle.Danger),
+  );
+
+//관리자 밴 목록 - 등록할 ID 입력 모달(modal_new_season_name과 동일 패턴, 확인 절차 없이 바로 등록 -
+//밴 해제/시즌 종료와 달리 되돌리기 쉬운 동작이라 오클릭 방어용 확인 단계는 생략)
+const modal_admin_ban_register = new ModalBuilder()
+  .setCustomId('modal_admin_ban_register')
+  .setTitle('ID 직접 등록')
+  .addComponents(
+    new ActionRowBuilder()
+      .addComponents(
+        new TextInputBuilder()
+          .setCustomId('txt_input_ban_id')
+          .setLabel('밴할 유저ID 또는 길드(서버)ID')
+          .setStyle(TextInputStyle.Short)
+          .setMinLength(1)
+          .setMaxLength(32)
+          .setRequired(true)
+          .setPlaceholder('디스코드 유저ID 또는 서버ID 숫자')
+      )
+  );
+
 //관리자 패널 - 공지 관리(quizmgr, 2026-08-15 신설) 목록 화면의 "새 공지 작성" 버튼
 const admin_notice_create_btn_comp = new ActionRowBuilder()
   .addComponents(
@@ -771,6 +800,8 @@ module.exports = {
   quiz_delete_confirm_admin_comp,
   admin_panel_comp,
   admin_ban_unban_confirm_comp,
+  admin_ban_register_btn_comp,
+  modal_admin_ban_register,
   admin_notice_create_btn_comp,
   admin_notice_manage_comp,
   admin_notice_delete_confirm_comp,

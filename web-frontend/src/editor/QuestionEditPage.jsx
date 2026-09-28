@@ -25,6 +25,12 @@
 // 옆에 이전/다음 문제 버튼 추가(양 끝에서는 비활성화), 저장 버튼만 다른 색(toolbar-cta, 파란색)으로
 // 구분하고 취소/이전/다음은 중립색(btn-secondary) - .cta-primary는 width:100% 고정이라 가로 버튼
 // 로우에 넣으면 레이아웃이 깨져서(기존에도 있던 알려진 함정) 안 씀.
+//
+// 2026-09-28 모바일 UX 피드백: `.panel.active`가 880px 이하에서 1열로 바뀌며 `.detail-col`(우측
+// "디스코드 미리보기" 패널)이 order:-1로 맨 위에 오는데, 이 패널이 폼보다 훨씬 길어서(임베드+버튼+
+// 유튜브 플레이어) 모바일에서 실제 입력 폼에 도달하기 전에 한참 스크롤해야 하는 문제가 있었음 -
+// 좁은 화면(useIsNarrowViewport)에서만 기본 접힘 상태로 바꾸고 탭해서 펼치게 함(데스크톱은 기존과
+// 동일하게 항상 펼쳐짐 - isNarrow가 false면 previewOpen 값과 무관하게 항상 보임).
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -41,6 +47,26 @@ import {
 } from './questionDisplay.jsx';
 
 const MAX_QUESTIONS_PER_QUIZ = 50; //config/system_setting.js SYSTEM_CONFIG.MAX_QUESTIONS_PER_QUIZ 미러링(QuizDetailPage.jsx와 동일 관례)
+
+const PREVIEW_COLLAPSE_BREAKPOINT = 880; //styles.css의 .panel.active 1열 전환 브레이크포인트와 동일 값
+
+//뷰포트가 브레이크포인트 이하로 좁은지 실시간 추적(리사이즈 대응) - 이 값이 true일 때만 미리보기
+//패널을 기본 접힘으로 바꾼다.
+function useIsNarrowViewport(breakpoint = PREVIEW_COLLAPSE_BREAKPOINT)
+{
+  const query = `(max-width: ${breakpoint}px)`;
+  const [isNarrow, setIsNarrow] = useState(() => window.matchMedia(query).matches);
+
+  useEffect(() =>
+  {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setIsNarrow(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [query]);
+
+  return isNarrow;
+}
 
 const composeRangeRow = (start, end) =>
 {
@@ -112,6 +138,10 @@ export default function QuestionEditPage({ onSessionInvalid }) {
   const [formError, setFormError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+
+  const isNarrow = useIsNarrowViewport();
+  const [previewOpen, setPreviewOpen] = useState(false); //좁은 화면 기본값 - 데스크톱은 isNarrow===false라 항상 펼쳐짐
+  const showPreview = !isNarrow || previewOpen;
 
   const handleApiError = (err) => {
     if (err.status === 401) {
@@ -451,13 +481,24 @@ export default function QuestionEditPage({ onSessionInvalid }) {
 
       <div className="detail-col">
         <div className="card detail-card">
-          <span className="field-label">👀 실제 디스코드에선 이렇게 보여요</span>
-          {activeTab === 'basic' && (
-            <DiscordQuestionPreview quizTitle={quizTitle} form={form} index={index} total={total} />
+          {isNarrow ? (
+            <button type="button" className="preview-toggle" onClick={() => setPreviewOpen((v) => !v)}>
+              <span className="field-label" style={{ marginBottom: 0 }}>👀 실제 디스코드에선 이렇게 보여요</span>
+              <span className="chev">{previewOpen ? '숨기기 ▲' : '보기 ▼'}</span>
+            </button>
+          ) : (
+            <span className="field-label">👀 실제 디스코드에선 이렇게 보여요</span>
           )}
-          {activeTab === 'extra' && <DiscordHintPreview form={form} />}
-          {activeTab === 'answering' && <DiscordAnswerPreview form={form} />}
-          <p className="preview-caption">{TAB_TO_PREVIEW_CAPTION[activeTab]}</p>
+          {showPreview && (
+            <>
+              {activeTab === 'basic' && (
+                <DiscordQuestionPreview quizTitle={quizTitle} form={form} index={index} total={total} />
+              )}
+              {activeTab === 'extra' && <DiscordHintPreview form={form} />}
+              {activeTab === 'answering' && <DiscordAnswerPreview form={form} />}
+              <p className="preview-caption">{TAB_TO_PREVIEW_CAPTION[activeTab]}</p>
+            </>
+          )}
         </div>
       </div>
     </div>
