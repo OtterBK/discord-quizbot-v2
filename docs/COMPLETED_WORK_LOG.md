@@ -2015,3 +2015,46 @@ pass, 신규 PUT/DELETE 라우트 테스트 8건 포함, `db_manager.js` export 
 때문) — 헤드리스 서버라 브라우저 인증이 안 되므로 로컬 PC에서 `rclone authorize "drive"`로 받은 토큰을
 붙여넣는 방식. 상세 설정 절차는 `auto_script/정석 사용법.txt`에 추가. 코드 변경 없음(운영 스크립트만),
 `npm test`/`npm run lint` 대상 아님.
+
+## 2026-09-02 — 웹 UI 모바일 헤더 아이콘/편집기 breadcrumb 겹침 수정
+
+사용자가 모바일 브라우저로 퀴즈 만들기 웹 편집기를 직접 써보다 "인터페이스가 겹쳐서 편집이 어렵다"고
+피드백. 조사 결과 `.topbar`/`.topbar-actions`(로고+지원센터/☰더보기/테마토글 pill 3개)에 `flex-wrap`이
+없어서, 아이콘 pill들이 전부 `white-space:nowrap` 고정폭이라 좁은 화면에서 줄바꿈도 못 하고 줄어들지도
+못한 채 로고 영역과 한 줄에서 서로 밀고 들어가며 겹쳐 보였음 — 이 헤더는 `App.jsx`(퀴즈 조회)/
+`QuizEditorApp.jsx`(퀴즈 편집기)/`PresetManagerApp.jsx`(프리셋 관리) 3개 진입점이 전부 공유하는
+컴포넌트라 세 화면 다 동일 증상. `.topbar`/`.topbar-actions`에 `flex-wrap: wrap` 추가로 해결(좁은
+화면에서 아이콘 묶음이 로고 아래로 자연스럽게 줄바꿈). 같은 원인으로 편집기 breadcrumb(`QuizDetailPage.jsx`/
+`QuestionEditPage.jsx`의 "내 퀴즈 / 퀴즈제목 / 문제 수정")도 제목이 길면 뒤로가기 버튼과 겹칠 수 있어
+`.breadcrumb-trail`(`flex-wrap:wrap; min-width:0;`) 클래스로 분리, 인라인 style을 대체.
+
+검증: `web-frontend`에서 `npm run build` 통과. 실제 모바일 기기 확인은 사용자가 직접 진행(피드백
+출발점이 실사용 테스트였음). **CSS만 변경, 코드/테스트 대상 아님.**
+
+## 2026-09-28 — 웹 퀴즈 편집기 모바일 미리보기 접기 + 밴 목록 ID 직접 등록
+
+**(1) 모바일 미리보기 접기**: 위 2026-09-02 수정을 사용자가 실사용 테스트하며 이어서 발견한 후속
+피드백 — 문제 편집 화면(`QuestionEditPage.jsx`) 우측 "디스코드 미리보기" 패널이 `.panel.active`의
+880px 이하 1열 전환 시 `.detail-col{order:-1}`로 항상 맨 위에 오는데, 이 패널이 임베드+버튼+유튜브
+플레이어까지 포함해 폼보다 훨씬 길어서 모바일에서 실제 입력 폼에 닿기 전에 한참 스크롤해야 했음.
+`useIsNarrowViewport()`(matchMedia 기반, `.panel.active`와 동일한 880px 기준) 훅을 추가해 좁은
+화면에서만 미리보기를 기본 접힘 상태로 바꾸고(`.preview-toggle` 버튼으로 탭해서 펼침/접힘 전환),
+`isNarrow===false`(데스크톱)면 `previewOpen` 값과 무관하게 항상 펼쳐진 채로 유지 — 기존 데스크톱
+경험은 그대로 보존. `QuizDetailPage.jsx`(퀴즈 상세)의 미리보기는 이 문제 대상이 아니라 안 건드림
+(그쪽 미리보기는 컴팩트한 `QuizDetailCard` 요약이라 사용자가 지목한 "디스코드 미리보기"와 다름).
+
+**(2) 밴 목록 ID 직접 등록**: `/quizmgr` 밴 목록 관리가 기존엔 select 메뉴에 이미 걸려있는 ID의 해제만
+가능했고, 아직 안 걸린 새 ID를 밴하려면 퀴즈 삭제+영구밴/로비 강제삭제+영구밴처럼 "문제가 생긴 시점에
+곁다리로 거는" 경로뿐이었음(사용자 요청 - 임의 ID를 바로 등록하고 싶음). `custom_quiz_components.ts`에
+`admin_ban_register_btn_comp`("➕ ID 직접 등록" 버튼)/`modal_admin_ban_register`(ID 1개 입력 모달,
+`modal_new_season_name`과 동일 패턴) 신설, `admin-ban-list-ui.ts`에 버튼→모달→`ban_manager.banId(id,
+actor)` 직접 호출 핸들러 추가 — 이미 밴된 ID를 다시 등록하면 `banId`의 기존 반환값(false)으로 구분해
+"이미 밴 목록에 있습니다" 안내. 밴 해제/시즌 종료와 달리 되돌리기 쉬운 추가 동작이라 확인 절차 없이
+모달 제출 즉시 반영(오클릭 방지 확인 화면 생략은 의도적 설계).
+
+검증: `npx tsc --noEmit`(0 error)/`npm run lint`(0 error, 기존 56개 warning 유지)/`npm test`(421 pass,
+`components.test.js` export 개수 80→82 갱신 포함)/`npm run build`(백엔드, `node -e` require 스모크
+테스트로 `AdminBanListUI` 컴포넌트 행 3개(select+등록 버튼+뒤로가기) 확인)/`npm run build`(프론트엔드)
+전부 통과. `docs/TEST_CHECKLIST.md` V섹션(모바일 미리보기 접기)/L섹션(ID 직접 등록) 신규 항목 추가.
+**실사용 미검증** — 실제 모바일 브라우저 폭에서 접힘/펼침 토글, `/quizmgr`에서 등록한 ID가 실제로
+차단되는지는 다음 세션에서 확인 필요.

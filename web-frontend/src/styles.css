@@ -412,6 +412,14 @@ select.sort-select {
 }
 .detail-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
 .detail-card:empty { display: none; }
+
+/* 문제 편집 화면(QuestionEditPage) 디스코드 미리보기 패널의 모바일 접기/펼치기 토글(2026-09-28
+   피드백) - 좁은 화면에서만 렌더링됨(.field-label을 그대로 감싸 데스크톱과 톤 유지). */
+.preview-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: none; background: transparent; padding: 0; text-align: left;
+}
+.preview-toggle .chev { font-size: 11px; font-weight: 700; color: var(--ink-faint); white-space: nowrap; flex-shrink: 0; }
 .detail-empty {
   padding: 32px 18px; text-align: center; color: var(--ink-faint); font-size: 13px;
   display: flex; flex-direction: column; gap: 8px; align-items: center; line-height: 1.6;

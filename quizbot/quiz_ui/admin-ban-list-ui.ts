@@ -9,6 +9,8 @@ const ban_manager = require('../managers/ban_manager');
 const {
   only_back_comp,
   admin_ban_unban_confirm_comp,
+  admin_ban_register_btn_comp,
+  modal_admin_ban_register,
 } = require("./components");
 
 const {
@@ -47,7 +49,7 @@ class AdminBanListUI extends QuizbotUI
     this.embed = {
       color: 0x8B0000,
       title: `🚫 밴 목록 관리`,
-      description: `${count_notice}\n해제할 ID를 선택하세요.`,
+      description: `${count_notice}\n해제할 ID를 선택하거나, "➕ ID 직접 등록"으로 새 ID를 바로 밴하세요.`,
     };
   }
 
@@ -83,7 +85,7 @@ class AdminBanListUI extends QuizbotUI
     const ban_list_select_row = new ActionRowBuilder()
       .addComponents(ban_list_select_menu);
 
-    this.components = [ ban_list_select_row, only_back_comp ];
+    this.components = [ ban_list_select_row, admin_ban_register_btn_comp, only_back_comp ];
   }
 
   refreshList()
@@ -108,6 +110,16 @@ class AdminBanListUI extends QuizbotUI
     if(interaction.isButton() && interaction.customId === 'admin_ban_unban_cancel')
     {
       return this.cancelUnban(interaction);
+    }
+
+    if(interaction.isButton() && interaction.customId === 'admin_ban_register_request')
+    {
+      return this.requestRegisterBan(interaction);
+    }
+
+    if(interaction.isModalSubmit() && interaction.customId === 'modal_admin_ban_register')
+    {
+      return this.confirmRegisterBan(interaction);
     }
   }
 
@@ -152,6 +164,35 @@ class AdminBanListUI extends QuizbotUI
     this.pending_unban_id = undefined;
     interaction.explicit_replied = true;
     interaction.reply({ content: `\`\`\`🚫 해제를 취소했습니다.\`\`\``, flags: MessageFlags.Ephemeral });
+  }
+
+  requestRegisterBan(interaction: any) //목록 선택 없이 새 ID를 바로 등록 - 모달로 ID를 입력받음
+  {
+    interaction.explicit_replied = true;
+    interaction.showModal(modal_admin_ban_register);
+  }
+
+  confirmRegisterBan(interaction: any)
+  {
+    const id = interaction.fields.getTextInputValue('txt_input_ban_id').trim();
+
+    interaction.explicit_replied = true;
+
+    if(id === '')
+    {
+      interaction.reply({ content: `\`\`\`🚫 ID를 입력해주세요.\`\`\``, flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    const newly_banned = ban_manager.banId(id, `${interaction.user.tag}(${interaction.user.id})`);
+    this.refreshList();
+
+    interaction.reply({
+      content: newly_banned
+        ? `\`\`\`🚫 [ ${id} ] 를(을) 밴 목록에 등록했습니다.\`\`\``
+        : `\`\`\`🚫 [ ${id} ] 는(은) 이미 밴 목록에 있습니다.\`\`\``,
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
 
