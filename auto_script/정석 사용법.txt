@@ -61,6 +61,9 @@ auto_script/ 밑의 모든 .sh 스크립트는 `bash script.sh`로 실행하는 
 - 실시간 로그:     journalctl -u quizbot3 -f
 - 수동 재시작:     bash auto_script/server_script/quizbot_stop.sh && bash auto_script/server_script/quizbot_start.sh
   (또는 systemctl start/stop/restart quizbot3를 직접 써도 동일 - 아래 systemd 동작 방식 참고)
+- 노래 다운로드 진단: bash auto_script/server_script/check_yt-dlp.sh [유튜브 URL]
+  (2026-11-01 추가 - IPv4/IPv6 x 쿠키 유무별로 봇 차단/쿠키 유효성/IPv6 라우팅/OOM 기록을 한 번에 확인,
+   실제 파일은 안 받고 운영 쿠키는 복사본으로 시험함)
 
 [systemd 서비스(quizbot3) 동작 방식 - 2026-08-15 정리]
 

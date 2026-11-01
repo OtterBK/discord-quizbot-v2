@@ -91,7 +91,7 @@ exports.SYSTEM_CONFIG = {
   // custom_audio_cache_path: `${PROJECT_ROOT}/resources/cache`,
   CUSTOM_AUDIO_CACHE_PATH: `${PROJECT_ROOT}/resources/cache`,
 
-  YTDL_COOKIE_PATH: `${PROJECT_ROOT}/resources/ytdl_cookie.json`,
+  YTDL_COOKIE_PATH: `${PROJECT_ROOT}/resources/yt-cookies.txt`, //yt-dlp 쿠키(Netscape 형식), IP 시나리오가 봇 차단으로 다 실패했을 때만 사용. 파일 없으면 미사용
   YTDL_IPV6_USE: true, //IPv6도 함께 사용할지 여부
 
   CERTIFY_LIKE_CRITERIA: 10, //인증된 퀴즈 전환을 위한 추천 수 기준

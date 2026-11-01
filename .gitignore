@@ -6,6 +6,7 @@ bgm_bak
 cache
 resources/notices/
 resources/maintenance_notice.txt
+resources/yt-cookies.txt
 log
 dist
 *.tsbuildinfo

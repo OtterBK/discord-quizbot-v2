@@ -150,3 +150,89 @@ test('executeDownloadProcess: stderr도 여러 청크로 나눠 받아도 쓰레
   assert.equal(result.error_message, 'ERROR: [youtube] abc123: Private video\n');
   assert.doesNotMatch(result.error_message, /\[object/);
 });
+
+//executeDownloadAudioCache 쿠키 재시도 시나리오용 - 옵션에 cookies가 있으면 성공, 없으면 봇 차단 stderr로 실패하는 가짜 yt-dlp
+function mockYtdlpBotDetectedUnlessCookies(t)
+{
+  const calls = [];
+  t.mock.method(youtubedl, 'exec', (url, option) =>
+  {
+    calls.push(option);
+    const { subprocess, resolve_subprocess, reject_subprocess } = createFakeSubprocess();
+    setImmediate(() =>
+    {
+      if(option.cookies != undefined)
+      {
+        subprocess.stdout.emit('data', Buffer.from('[download] Destination: zz_cookie_test.webm\n'));
+        resolve_subprocess();
+        return;
+      }
+      subprocess.stderr.emit('data', Buffer.from('ERROR: [youtube] zz_cookie_test: Sign in to confirm you’re not a bot.\n'));
+      reject_subprocess(new Error('yt-dlp exited with code 1'));
+    });
+    return subprocess;
+  });
+  return calls;
+}
+
+function setupCookieTest(t, { cookie_file_exists })
+{
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { SYSTEM_CONFIG } = require('../../config/system_setting.js');
+
+  const tmp_dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ytdl-cookie-test-'));
+  const cookie_path = path.join(tmp_dir, 'yt-cookies.txt');
+  if(cookie_file_exists)
+  {
+    fs.writeFileSync(cookie_path, '# Netscape HTTP Cookie File\n');
+  }
+
+  const original_cookie_path = SYSTEM_CONFIG.YTDL_COOKIE_PATH;
+  SYSTEM_CONFIG.YTDL_COOKIE_PATH = cookie_path;
+
+  t.mock.method(fs, 'appendFile', () => {}); //logFailedUrl이 실제 failed_url.txt에 테스트 URL을 남기지 않게
+
+  t.after(() =>
+  {
+    SYSTEM_CONFIG.YTDL_COOKIE_PATH = original_cookie_path;
+    fs.rmSync(tmp_dir, { recursive: true, force: true });
+    //reWriteCacheInfo가 캐시 경로에 남긴 info 파일 정리
+    const info_path = path.join(audio_cache_manager.getHashedPath('zz_cookie_test'), 'zz_cookie_test.info.json');
+    fs.rmSync(info_path, { force: true });
+  });
+
+  return cookie_path;
+}
+
+test('executeDownloadAudioCache: IP 시나리오가 전부 봇 차단이면 봇 차단된 IP 그대로 쿠키+node 런타임으로 1회 재시도한다', async (t) =>
+{
+  const cookie_path = setupCookieTest(t, { cookie_file_exists: true });
+  const calls = mockYtdlpBotDetectedUnlessCookies(t);
+
+  const result = await audio_cache_manager.executeDownloadAudioCache(
+    'https://youtu.be/zz_cookie_test', 'zz_cookie_test', { ipv4: '10.0.0.4', ipv6: '2600::1' });
+
+  assert.equal(result.success, true);
+  assert.equal(calls.length, 3); //ipv6 -> ipv4 -> 쿠키
+  assert.equal(calls[0].cookies, undefined);
+  assert.equal(calls[1].cookies, undefined);
+  assert.equal(calls[2].cookies, cookie_path);
+  assert.equal(calls[2].jsRuntimes, 'node');
+  assert.equal(calls[2].sourceAddress, '10.0.0.4'); //마지막으로 봇 차단된 시나리오의 IP
+});
+
+test('executeDownloadAudioCache: 쿠키 파일이 없으면 쿠키 재시도 없이 봇 차단 실패를 반환한다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: false });
+  const calls = mockYtdlpBotDetectedUnlessCookies(t);
+
+  const result = await audio_cache_manager.executeDownloadAudioCache(
+    'https://youtu.be/zz_cookie_test', 'zz_cookie_test', { ipv4: '10.0.0.4', ipv6: undefined });
+
+  assert.equal(result.success, false);
+  assert.equal(result.need_retry, true);
+  assert.match(result.causation_message, /봇/);
+  assert.equal(calls.length, 1);
+});

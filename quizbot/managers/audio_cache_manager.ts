@@ -182,6 +182,18 @@ const downloadAudioCache = async (audio_url: string, video_id: string, ip_info: 
   }
 };
 
+//yt-dlp용 쿠키 파일(Netscape 형식) 경로. 설정이 비었거나 파일이 없으면 undefined(쿠키 재시도 안 함)
+const getYtdlCookiePath = (): string | undefined =>
+{
+  const cookie_path = SYSTEM_CONFIG.YTDL_COOKIE_PATH;
+  if(cookie_path == undefined || cookie_path.length == 0 || fs.existsSync(cookie_path) == false)
+  {
+    return undefined;
+  }
+
+  return cookie_path;
+};
+
 const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip_info: any = {ipv4: undefined, ipv6: undefined}): Promise<any> =>
 {
   const cache_path = getHashedPath(video_id);
@@ -233,6 +245,24 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
 
   let result: any = undefined;
   let cache_result: any = {};
+  let bot_detected_option: any = undefined; //봇 차단당한 시나리오 - 쿠키 재시도 때 같은 IP로 씀
+
+  const onDownloadSuccess = async (): Promise<any> =>
+  {
+    cache_result = {
+      success: true,
+      causation_message: '',
+      need_retry: false
+    };
+
+    logger.info(`Downloaded cache file ${video_id}`);
+
+    reWriteCacheInfo(video_id, cache_result);
+
+    await convertToWebm(video_id);
+
+    return cache_result;
+  };
 
   while(download_scenario.length > 0)
   {
@@ -241,28 +271,43 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
 
     if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR || result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED) //에러발생했으면 다시 ㄱㄱ임 (봇 차단은 IP 단위라 다른 IP로는 될 수 있음)
     {
+      if(result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED)
+      {
+        bot_detected_option = yt_dlp_option;
+      }
+
       logger.warn(`Failed yt-dlp download... Using ip:${yt_dlp_option.sourceAddress}, url: ${audio_url}, err_message: ${result.error_message}, `);
       continue;
     }
 
     if(result.result_type == DOWNLOAD_RESULT_TYPE.SUCCESS) //성공이면 바로 반환 ^^
     {
-      cache_result = {
-        success: true,
-        causation_message: '',
-        need_retry: false
-      };
-
-      logger.info(`Downloaded cache file ${video_id}`);
-
-      reWriteCacheInfo(video_id, cache_result);
-
-      await convertToWebm(video_id);
-
-      return cache_result;
+      return await onDownloadSuccess();
     }
 
     break; //에러도 아니고 성공도 아니면 예상된 문제들임
+  }
+
+  //IP 시나리오가 봇 차단(Sign in to confirm)으로 다 실패했으면 쿠키 붙여서 1회 더 시도 (2026-11-01)
+  //계정 밴 위험 때문에 평소엔 안 쓰고 이 경우에만 씀. 로그인 상태 추출은 JS 런타임 필수라 node 지정
+  const cookie_path = getYtdlCookiePath();
+  if(bot_detected_option != undefined
+    && cookie_path != undefined
+    && (result.result_type == DOWNLOAD_RESULT_TYPE.ERROR || result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED))
+  {
+    const cookie_option: any = cloneDeep(bot_detected_option);
+    cookie_option["cookies"] = cookie_path;
+    cookie_option["jsRuntimes"] = 'node';
+
+    logger.info(`Retrying yt-dlp download with cookies... Using ip:${cookie_option.sourceAddress}, url: ${audio_url}`);
+    result = await executeDownloadProcess(audio_url, cookie_option);
+
+    if(result.result_type == DOWNLOAD_RESULT_TYPE.SUCCESS)
+    {
+      return await onDownloadSuccess();
+    }
+
+    logger.warn(`Failed yt-dlp download with cookies... url: ${audio_url}, err_message: ${result.error_message}, `);
   }
 
   //다 해봤는데 실패한 경우임
@@ -722,4 +767,5 @@ module.exports = {
   getDownloadResultType,
   getExpectedErrorType,
   executeDownloadProcess,
+  executeDownloadAudioCache, //쿠키 재시도 시나리오 테스트용
 };
