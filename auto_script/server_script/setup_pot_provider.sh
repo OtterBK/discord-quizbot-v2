@@ -18,7 +18,12 @@ fi
 # 플러그인(.py)/서버(.js) 버전이 서로 짝이 맞아야 해서(release tag 기준) 고정 버전으로 받는다 -
 # yt-dlp 최신 nightly 채널처럼 항상 최신을 자동 추종하지 않음(플러그인 쪽만 새 버전이 나와도 서버
 # 쪽과 프로토콜이 안 맞으면 깨질 수 있어서, 버전을 올릴 땐 이 값을 손으로 갱신할 것).
-POT_VERSION="1.3.1"
+# 2026-11-01 1.3.1 -> 2.0.2: 1.x는 HTTP 서버가 0.0.0.0에 바인드 + RCE 취약점(GHSA-qpv9-8xfj-xx9m)이 있어
+# 2.0.0에서 수정됨(이후 localhost에만 바인드, Node 22 이상 필요). 이미 설치된 서버는 아래 "이미 설치돼
+# 있으면 건너뜀" 때문에 이 값만 바꿔선 안 올라감 - 서비스 중지 후 기존 플러그인/서버 디렉터리를 치우고
+# 이 스크립트를 다시 실행하거나 같은 절차를 수동으로 할 것(백업은 plugins 폴더 밖에 둘 것 - 안에 두면
+# yt-dlp가 구버전 플러그인까지 같이 읽음).
+POT_VERSION="2.0.2"
 POT_USER="ubuntu"
 POT_HOME="/home/$POT_USER"
 PLUGIN_DIR="$POT_HOME/.config/yt-dlp/plugins/bgutil-ytdlp-pot-provider"
