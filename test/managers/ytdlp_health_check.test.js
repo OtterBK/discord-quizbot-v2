@@ -94,6 +94,17 @@ test('buildReportMessage: 쿠키 시나리오가 전부 실패하면 재발급 �
   assert.match(all_fail, /🚨 모든 시나리오 실패/);
 });
 
+test('buildReportMessage: 기타 오류는 원인 파악용으로 yt-dlp 에러 문구를 같이 보여준다', () =>
+{
+  const message = report({
+    scenario_results: [
+      { label: 'IPv6+쿠키', use_cookie: true, result: { ...fail(1 /* ERROR */), detail: 'yt-dlp: error: no such option: --no-no-warnings' } },
+    ],
+  });
+
+  assert.match(message, /IPv6\+쿠키: ❌ 기타 오류 - yt-dlp: error: no such option: --no-no-warnings/);
+});
+
 test('buildReportMessage: 쿠키 파일이 없으면 미설정으로 표시하고 쿠키 경고는 붙이지 않는다', () =>
 {
   const message = report({

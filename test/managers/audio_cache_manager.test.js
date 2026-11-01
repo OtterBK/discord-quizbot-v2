@@ -236,8 +236,25 @@ test('executeDownloadAudioCache: 쿠키 파일이 있으면 IPv6+쿠키 -> IPv4+
   assert.match(result.causation_message, /봇/);
   assert.deepEqual(calls.map(describeCall), ['cookie:2600::1', 'cookie:10.0.0.4', 'nocookie:2600::1', 'nocookie:10.0.0.4']);
   assert.equal(calls[0].jsRuntimes, 'node');
-  assert.equal(calls[0].noWarnings, false); //쿠키 무효 경고(WARNING)를 잡기 위해
   assert.equal(calls[2].jsRuntimes, undefined);
+});
+
+test('executeDownloadAudioCache: 시나리오 옵션이 yt-dlp가 모르는 인자(--no-no-warnings 등)로 변환되지 않는다 (2026-11-01 회귀 테스트)', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: true });
+  const calls = mockYtdlp(t, () => BOT_DETECTED_STDERR);
+
+  await download();
+
+  //실제 youtube-dl-exec의 옵션->인자 변환(dargs)을 그대로 거쳐서 확인
+  for(const call of calls)
+  {
+    const { cookie_copy_existed, ...option } = call;
+    const cli_args = youtubedl.args(option);
+    assert.equal(cli_args.some((arg) => arg.startsWith('--no-no-')), false, cli_args.join(' '));
+  }
+  assert.equal(youtubedl.args(calls[0]).includes('--no-warnings'), false); //쿠키 시나리오는 쿠키 무효 경고를 잡으려고 경고 출력
+  assert.equal(youtubedl.args(calls[2]).includes('--no-warnings'), true);
 });
 
 test('executeDownloadAudioCache: 쿠키 시나리오는 원본이 아닌 임시 복사본을 넘기고, 끝나면 복사본을 지운다', async (t) =>

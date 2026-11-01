@@ -237,7 +237,9 @@ const buildDownloadScenarios = (base_option: any, ip_info: any, cookie_path: str
       if(use_cookie)
       {
         option.jsRuntimes = 'node'; //로그인 상태 추출은 JS 런타임 필수
-        option.noWarnings = false; //쿠키 무효 경고(WARNING)를 잡아야 해서 경고 출력
+        //쿠키 무효 경고(WARNING)를 잡아야 해서 경고 출력. false로 두면 dargs가 존재하지 않는 옵션
+        //--no-no-warnings로 바꿔서 yt-dlp가 즉시 에러 종료함(2026-11-01 운영에서 발생) - 반드시 delete
+        delete option.noWarnings;
       }
 
       scenarios.push({

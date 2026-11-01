@@ -83,7 +83,7 @@ const getYtdlpVersion = async (): Promise<string> =>
 };
 
 //포맷 선택까지만 시험(--simulate). 성공하면 고른 format_id를 돌려준다
-const runSimulateScenario = async (url: string, scenario: any, cookie_path: string | undefined): Promise<{ success: boolean, result_type: number, format_id: string }> =>
+const runSimulateScenario = async (url: string, scenario: any, cookie_path: string | undefined): Promise<{ success: boolean, result_type: number, format_id: string, detail?: string }> =>
 {
   const execute = async (option: any) =>
   {
@@ -100,7 +100,9 @@ const runSimulateScenario = async (url: string, scenario: any, cookie_path: stri
     }
     catch(err: any)
     {
-      return { success: false, result_type: audio_cache_manager.getExpectedErrorType(stderr), format_id: '' };
+      //"기타 오류"만으로는 원인을 알 수 없어서 첫 에러 줄을 같이 보여줌 (예: yt-dlp: error: no such option ...)
+      const detail = stderr.split('\n').find((line) => /error/i.test(line))?.trim() ?? err.message?.split('\n')[0] ?? '';
+      return { success: false, result_type: audio_cache_manager.getExpectedErrorType(stderr), format_id: '', detail };
     }
   };
 
@@ -158,9 +160,10 @@ const buildReportMessage = ({ version, cookie_path, cookie_problems, cookie_expi
   //시나리오별 결과
   for(const { label, result } of scenario_results)
   {
+    const fail_detail = (result.result_type == DOWNLOAD_RESULT_TYPE.ERROR && result.detail) ? ` - ${String(result.detail).slice(0, 120)}` : '';
     lines.push(result.success
       ? `${label}: ✅ (format ${result.format_id})`
-      : `${label}: ❌ ${RESULT_LABELS[result.result_type] ?? '알 수 없음'}`);
+      : `${label}: ❌ ${RESULT_LABELS[result.result_type] ?? '알 수 없음'}${fail_detail}`);
   }
 
   const cookie_results = scenario_results.filter(({ use_cookie }: any) => use_cookie);
