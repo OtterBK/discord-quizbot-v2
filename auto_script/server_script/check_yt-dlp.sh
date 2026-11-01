@@ -7,7 +7,9 @@
 # 표로 보여준다. 실제 파일은 받지 않음(--simulate) - 포맷 선택까지만 확인.
 #
 # 사용법: bash check_yt-dlp.sh [유튜브 URL]
-#   - URL 생략 시 오래 유지되는 공개 영상(Me at the zoo)으로 시험
+#   - URL 생략 시 system_setting.js의 YTDL_HEALTH_CHECK_URL(쿠키 없으면 접근 안 되는 영상 - 봇 시작 시
+#     점검과 같은 영상)로 시험. 설정이 없으면 같은 기본 영상 사용
+#   - 시나리오 순서는 봇과 동일: IPv6+쿠키 -> IPv4+쿠키 -> IPv6 -> IPv4
 #   - 쿠키는 운영 쿠키 파일의 "복사본"으로 시험함 - yt-dlp가 실행 후 쿠키 파일을 다시 써서, 진단 때문에
 #     운영 쿠키가 바뀌거나 소유권이 root로 넘어가는 걸 막기 위함
 #   - 봇은 ubuntu 계정으로 돌고 PO Token 플러그인도 /home/ubuntu/.config 밑에 있어서, root로 실행하면
@@ -24,7 +26,8 @@ if [ -z "$QUIZBOT_PATH" ]; then
     exit 1
 fi
 
-TEST_URL="${1:-https://www.youtube.com/watch?v=jNQXAC9IVRw}"
+DEFAULT_TEST_URL=$(cd "$QUIZBOT_PATH" && node -e 'process.stdout.write(String(require("./config/system_setting.js").SYSTEM_CONFIG.YTDL_HEALTH_CHECK_URL ?? ""))' 2>/dev/null)
+TEST_URL="${1:-${DEFAULT_TEST_URL:-https://youtu.be/gGNHBKW_pgo}}"
 YT_DLP_BIN="$QUIZBOT_PATH/node_modules/youtube-dl-exec/bin/yt-dlp"
 FORMAT='bestaudio[ext=webm]/bestaudio' # audio_cache_manager.ts와 동일
 TIMEOUT_SEC=60
@@ -176,7 +179,7 @@ run_scenario()
         "$@" > "$out_file.stdout" 2> "$out_file.stderr"
     local exit_code=$?
 
-    printf "%-22s %s\n" "$label" "$(classify_output "$out_file" "$exit_code")"
+    printf "%-16s %s\n" "$label" "$(classify_output "$out_file" "$exit_code")" # 라벨은 영문만(printf 폭이 바이트 기준이라 한글이면 정렬이 깨짐)
 }
 
 # 파일 검사(3번)에서 문제가 나와도 실제 결과를 보기 위해 파일만 있으면 시험한다
@@ -186,6 +189,21 @@ if [ -n "$COOKIE_PATH" ] && [ -f "$COOKIE_PATH" ]; then
     COOKIE_ARGS=(--cookies "$TMP_DIR/cookies.txt" --js-runtimes node)
 fi
 
+# 봇과 같은 순서: IPv6+cookie -> IPv4+cookie -> IPv6 -> IPv4
+if [ "${#COOKIE_ARGS[@]}" -gt 0 ] && [ "$HAS_NODE" -eq 1 ]; then
+    if [ -n "$IPV6" ]; then
+        run_scenario "IPv6 + cookie" --force-ipv6 --source-address "$IPV6" "${COOKIE_ARGS[@]}"
+    fi
+    if [ -n "$IPV4" ]; then
+        run_scenario "IPv4 + cookie" --force-ipv4 --source-address "$IPV4" "${COOKIE_ARGS[@]}"
+    fi
+    if [ -z "$IPV4" ] && [ -z "$IPV6" ]; then
+        run_scenario "default + cookie" "${COOKIE_ARGS[@]}"
+    fi
+else
+    echo "ℹ️  쿠키 시나리오 건너뜀 (쿠키 파일 또는 node 없음)"
+fi
+
 if [ -n "$IPV6" ]; then
     run_scenario "IPv6" --force-ipv6 --source-address "$IPV6"
 fi
@@ -193,22 +211,12 @@ if [ -n "$IPV4" ]; then
     run_scenario "IPv4" --force-ipv4 --source-address "$IPV4"
 fi
 if [ -z "$IPV4" ] && [ -z "$IPV6" ]; then
-    run_scenario "기본 IP"
-fi
-
-if [ "${#COOKIE_ARGS[@]}" -gt 0 ] && [ "$HAS_NODE" -eq 1 ]; then
-    if [ -n "$IPV6" ]; then
-        run_scenario "IPv6 + 쿠키" --force-ipv6 --source-address "$IPV6" "${COOKIE_ARGS[@]}"
-    fi
-    if [ -n "$IPV4" ]; then
-        run_scenario "IPv4 + 쿠키" --force-ipv4 --source-address "$IPV4" "${COOKIE_ARGS[@]}"
-    fi
-else
-    echo "ℹ️  쿠키 시나리오 건너뜀 (쿠키 파일 또는 node 없음)"
+    run_scenario "default"
 fi
 
 echo ""
-echo "해석:"
-echo "  - IP 시나리오 중 하나라도 ✅ → 봇은 쿠키 없이 정상 다운로드 (IPv6 → IPv4 순서로 시도)"
-echo "  - IP는 전부 봇 차단인데 '+ 쿠키'가 ✅ → 봇은 쿠키 재시도로 다운로드 (계정 사용 중)"
+echo "해석 (봇은 위에서부터 순서대로 시도, 처음 ✅에서 다운로드):"
+echo "  - '+ cookie' 중 하나라도 ✅ → 정상 (쿠키로 다운로드)"
+echo "  - '+ cookie'는 전부 ❌인데 IP만 ✅ → 쿠키 무효/계정 문제 의심, 재발급 권장 (당장은 쿠키 없이 받는 중)"
 echo "  - 전부 ❌ → IP와 쿠키 모두 막힘: 쿠키 재발급 / IP 교체 / 프록시 검토"
+echo "  - 기본 테스트 영상은 쿠키 없이는 원래 접근이 안 되는 영상이라, 쿠키 없는 IP 시나리오의 ❌는 정상일 수 있음"

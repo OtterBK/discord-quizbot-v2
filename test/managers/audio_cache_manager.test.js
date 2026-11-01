@@ -108,6 +108,16 @@ test('getExpectedErrorType: "Sign in to confirm you\'re not a bot"은 BOT_DETECT
   assert.equal(audio_cache_manager.getExpectedErrorType(stderr), 9 /* BOT_DETECTED */);
 });
 
+test('getExpectedErrorType: 연령 제한/네트워크 불가/쿠키 무효를 각각 분류한다', () =>
+{
+  assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: [youtube] abc: Sign in to confirm your age. This video may be inappropriate for some users.`), 13 /* AGE_RESTRICTED */);
+  assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: [youtube] abc: Unable to download API page: [Errno 101] Network is unreachable`), 12 /* NETWORK_ERROR */);
+  assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: [youtube] abc: [Errno 99] Cannot assign requested address`), 12 /* NETWORK_ERROR */);
+  //쿠키 무효는 WARNING으로 찍히고 이후 비로그인으로 진행하다 봇 차단으로 실패 -> 진짜 원인은 쿠키
+  assert.equal(audio_cache_manager.getExpectedErrorType(
+    `WARNING: [youtube] The provided YouTube account cookies are no longer valid.\nERROR: [youtube] abc: Sign in to confirm you’re not a bot.`), 11 /* COOKIE_INVALID */);
+});
+
 test('getExpectedErrorType: ERROR: 줄이 있어도 알려진 패턴이 아니면 ERROR다', () =>
 {
   assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: something totally unexpected`), 1 /* ERROR */);
@@ -151,29 +161,35 @@ test('executeDownloadProcess: stderr도 여러 청크로 나눠 받아도 쓰레
   assert.doesNotMatch(result.error_message, /\[object/);
 });
 
-//executeDownloadAudioCache 쿠키 재시도 시나리오용 - 옵션에 cookies가 있으면 성공, 없으면 봇 차단 stderr로 실패하는 가짜 yt-dlp
-function mockYtdlpBotDetectedUnlessCookies(t)
+//executeDownloadAudioCache 시나리오 테스트용 가짜 yt-dlp - decide(option)이 'success'면 성공, 아니면 그 문자열을 stderr로 내고 실패
+function mockYtdlp(t, decide)
 {
   const calls = [];
   t.mock.method(youtubedl, 'exec', (url, option) =>
   {
-    calls.push(option);
+    calls.push({ ...option, cookie_copy_existed: option.cookies != undefined && require('node:fs').existsSync(option.cookies) });
     const { subprocess, resolve_subprocess, reject_subprocess } = createFakeSubprocess();
     setImmediate(() =>
     {
-      if(option.cookies != undefined)
+      const decision = decide(option);
+      if(decision === 'success')
       {
         subprocess.stdout.emit('data', Buffer.from('[download] Destination: zz_cookie_test.webm\n'));
         resolve_subprocess();
         return;
       }
-      subprocess.stderr.emit('data', Buffer.from('ERROR: [youtube] zz_cookie_test: Sign in to confirm you’re not a bot.\n'));
+      subprocess.stderr.emit('data', Buffer.from(decision));
       reject_subprocess(new Error('yt-dlp exited with code 1'));
     });
     return subprocess;
   });
   return calls;
 }
+
+const BOT_DETECTED_STDERR = 'ERROR: [youtube] zz_cookie_test: Sign in to confirm you’re not a bot.\n';
+const IP_INFO = { ipv4: '10.0.0.4', ipv6: '2600::1' };
+const download = () => audio_cache_manager.executeDownloadAudioCache('https://youtu.be/zz_cookie_test', 'zz_cookie_test', IP_INFO);
+const describeCall = (call) => `${call.cookies != undefined ? 'cookie' : 'nocookie'}:${call.sourceAddress}`;
 
 function setupCookieTest(t, { cookie_file_exists })
 {
@@ -191,12 +207,14 @@ function setupCookieTest(t, { cookie_file_exists })
 
   const original_cookie_path = SYSTEM_CONFIG.YTDL_COOKIE_PATH;
   SYSTEM_CONFIG.YTDL_COOKIE_PATH = cookie_path;
+  audio_cache_manager.resetScenarioHealth(); //시나리오 차단 상태는 모듈 전역이라 테스트마다 초기화
 
   t.mock.method(fs, 'appendFile', () => {}); //logFailedUrl이 실제 failed_url.txt에 테스트 URL을 남기지 않게
 
   t.after(() =>
   {
     SYSTEM_CONFIG.YTDL_COOKIE_PATH = original_cookie_path;
+    audio_cache_manager.resetScenarioHealth();
     fs.rmSync(tmp_dir, { recursive: true, force: true });
     //reWriteCacheInfo가 캐시 경로에 남긴 info 파일 정리
     const info_path = path.join(audio_cache_manager.getHashedPath('zz_cookie_test'), 'zz_cookie_test.info.json');
@@ -206,33 +224,118 @@ function setupCookieTest(t, { cookie_file_exists })
   return cookie_path;
 }
 
-test('executeDownloadAudioCache: IP 시나리오가 전부 봇 차단이면 봇 차단된 IP 그대로 쿠키+node 런타임으로 1회 재시도한다', async (t) =>
+test('executeDownloadAudioCache: 쿠키 파일이 있으면 IPv6+쿠키 -> IPv4+쿠키 -> IPv6 -> IPv4 순서로 시도한다', async (t) =>
 {
-  const cookie_path = setupCookieTest(t, { cookie_file_exists: true });
-  const calls = mockYtdlpBotDetectedUnlessCookies(t);
+  setupCookieTest(t, { cookie_file_exists: true });
+  const calls = mockYtdlp(t, () => BOT_DETECTED_STDERR);
 
-  const result = await audio_cache_manager.executeDownloadAudioCache(
-    'https://youtu.be/zz_cookie_test', 'zz_cookie_test', { ipv4: '10.0.0.4', ipv6: '2600::1' });
-
-  assert.equal(result.success, true);
-  assert.equal(calls.length, 3); //ipv6 -> ipv4 -> 쿠키
-  assert.equal(calls[0].cookies, undefined);
-  assert.equal(calls[1].cookies, undefined);
-  assert.equal(calls[2].cookies, cookie_path);
-  assert.equal(calls[2].jsRuntimes, 'node');
-  assert.equal(calls[2].sourceAddress, '10.0.0.4'); //마지막으로 봇 차단된 시나리오의 IP
-});
-
-test('executeDownloadAudioCache: 쿠키 파일이 없으면 쿠키 재시도 없이 봇 차단 실패를 반환한다', async (t) =>
-{
-  setupCookieTest(t, { cookie_file_exists: false });
-  const calls = mockYtdlpBotDetectedUnlessCookies(t);
-
-  const result = await audio_cache_manager.executeDownloadAudioCache(
-    'https://youtu.be/zz_cookie_test', 'zz_cookie_test', { ipv4: '10.0.0.4', ipv6: undefined });
+  const result = await download();
 
   assert.equal(result.success, false);
   assert.equal(result.need_retry, true);
   assert.match(result.causation_message, /봇/);
+  assert.deepEqual(calls.map(describeCall), ['cookie:2600::1', 'cookie:10.0.0.4', 'nocookie:2600::1', 'nocookie:10.0.0.4']);
+  assert.equal(calls[0].jsRuntimes, 'node');
+  assert.equal(calls[0].noWarnings, false); //쿠키 무효 경고(WARNING)를 잡기 위해
+  assert.equal(calls[2].jsRuntimes, undefined);
+});
+
+test('executeDownloadAudioCache: 쿠키 시나리오는 원본이 아닌 임시 복사본을 넘기고, 끝나면 복사본을 지운다', async (t) =>
+{
+  const cookie_path = setupCookieTest(t, { cookie_file_exists: true });
+  const calls = mockYtdlp(t, () => 'success');
+
+  const result = await download();
+  await new Promise((resolve) => setTimeout(resolve, 50)); //복사본 삭제(비동기) 대기
+
+  assert.equal(result.success, true);
   assert.equal(calls.length, 1);
+  assert.notEqual(calls[0].cookies, cookie_path);
+  assert.equal(calls[0].cookie_copy_existed, true);
+  assert.equal(require('node:fs').existsSync(calls[0].cookies), false);
+});
+
+test('executeDownloadAudioCache: 쿠키 파일이 없으면 IPv6 -> IPv4만 시도한다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: false });
+  const calls = mockYtdlp(t, () => BOT_DETECTED_STDERR);
+
+  await download();
+
+  assert.deepEqual(calls.map(describeCall), ['nocookie:2600::1', 'nocookie:10.0.0.4']);
+});
+
+test('executeDownloadAudioCache: 시나리오가 3번 연속 실패하면 1시간 건너뛰고, 1시간 뒤 1번 시험해서 또 실패하면 바로 재차단한다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: true });
+  //IPv6+쿠키만 항상 봇 차단, IPv4+쿠키는 성공
+  const calls = mockYtdlp(t, (option) => (option.cookies != undefined && option.sourceAddress === '10.0.0.4') ? 'success' : BOT_DETECTED_STDERR);
+  let now = 1_000_000;
+  t.mock.method(Date, 'now', () => now);
+
+  for(let i = 0; i < 3; ++i)
+  {
+    calls.length = 0;
+    await download();
+    assert.deepEqual(calls.map(describeCall), ['cookie:2600::1', 'cookie:10.0.0.4']);
+  }
+
+  calls.length = 0;
+  await download(); //IPv6+쿠키 차단됨
+  assert.deepEqual(calls.map(describeCall), ['cookie:10.0.0.4']);
+
+  now += 3600 * 1000; //1시간 경과 -> 1번 시험
+  calls.length = 0;
+  await download();
+  assert.deepEqual(calls.map(describeCall), ['cookie:2600::1', 'cookie:10.0.0.4']);
+
+  calls.length = 0;
+  await download(); //시험 실패 -> 3번 안 기다리고 바로 재차단
+  assert.deepEqual(calls.map(describeCall), ['cookie:10.0.0.4']);
+});
+
+test('executeDownloadAudioCache: 성공하면 연속 실패 카운트가 초기화된다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: false });
+  let fail = true;
+  const calls = mockYtdlp(t, () => fail ? BOT_DETECTED_STDERR : 'success');
+
+  await download(); await download(); //IPv6 2회 실패
+  fail = false;
+  await download(); //IPv6 성공 -> 초기화
+  fail = true;
+  await download(); await download(); //다시 2회 실패 (누적이었으면 여기서 차단됐을 것)
+
+  calls.length = 0;
+  await download();
+  assert.equal(describeCall(calls[0]), 'nocookie:2600::1');
+});
+
+test('executeDownloadAudioCache: 전부 차단 상태면 차단을 무시하고 모든 시나리오를 시도한다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: false });
+  const calls = mockYtdlp(t, () => BOT_DETECTED_STDERR);
+
+  for(let i = 0; i < 3; ++i)
+  {
+    await download();
+  }
+
+  calls.length = 0;
+  await download();
+  assert.deepEqual(calls.map(describeCall), ['nocookie:2600::1', 'nocookie:10.0.0.4']);
+});
+
+test('executeDownloadAudioCache: 영상 탓 실패(비공개 등)는 실패로 세지 않고 다음 시나리오로 넘어가지도 않는다', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: false });
+  const calls = mockYtdlp(t, () => 'ERROR: [youtube] zz_cookie_test: Private video\n');
+
+  for(let i = 0; i < 4; ++i)
+  {
+    calls.length = 0;
+    const result = await download();
+    assert.equal(result.need_retry, false);
+    assert.deepEqual(calls.map(describeCall), ['nocookie:2600::1']); //차단되지 않음
+  }
 });

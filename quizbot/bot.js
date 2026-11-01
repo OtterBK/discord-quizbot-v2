@@ -40,6 +40,7 @@ const report_manager = require('./managers/report_manager');
 const ban_manager = require('./managers/ban_manager');
 const { SERVER_SIGNAL } = require('./managers/multiplayer_signal.js');
 const { startMonitoring } = require('./managers/monitoring_manager');
+const ytdlp_health_check = require('./managers/ytdlp_health_check');
 
 //2026-08-12(UI 개선 2라운드 B-1 [P3]) - 모든 봇 메시지가 🔸 하나로 정보/에러/성공을 뭉뚱그려
 //표현하던 것을 이 파일 안에서는 심각도별로 구분: 🔸 안내/일반 정보, ⚠️ 실패/권한없음/제한된 동작,
@@ -215,6 +216,16 @@ const registerMainClusterService = () =>
 
   registerUpdateServerCountScheduler();
   registerMonitoringService();
+  registerYtdlpHealthCheck();
+};
+
+//봇 시작 시 1회 yt-dlp 점검(쿠키 유효성/IP 차단) 후 어드민 DM - 시작 직후 부하를 피하려고 30초 뒤 실행
+const registerYtdlpHealthCheck = () =>
+{
+  setTimeout(() =>
+  {
+    ytdlp_health_check.runHealthCheckAndNotifyAdmin(client, PRIVATE_CONFIG.ADMIN_ID);
+  }, 30 * 1000);
 };
 
 const registerUpdateServerCountScheduler = () =>

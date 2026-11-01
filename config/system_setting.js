@@ -91,7 +91,13 @@ exports.SYSTEM_CONFIG = {
   // custom_audio_cache_path: `${PROJECT_ROOT}/resources/cache`,
   CUSTOM_AUDIO_CACHE_PATH: `${PROJECT_ROOT}/resources/cache`,
 
-  YTDL_COOKIE_PATH: `${PROJECT_ROOT}/resources/yt-cookies.txt`, //yt-dlp 쿠키(Netscape 형식), IP 시나리오가 봇 차단으로 다 실패했을 때만 사용. 파일 없으면 미사용
+  YTDL_COOKIE_PATH: `${PROJECT_ROOT}/resources/yt-cookies.txt`, //yt-dlp 쿠키(Netscape 형식), 있으면 IPv6+쿠키 -> IPv4+쿠키 -> IPv6 -> IPv4 순서로 시도. 파일 없으면 쿠키 미사용
+  //아래 4개는 운영 서버 system_setting.js에 없어도 코드 기본값(괄호 안 값)으로 동작함
+  YTDL_SCENARIO_FAIL_LIMIT: 3, //다운로드 시나리오가 연속으로 이 횟수만큼 실패(봇 차단/쿠키 무효/네트워크)하면 차단 (3)
+  YTDL_SCENARIO_BLOCK_SEC: 3600, //시나리오 차단 시간(s), 지나면 1회 시험 후 해제/재차단 (3600)
+  YTDL_COOKIE_EXPIRE_WARN_DAYS: 14, //시작 점검 시 쿠키 만료가 이 일수 이내면 경고 (14)
+  YTDL_HEALTH_CHECK_URL: 'https://youtu.be/gGNHBKW_pgo', //시작 점검용 영상 - 쿠키 없으면 접근 안 되는 영상
+
   YTDL_IPV6_USE: true, //IPv6도 함께 사용할지 여부
 
   CERTIFY_LIKE_CRITERIA: 10, //인증된 퀴즈 전환을 위한 추천 수 기준

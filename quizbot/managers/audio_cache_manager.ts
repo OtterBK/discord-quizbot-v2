@@ -3,6 +3,7 @@ const logger = require('../../utility/logger.js')('AudioCacheManager');
 const youtubedl = require('youtube-dl-exec');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const cloneDeep = require("lodash/cloneDeep.js");
 const { json } = require('express');
 const utility = require('../../utility/utility.js');
@@ -25,6 +26,9 @@ const DOWNLOAD_RESULT_TYPE =
   PREMIUM: 8,
   BOT_DETECTED: 9, //"Sign in to confirm you're not a bot" - IP 평판 차단, 다른 IP 시나리오로는 될 수 있음
   UNKNOWN: 10,
+  COOKIE_INVALID: 11, //쿠키가 로그아웃/폐기됨 - 재발급 필요
+  NETWORK_ERROR: 12, //해당 source-address로 외부 통신 불가(Network is unreachable, 바인드 실패)
+  AGE_RESTRICTED: 13, //연령 제한 영상 - 로그인(쿠키) 없이는 IP를 바꿔도 안 됨
 };
 
 const getHashedPath = (target: string): string | undefined =>
@@ -182,7 +186,14 @@ const downloadAudioCache = async (audio_url: string, video_id: string, ip_info: 
   }
 };
 
-//yt-dlp용 쿠키 파일(Netscape 형식) 경로. 설정이 비었거나 파일이 없으면 undefined(쿠키 재시도 안 함)
+//#region 다운로드 시나리오 (2026-11-01)
+//순서: IPv6+쿠키 -> IPv4+쿠키 -> IPv6 -> IPv4. 영상마다 IP 차단 여부가 달라서 쿠키를 우선 사용하고,
+//쿠키가 무효/차단일 때를 대비해 쿠키 없는 IP 시나리오를 뒤에 둔다. 쿠키 파일이 없으면 IP 시나리오만.
+
+const YTDL_DEFAULT_TIMEOUT_MS = 20000;
+const YTDL_COOKIE_TIMEOUT_MS = 60000; //로그인 추출은 JS 챌린지(node) 풀이가 붙어서 더 오래 걸림
+
+//yt-dlp용 쿠키 파일(Netscape 형식) 경로. 설정이 비었거나 파일이 없으면 undefined(쿠키 시나리오 안 씀)
 const getYtdlCookiePath = (): string | undefined =>
 {
   const cookie_path = SYSTEM_CONFIG.YTDL_COOKIE_PATH;
@@ -193,6 +204,193 @@ const getYtdlCookiePath = (): string | undefined =>
 
   return cookie_path;
 };
+
+/**
+ * base_option(yt-dlp 옵션)에 IP/쿠키를 조합한 시나리오 목록을 우선순위 순서로 만든다.
+ * key는 시나리오 차단 상태 관리용 - IP가 바뀌면 새 시나리오로 취급되도록 IP까지 포함한다.
+ */
+const buildDownloadScenarios = (base_option: any, ip_info: any, cookie_path: string | undefined): any[] =>
+{
+  const { ipv4, ipv6 } = ip_info ?? {};
+
+  const ip_variants: any[] = [];
+  if(ipv6 != undefined)
+  {
+    ip_variants.push({ ip_label: 'IPv6', ip_key: `v6:${ipv6}`, ip_option: { sourceAddress: ipv6, forceIpv6: true } });
+  }
+  if(ipv4 != undefined)
+  {
+    ip_variants.push({ ip_label: 'IPv4', ip_key: `v4:${ipv4}`, ip_option: { sourceAddress: ipv4, forceIpv4: true } });
+  }
+  if(ip_variants.length == 0)
+  {
+    ip_variants.push({ ip_label: 'default', ip_key: 'default', ip_option: {} });
+  }
+
+  const scenarios: any[] = [];
+  const cookie_flags = cookie_path != undefined ? [true, false] : [false];
+  for(const use_cookie of cookie_flags)
+  {
+    for(const { ip_label, ip_key, ip_option } of ip_variants)
+    {
+      const option: any = { ...cloneDeep(base_option), ...ip_option };
+      if(use_cookie)
+      {
+        option.jsRuntimes = 'node'; //로그인 상태 추출은 JS 런타임 필수
+        option.noWarnings = false; //쿠키 무효 경고(WARNING)를 잡아야 해서 경고 출력
+      }
+
+      scenarios.push({
+        key: `${use_cookie ? 'cookie' : 'nocookie'}|${ip_key}`,
+        label: `${ip_label}${use_cookie ? '+쿠키' : ''}`,
+        use_cookie,
+        option,
+      });
+    }
+  }
+
+  return scenarios;
+};
+
+/**
+ * 쿠키 시나리오는 원본 쿠키 파일의 임시 복사본으로 실행한다. yt-dlp가 실행 후 쿠키 파일을 다시 쓰는데,
+ * 여러 cluster/세션이 동시에 다운로드하면 같은 파일에 동시에 써서 깨질 수 있기 때문(원본은 읽기만 함).
+ */
+const runWithCookieCopy = async <T>(cookie_path: string, task: (cookie_copy_path: string) => Promise<T>): Promise<T> =>
+{
+  const cookie_copy_path = path.join(os.tmpdir(), `yt-cookies-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
+  await fs.promises.copyFile(cookie_path, cookie_copy_path);
+
+  try
+  {
+    return await task(cookie_copy_path);
+  }
+  finally
+  {
+    fs.promises.rm(cookie_copy_path, { force: true }).catch(() => {});
+  }
+};
+
+const runScenario = async (audio_url: string, scenario: any, cookie_path: string | undefined): Promise<any> =>
+{
+  if(scenario.use_cookie == false || cookie_path == undefined)
+  {
+    return executeDownloadProcess(audio_url, scenario.option, YTDL_DEFAULT_TIMEOUT_MS);
+  }
+
+  return runWithCookieCopy(cookie_path, (cookie_copy_path) =>
+    executeDownloadProcess(audio_url, { ...scenario.option, cookies: cookie_copy_path }, YTDL_COOKIE_TIMEOUT_MS)
+  );
+};
+
+//#region 시나리오 차단 상태 - 같은 시나리오가 연속 N번(기본 3) 실패하면 일정 시간(기본 1시간) 건너뛴다.
+//차단 시간이 지나면 1번만 시험해서 성공하면 해제, 실패하면 곧바로 다시 차단(매번 N번씩 헛걸음 방지).
+//cluster(프로세스)마다 따로 관리되고 재시작하면 초기화됨 - 하루 2번 재시작이라 적당한 리셋 주기.
+
+//시나리오 자체 문제(IP/쿠키)인 실패만 센다. 영상 탓(비공개/삭제/길이초과 등)이나 원인 불명(ERROR),
+//서버 문제(시그널 종료/타임아웃 - ERROR로 들어옴)는 세지 않음
+const COUNTABLE_FAILURE_TYPES = [
+  DOWNLOAD_RESULT_TYPE.BOT_DETECTED,
+  DOWNLOAD_RESULT_TYPE.COOKIE_INVALID,
+  DOWNLOAD_RESULT_TYPE.NETWORK_ERROR,
+];
+
+//유튜브에 정상 도달해서 영상 단위 결과를 받은 경우 = 시나리오는 정상 -> 연속 실패 카운트 초기화
+const SCENARIO_OK_TYPES = [
+  DOWNLOAD_RESULT_TYPE.SUCCESS,
+  DOWNLOAD_RESULT_TYPE.ALREADY_EXIST,
+  DOWNLOAD_RESULT_TYPE.OVER_DURATION,
+  DOWNLOAD_RESULT_TYPE.OVER_MAX_FILE_SIZE,
+  DOWNLOAD_RESULT_TYPE.NO_MATCH_FILTER,
+  DOWNLOAD_RESULT_TYPE.VIDEO_UNAVAILABLE,
+  DOWNLOAD_RESULT_TYPE.PRIVATE_VIDEO,
+  DOWNLOAD_RESULT_TYPE.PREMIUM,
+];
+
+//다음 시나리오로 넘어가서 다시 시도해볼 만한 결과 (나머지는 어느 시나리오든 결과가 같으므로 중단)
+const RETRYABLE_TYPES = [
+  DOWNLOAD_RESULT_TYPE.ERROR,
+  ...COUNTABLE_FAILURE_TYPES,
+];
+
+const scenario_health = new Map<string, { fail_count: number, blocked_until: number }>();
+
+const getScenarioFailLimit = (): number => SYSTEM_CONFIG.YTDL_SCENARIO_FAIL_LIMIT ?? 3;
+const getScenarioBlockMs = (): number => (SYSTEM_CONFIG.YTDL_SCENARIO_BLOCK_SEC ?? 3600) * 1000;
+
+const isScenarioBlocked = (key: string, now: number): boolean =>
+{
+  const health = scenario_health.get(key);
+  return health != undefined && health.blocked_until > now;
+};
+
+const recordScenarioResult = (scenario: any, result_type: number): void =>
+{
+  const health = scenario_health.get(scenario.key);
+
+  if(SCENARIO_OK_TYPES.includes(result_type))
+  {
+    if(health != undefined && health.blocked_until > 0)
+    {
+      logger.info(`yt-dlp scenario recovered, unblocked: ${scenario.label}(${scenario.key})`);
+    }
+    scenario_health.delete(scenario.key);
+    return;
+  }
+
+  if(COUNTABLE_FAILURE_TYPES.includes(result_type) == false)
+  {
+    return;
+  }
+
+  const now = Date.now();
+  const block_ms = getScenarioBlockMs();
+  const new_health = health ?? { fail_count: 0, blocked_until: 0 };
+
+  if(new_health.blocked_until > 0) //한 번 차단됐던 시나리오(차단 만료 후 시험 or 전부 차단이라 강행)가 또 실패 -> 바로 재차단
+  {
+    new_health.blocked_until = now + block_ms;
+    logger.warn(`yt-dlp scenario still failing, blocked again for ${block_ms / 1000}s: ${scenario.label}(${scenario.key})`);
+  }
+  else
+  {
+    new_health.fail_count += 1;
+    if(new_health.fail_count >= getScenarioFailLimit())
+    {
+      new_health.fail_count = 0;
+      new_health.blocked_until = now + block_ms;
+      logger.warn(`yt-dlp scenario failed ${getScenarioFailLimit()} times in a row, blocked for ${block_ms / 1000}s: ${scenario.label}(${scenario.key})`);
+    }
+  }
+
+  if(scenario.use_cookie && new_health.blocked_until > now)
+  {
+    logger.error(`yt-dlp cookie scenario is blocked. cookies may be invalid or the account may be restricted - re-export cookies! (${SYSTEM_CONFIG.YTDL_COOKIE_PATH})`);
+  }
+
+  scenario_health.set(scenario.key, new_health);
+};
+
+//차단 안 된 시나리오만 고른다. 전부 차단이면 차단을 무시하고 전부 시도(받을 방법이 없으니 느려도 시도는 해봄)
+const selectRunnableScenarios = (scenarios: any[]): any[] =>
+{
+  const now = Date.now();
+  const runnable = scenarios.filter((scenario) => isScenarioBlocked(scenario.key, now) == false);
+  if(runnable.length > 0)
+  {
+    return runnable;
+  }
+
+  logger.warn(`All yt-dlp scenarios are blocked. ignoring block and trying all scenarios`);
+  return scenarios;
+};
+
+const resetScenarioHealth = (): void => //테스트용
+{
+  scenario_health.clear();
+};
+//#endregion
+//#endregion
 
 const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip_info: any = {ipv4: undefined, ipv6: undefined}): Promise<any> =>
 {
@@ -214,38 +412,13 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
     addHeader: ['referer:youtube.com', 'user-agent:googlebot'],
   };
 
-  //create download scenario
-  const download_scenario: any[] = [];
+  const cookie_path = getYtdlCookiePath();
+  const download_scenarios = selectRunnableScenarios(buildDownloadScenarios(default_option, ip_info, cookie_path));
 
-  const { ipv4, ipv6 } = ip_info;
-  if(ipv4 == undefined && ipv6 == undefined)
-  {
-    download_scenario.push(default_option);
-  }
-  else
-  {
-    if(ipv4 != undefined)
-    {
-      const ipv4_option: any = cloneDeep(default_option);
-      ipv4_option["sourceAddress"] = ipv4;
-      ipv4_option["forceIpv4"] = true;
-      download_scenario.push(ipv4_option);
-    }
-
-    if(ipv6 != undefined)
-    {
-      const ipv6_option: any = cloneDeep(default_option);
-      ipv6_option["sourceAddress"] = ipv6;
-      ipv6_option["forceIpv6"] = true;
-      download_scenario.push(ipv6_option);
-    }
-  }
-
-  logger.debug(`Downloading cache scenario is ${download_scenario.length}`);
+  logger.debug(`Downloading cache scenario is ${download_scenarios.length}: ${download_scenarios.map((scenario) => scenario.label).join(' -> ')}`);
 
   let result: any = undefined;
   let cache_result: any = {};
-  let bot_detected_option: any = undefined; //봇 차단당한 시나리오 - 쿠키 재시도 때 같은 IP로 씀
 
   const onDownloadSuccess = async (): Promise<any> =>
   {
@@ -264,54 +437,29 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
     return cache_result;
   };
 
-  while(download_scenario.length > 0)
+  for(const scenario of download_scenarios)
   {
-    const yt_dlp_option = download_scenario.pop(); //stack
-    result = await executeDownloadProcess(audio_url, yt_dlp_option);
-
-    if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR || result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED) //에러발생했으면 다시 ㄱㄱ임 (봇 차단은 IP 단위라 다른 IP로는 될 수 있음)
-    {
-      if(result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED)
-      {
-        bot_detected_option = yt_dlp_option;
-      }
-
-      logger.warn(`Failed yt-dlp download... Using ip:${yt_dlp_option.sourceAddress}, url: ${audio_url}, err_message: ${result.error_message}, `);
-      continue;
-    }
+    result = await runScenario(audio_url, scenario, cookie_path);
+    recordScenarioResult(scenario, result.result_type);
 
     if(result.result_type == DOWNLOAD_RESULT_TYPE.SUCCESS) //성공이면 바로 반환 ^^
     {
       return await onDownloadSuccess();
     }
 
-    break; //에러도 아니고 성공도 아니면 예상된 문제들임
-  }
-
-  //IP 시나리오가 봇 차단(Sign in to confirm)으로 다 실패했으면 쿠키 붙여서 1회 더 시도 (2026-11-01)
-  //계정 밴 위험 때문에 평소엔 안 쓰고 이 경우에만 씀. 로그인 상태 추출은 JS 런타임 필수라 node 지정
-  const cookie_path = getYtdlCookiePath();
-  if(bot_detected_option != undefined
-    && cookie_path != undefined
-    && (result.result_type == DOWNLOAD_RESULT_TYPE.ERROR || result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED))
-  {
-    const cookie_option: any = cloneDeep(bot_detected_option);
-    cookie_option["cookies"] = cookie_path;
-    cookie_option["jsRuntimes"] = 'node';
-
-    logger.info(`Retrying yt-dlp download with cookies... Using ip:${cookie_option.sourceAddress}, url: ${audio_url}`);
-    result = await executeDownloadProcess(audio_url, cookie_option);
-
-    if(result.result_type == DOWNLOAD_RESULT_TYPE.SUCCESS)
+    if(RETRYABLE_TYPES.includes(result.result_type)) //에러발생했으면 다음 시나리오로 ㄱㄱ (봇 차단/쿠키 무효/네트워크는 시나리오 단위라 다른 시나리오로는 될 수 있음)
     {
-      return await onDownloadSuccess();
+      logger.warn(`Failed yt-dlp download... scenario: ${scenario.label}, ip: ${scenario.option.sourceAddress ?? 'default'}, url: ${audio_url}, err_message: ${result.error_message}, `);
+      continue;
     }
 
-    logger.warn(`Failed yt-dlp download with cookies... url: ${audio_url}, err_message: ${result.error_message}, `);
+    break; //에러도 아니고 성공도 아니면 예상된 문제들임 (어느 시나리오든 결과가 같음)
   }
 
   //다 해봤는데 실패한 경우임
-  if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR)
+  if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR
+    || result.result_type == DOWNLOAD_RESULT_TYPE.NETWORK_ERROR
+    || result.result_type == DOWNLOAD_RESULT_TYPE.COOKIE_INVALID)
   {
     logger.error(`Failed ytdlp download audio... for all scenario`);
 
@@ -331,6 +479,17 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
       success: false,
       causation_message: `유튜브가 봇 접근으로 판단해 오디오 다운로드를 차단했습니다.\n잠시 후 다시 시도해주세요. 해당 문제가 오래 지속될 경우 개발자에게 문의 바랍니다.`,
       need_retry: true //IP 차단은 일시적일 수 있음
+    };
+
+    logFailedUrl(audio_url);
+  }
+  else if(result.result_type == DOWNLOAD_RESULT_TYPE.AGE_RESTRICTED)
+  {
+    logger.warn(`${audio_url} is age restricted video (cookies: ${cookie_path != undefined ? 'used' : 'not configured'})`);
+    cache_result = {
+      success: false,
+      causation_message: `${audio_url} 링크는 연령 제한 영상이라 다운로드할 수 없습니다.`,
+      need_retry: true //쿠키가 설정/갱신되면 받을 수 있음
     };
 
     logFailedUrl(audio_url);
@@ -408,7 +567,7 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
   return cache_result;
 };
 
-const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any): Promise<{result_type: number, result_message: string, error_message: string}> =>
+const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any, timeout_ms: number = YTDL_DEFAULT_TIMEOUT_MS): Promise<{result_type: number, result_message: string, error_message: string}> =>
 {
   /** 24.07.16 root 권한으로 yt-dlp 실행하면 webm 포맷이 안뜬다.
      * 아마 환경변수 때문인 것 같음.
@@ -418,7 +577,7 @@ const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any): Pr
     audio_url,
     yt_dlp_option,
     {
-      timeout: 20000,
+      timeout: timeout_ms,
       killSignal: 'SIGKILL'
     }
   );
@@ -444,6 +603,11 @@ const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any): Pr
     await subprocess;
 
     result_type = getDownloadResultType(stdout);
+
+    if(isCookieInvalidMessage(stderr)) //쿠키가 무효여도 비로그인으로 받아지는 영상은 성공함 - 쿠키 재발급 필요만 알림
+    {
+      logger.error(`yt-dlp reported cookies are no longer valid (downloaded without login) - re-export cookies! url: ${audio_url}`);
+    }
   }
   catch(err: any)
   {
@@ -533,6 +697,27 @@ const getExpectedErrorType = (error_message: any): number =>
     return DOWNLOAD_RESULT_TYPE.ERROR;
   }
 
+  error_message = String(error_message);
+  const result_type = getErrorTypeFromErrorLines(error_message);
+
+  //쿠키 무효는 ERROR가 아니라 WARNING으로 찍히고(쿠키 시나리오는 noWarnings를 끔), yt-dlp는 비로그인으로
+  //계속 진행하다가 봇 차단 등으로 실패함 - 이 경우 진짜 원인은 쿠키라서 COOKIE_INVALID로 분류
+  if((result_type == DOWNLOAD_RESULT_TYPE.ERROR || result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED)
+    && isCookieInvalidMessage(error_message))
+  {
+    return DOWNLOAD_RESULT_TYPE.COOKIE_INVALID;
+  }
+
+  return result_type;
+};
+
+const isCookieInvalidMessage = (error_message: string): boolean =>
+{
+  return error_message.includes("cookies are no longer valid");
+};
+
+const getErrorTypeFromErrorLines = (error_message: string): number =>
+{
   const lines = error_message.split('\n');
 
   for (let i = lines.length - 1; i >= 0; --i)
@@ -541,6 +726,11 @@ const getExpectedErrorType = (error_message: any): number =>
     if(line.includes('ERROR:') == false)
     {
       continue;
+    }
+
+    if(line.includes("Network is unreachable") || line.includes("Cannot assign requested address"))
+    {
+      return DOWNLOAD_RESULT_TYPE.NETWORK_ERROR;
     }
 
     if(line.includes("Video unavailable"))
@@ -556,6 +746,11 @@ const getExpectedErrorType = (error_message: any): number =>
     if(line.includes("Music Premium"))
     {
       return DOWNLOAD_RESULT_TYPE.PREMIUM;
+    }
+
+    if(line.includes("Sign in to confirm your age")) //"Sign in to confirm" 포함이라 봇 차단보다 먼저 검사
+    {
+      return DOWNLOAD_RESULT_TYPE.AGE_RESTRICTED;
     }
 
     if(line.includes("Sign in to confirm"))
@@ -767,5 +962,11 @@ module.exports = {
   getDownloadResultType,
   getExpectedErrorType,
   executeDownloadProcess,
-  executeDownloadAudioCache, //쿠키 재시도 시나리오 테스트용
+  executeDownloadAudioCache, //다운로드 시나리오 테스트용
+  resetScenarioHealth, //테스트용
+  //아래는 ytdlp_health_check.ts(시작 시 점검)와 공유
+  DOWNLOAD_RESULT_TYPE,
+  getYtdlCookiePath,
+  buildDownloadScenarios,
+  runWithCookieCopy,
 };
