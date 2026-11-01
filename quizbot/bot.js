@@ -6,6 +6,7 @@ const {
   GatewayIntentBits,
   PermissionsBitField,
   MessageFlags,
+  Options,
 } = require('discord.js');
 const { ClusterClient, getInfo } = require('discord-hybrid-sharding');
 const fs = require('fs');
@@ -58,6 +59,14 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
   allowedMentions: { parse: [], repliedUser: true }, // 모든 멘션 완전 차단 (빈 배열)
+  //메시지 캐시 비활성화 - 기본값은 채널당 200개라 MessageContent intent로 들어오는 모든 길드의 채팅이
+  //전부 메모리에 쌓였음. 봇은 채널 메시지 캐시를 조회하지 않는다(base_message는 객체를 직접 들고 있고,
+  //interaction.message는 payload로 생성, fetchReply는 API 조회). 멤버 캐시(GuildMemberManager)는
+  //voice_channel.members.size(힌트/스킵 투표 기준, 멀티 참가자 수)가 의존하므로 절대 제한하지 말 것.
+  makeCache: Options.cacheWithLimits({
+    ...Options.DefaultMakeCacheSettings,
+    MessageManager: 0,
+  }),
 });
 client.cluster = new ClusterClient(client); // initialize the Client, so we access the .broadcastEval()
 

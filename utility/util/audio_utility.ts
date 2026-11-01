@@ -86,6 +86,33 @@ exports.getAudioInfoFromPath = async (file_path: string) =>
 {
   return await mm.parseFile(file_path, { skipCovers: true, skipPostHeaders: true });
 };
+//오디오 재생 길이(초) 캐시 - prepare.ts가 문제를 준비할 때마다 같은 파일을 mm.parseFile로 다시 파싱하던 것을
+//줄이기 위함(개발자 퀴즈 파일은 사실상 불변). 파일이 교체됐을 때를 대비해 키에 mtime/size를 포함하고,
+//Map 삽입 순서를 이용해 최대 개수를 넘으면 가장 오래된 항목부터 버린다.
+const AUDIO_DURATION_CACHE_MAX_SIZE = 5000;
+const audio_duration_cache = new Map<string, number | undefined>();
+
+exports.getAudioDurationFromPath = async (file_path: string): Promise<number | undefined> =>
+{
+  const stat = await fs.promises.stat(file_path);
+  const cache_key = `${file_path}|${stat.mtimeMs}|${stat.size}`;
+
+  if(audio_duration_cache.has(cache_key))
+  {
+    return audio_duration_cache.get(cache_key);
+  }
+
+  const audio_info = await exports.getAudioInfoFromPath(file_path);
+  const duration = audio_info.format.duration;
+
+  if(audio_duration_cache.size >= AUDIO_DURATION_CACHE_MAX_SIZE)
+  {
+    audio_duration_cache.delete(audio_duration_cache.keys().next().value);
+  }
+  audio_duration_cache.set(cache_key, duration);
+
+  return duration;
+};
 exports.getAudioInfoFromStream = async (stream: any) =>
 {
   return await mm.parseStream(stream, { skipCovers: true, skipPostHeaders: true });

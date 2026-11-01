@@ -210,8 +210,8 @@ class Prepare extends QuizLifeCycle
       }
       else if(audio_play_time == undefined) //딱히 지정된게 없다면
       {
-        const audio_info = await utility.getAudioInfoFromPath(question);
-        audio_play_time = ((audio_info.format.duration) ?? SYSTEM_CONFIG.MAX_ANSWER_AUDIO_PLAY_TIME) * 1000; //오디오 길이 값 있으면 무조건 오디오 길이 쓰도록 //TODO 이게 맞나? 재고해보셈
+        const audio_duration = await utility.getAudioDurationFromPath(question); //파일별 캐시됨(audio_utility.ts)
+        audio_play_time = ((audio_duration) ?? SYSTEM_CONFIG.MAX_ANSWER_AUDIO_PLAY_TIME) * 1000; //오디오 길이 값 있으면 무조건 오디오 길이 쓰도록 //TODO 이게 맞나? 재고해보셈
       }
       target_question['answer_audio_play_time'] = audio_play_time;
 
@@ -391,8 +391,8 @@ class Prepare extends QuizLifeCycle
     let use_random_start = target_question['use_random_start'] ?? true; // 노래 어디서부터 시작할 지 랜덤으로 설정 여부
 
     // 오디오 정보 가져오기
-    const audio_info = await utility.getAudioInfoFromPath(question); // TODO: 상당한 리소스를 먹는 것 같은데 확인필요
-    const audio_duration_sec = parseInt(audio_info.format.duration) ?? SYSTEM_CONFIG.MAX_QUESTION_AUDIO_PLAY_TIME; // duration 없으면 무조건 서버 설정 값 따르게 할거임
+    const audio_duration = await utility.getAudioDurationFromPath(question); // 파일별 캐시됨(audio_utility.ts) - 매 문제마다 mm.parseFile 하던 것 개선
+    const audio_duration_sec = parseInt(audio_duration as any) ?? SYSTEM_CONFIG.MAX_QUESTION_AUDIO_PLAY_TIME; // duration 없으면 무조건 서버 설정 값 따르게 할거임
 
     // 오디오 길이 먼저 넣어주고
     const audio_play_time_sec = option_data.quiz.audio_play_time / 1000;

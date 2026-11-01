@@ -17,7 +17,7 @@ const misc_utility = require('../../utility/util/misc_utility');
 const web_token_utility = require('../../utility/util/web_token_utility');
 const discord_permission_utility = require('../../utility/util/discord_permission_utility');
 
-test('utility.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 29개)', () =>
+test('utility.js: 6개 도메인 파일의 export를 빠짐없이 재수출한다 (총 30개)', () =>
 {
   const expected_names = [
     ...Object.keys(quiz_content_loader),
@@ -30,7 +30,7 @@ test('utility.js: 6개 도메인 파일의 export를 빠짐없이 재수출한�
 
   const actual_names = Object.keys(utility).sort();
 
-  assert.equal(actual_names.length, 29);
+  assert.equal(actual_names.length, 30);
   assert.deepEqual(actual_names, expected_names);
 });
 
@@ -177,4 +177,19 @@ test('discord_permission_utility: 전부 있으면 빈 배열을 반환한다', 
   const permissions = { has: () => true };
 
   assert.deepEqual(discord_permission_utility.getMissingPermissionLabels(permissions, required), []);
+});
+
+test('audio_utility: getAudioDurationFromPath는 같은 파일을 두 번째부터 다시 파싱하지 않고 캐시된 길이를 반환한다', async (t) =>
+{
+  const file_path = path.join(__dirname, '../../resources/bgm/SUCCESS.webm');
+
+  const parse_spy = t.mock.method(audio_utility, 'getAudioInfoFromPath');
+
+  const first = await audio_utility.getAudioDurationFromPath(file_path);
+  const second = await audio_utility.getAudioDurationFromPath(file_path);
+
+  assert.equal(typeof first, 'number');
+  assert.ok(first > 0);
+  assert.equal(second, first);
+  assert.equal(parse_spy.mock.callCount(), 1);
 });
