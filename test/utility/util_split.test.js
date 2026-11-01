@@ -97,6 +97,21 @@ test('network_utility: getIPv4Address/getIPv6Address는 배열을 반환한다',
   assert.ok(Array.isArray(network_utility.getIPv6Address()));
 });
 
+test('network_utility: getIPv6Address는 링크 로컬(fe80::/10)과 internal 주소를 제외한다', (t) =>
+{
+  const os = require('node:os');
+  t.mock.method(os, 'networkInterfaces', () => ({
+    lo: [{ family: 'IPv6', address: '::1', internal: true }],
+    ens4: [
+      { family: 'IPv4', address: '10.0.0.4', internal: false },
+      { family: 'IPv6', address: 'fe80::4001:aff:fe00:4', internal: false },
+      { family: 'IPv6', address: '2600:1901:8180:54a:0:1::', internal: false },
+    ],
+  }));
+
+  assert.deepEqual(network_utility.getIPv6Address(), ['2600:1901:8180:54a:0:1::']);
+});
+
 test('misc_utility: convertTagsValueToString은 태그 사이에만 ", "를 넣고 마지막에 trailing comma를 남기지 않는다', () =>
 {
   const FAKE_TAG_INFO = { NONE: 0, A: 1, B: 2, C: 4 };

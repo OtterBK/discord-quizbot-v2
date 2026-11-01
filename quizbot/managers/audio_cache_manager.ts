@@ -23,6 +23,7 @@ const DOWNLOAD_RESULT_TYPE =
   VIDEO_UNAVAILABLE: 6,
   PRIVATE_VIDEO: 7,
   PREMIUM: 8,
+  BOT_DETECTED: 9, //"Sign in to confirm you're not a bot" - IP 평판 차단, 다른 IP 시나리오로는 될 수 있음
   UNKNOWN: 10,
 };
 
@@ -238,7 +239,7 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
     const yt_dlp_option = download_scenario.pop(); //stack
     result = await executeDownloadProcess(audio_url, yt_dlp_option);
 
-    if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR) //에러발생했으면 다시 ㄱㄱ임
+    if(result.result_type == DOWNLOAD_RESULT_TYPE.ERROR || result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED) //에러발생했으면 다시 ㄱㄱ임 (봇 차단은 IP 단위라 다른 IP로는 될 수 있음)
     {
       logger.warn(`Failed yt-dlp download... Using ip:${yt_dlp_option.sourceAddress}, url: ${audio_url}, err_message: ${result.error_message}, `);
       continue;
@@ -273,6 +274,18 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
       success: false,
       causation_message: `오디오 다운로드에 실패했습니다.\n해당 문제가 오래 지속될 경우 개발자에게 문의 바랍니다.`,
       need_retry: true
+    };
+
+    logFailedUrl(audio_url);
+  }
+  else if(result.result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED)
+  {
+    logger.error(`Failed ytdlp download audio... youtube bot detection(Sign in to confirm) for all scenario, url: ${audio_url}`);
+
+    cache_result = {
+      success: false,
+      causation_message: `유튜브가 봇 접근으로 판단해 오디오 다운로드를 차단했습니다.\n잠시 후 다시 시도해주세요. 해당 문제가 오래 지속될 경우 개발자에게 문의 바랍니다.`,
+      need_retry: true //IP 차단은 일시적일 수 있음
     };
 
     logFailedUrl(audio_url);
@@ -391,9 +404,20 @@ const executeDownloadProcess = async (audio_url: string, yt_dlp_option: any): Pr
   {
     logger.debug(`download process error occurred! ${err.message}`);
 
+    //tinyspawn이 childProcess 속성(signalCode/killed)을 error에 복사해줌.
+    //exit code가 null이면 시그널로 강제종료된 것(우리 timeout이면 killed=true, OOM killer 등 외부 kill이면 false)
+    if(err.signalCode != undefined)
+    {
+      logger.error(`yt-dlp process was killed by signal: ${err.signalCode}, killed_by_timeout: ${err.killed === true}, url: ${audio_url}`);
+    }
+
     result_type = getExpectedErrorType(stderr);
 
-    if(result_type == DOWNLOAD_RESULT_TYPE.ERROR)
+    if(result_type == DOWNLOAD_RESULT_TYPE.BOT_DETECTED)
+    {
+      logger.warn(`youtube bot detection(Sign in to confirm) with ip: ${yt_dlp_option?.sourceAddress ?? 'default'}, url: ${audio_url}`);
+    }
+    else if(result_type == DOWNLOAD_RESULT_TYPE.ERROR)
     {
       logger.error(`its unknown type error: ${err}`);
     }
@@ -487,6 +511,11 @@ const getExpectedErrorType = (error_message: any): number =>
     if(line.includes("Music Premium"))
     {
       return DOWNLOAD_RESULT_TYPE.PREMIUM;
+    }
+
+    if(line.includes("Sign in to confirm"))
+    {
+      return DOWNLOAD_RESULT_TYPE.BOT_DETECTED;
     }
   }
 

@@ -101,6 +101,13 @@ test('getExpectedErrorType: ERROR: 줄에서 Video unavailable/Private video/Mus
   );
 });
 
+test('getExpectedErrorType: "Sign in to confirm you\'re not a bot"은 BOT_DETECTED다', () =>
+{
+  const stderr = `ERROR: [youtube] p0pjdQOIOLg: Sign in to confirm you’re not a bot. This helps protect our community. Use --cookies-from-browser or --cookies for the authentication.`;
+
+  assert.equal(audio_cache_manager.getExpectedErrorType(stderr), 9 /* BOT_DETECTED */);
+});
+
 test('getExpectedErrorType: ERROR: 줄이 있어도 알려진 패턴이 아니면 ERROR다', () =>
 {
   assert.equal(audio_cache_manager.getExpectedErrorType(`ERROR: something totally unexpected`), 1 /* ERROR */);

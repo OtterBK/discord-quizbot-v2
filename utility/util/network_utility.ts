@@ -15,7 +15,9 @@ exports.getIPv6Address = (): string[] =>
     for (let i = 0; i < interfaces.length; i++)
     {
       const address = interfaces[i];
-      if (address.family === 'IPv6' && !address.internal)
+      //fe80::/10(링크 로컬)은 외부로 라우팅이 안 돼서 yt-dlp --source-address로 쓰면 항상
+      //"Network is unreachable" - 인터페이스 순서에 따라 [0]으로 뽑힐 수 있어 제외 (2026-11-01)
+      if (address.family === 'IPv6' && !address.internal && !/^fe[89ab]/i.test(address.address))
       {
         ipv6Addresses.push(address.address);
       }
