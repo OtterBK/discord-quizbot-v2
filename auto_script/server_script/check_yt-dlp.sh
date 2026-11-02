@@ -30,6 +30,7 @@ DEFAULT_TEST_URL=$(cd "$QUIZBOT_PATH" && node -e 'process.stdout.write(String(re
 TEST_URL="${1:-${DEFAULT_TEST_URL:-https://youtu.be/gGNHBKW_pgo}}"
 YT_DLP_BIN="$QUIZBOT_PATH/node_modules/youtube-dl-exec/bin/yt-dlp"
 FORMAT='bestaudio[ext=webm]/bestaudio' # audio_cache_manager.ts와 동일
+FORMAT_SORT='lang,+size' # audio_cache_manager.ts YTDL_FORMAT_SORT와 동일 (원본 오디오 트랙 우선 - 자동 더빙 트랙 방지)
 TIMEOUT_SEC=60
 
 print_section()
@@ -174,7 +175,7 @@ run_scenario()
     local out_file="$TMP_DIR/$(echo "$label" | tr -c 'a-zA-Z0-9' '_')"
 
     timeout "$TIMEOUT_SEC" "$YT_DLP_BIN" "$TEST_URL" --simulate --print format_id \
-        --format-sort +size --format "$FORMAT" --no-playlist --no-check-certificates \
+        --format-sort "$FORMAT_SORT" --format "$FORMAT" --no-playlist --no-check-certificates \
         --add-header referer:youtube.com --add-header user-agent:googlebot \
         "$@" > "$out_file.stdout" 2> "$out_file.stderr"
     local exit_code=$?

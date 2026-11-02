@@ -205,7 +205,7 @@ const runHealthCheck = async (): Promise<string> =>
   const base_option = {
     simulate: true,
     print: 'format_id',
-    formatSort: '+size',
+    formatSort: audio_cache_manager.YTDL_FORMAT_SORT, //audio_cache_manager.ts와 동일 (원본 트랙 우선)
     format: 'bestaudio[ext=webm]/bestaudio', //audio_cache_manager.ts와 동일
     noPlaylist: true,
     noCheckCertificates: true,

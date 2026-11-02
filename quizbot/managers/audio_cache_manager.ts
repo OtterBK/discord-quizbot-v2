@@ -190,6 +190,7 @@ const downloadAudioCache = async (audio_url: string, video_id: string, ip_info: 
 //순서: IPv6+쿠키 -> IPv4+쿠키 -> IPv6 -> IPv4. 영상마다 IP 차단 여부가 달라서 쿠키를 우선 사용하고,
 //쿠키가 무효/차단일 때를 대비해 쿠키 없는 IP 시나리오를 뒤에 둔다. 쿠키 파일이 없으면 IP 시나리오만.
 
+const YTDL_FORMAT_SORT = 'lang,+size'; //원본 오디오 트랙 우선, 그다음 작은 파일 (ytdlp_health_check.ts/check_yt-dlp.sh도 동일하게 맞출 것)
 const YTDL_DEFAULT_TIMEOUT_MS = 20000;
 const YTDL_COOKIE_TIMEOUT_MS = 60000; //로그인 추출은 JS 챌린지(node) 풀이가 붙어서 더 오래 걸림
 
@@ -403,7 +404,9 @@ const executeDownloadAudioCache = async (audio_url: string, video_id: string, ip
   const default_option = {
     paths: cache_path,
     output: `${video_id}.%(ext)s`,
-    formatSort: '+size', //파일 크기로 오름차순 정렬
+    //원본 오디오 트랙 우선(lang = yt-dlp의 language_preference, 원본 10 / 더빙 -1), 그다음 파일 크기 오름차순.
+    //+size만 쓰면 다국어 트랙 영상에서 원본보다 조금 작은 자동 더빙 트랙(예: 인도네시아어)을 받았음(2026-11-02 제보)
+    formatSort: YTDL_FORMAT_SORT,
     format: 'bestaudio[ext=webm]/bestaudio', //정렬된 포맷 중 webm 확장자인것. 없으면 젤 작은 audio -> 즉 webm이면서 파일 크기가 가장 작은거
     maxFilesize: SYSTEM_CONFIG.CUSTOM_AUDIO_MAX_FILE_SIZE, //최대 파일 크기
     matchFilter: `duration <= ${SYSTEM_CONFIG.CUSTOM_AUDIO_YTDL_MAX_LENGTH}`, //최대 길이
@@ -968,6 +971,7 @@ module.exports = {
   resetScenarioHealth, //테스트용
   //아래는 ytdlp_health_check.ts(시작 시 점검)와 공유
   DOWNLOAD_RESULT_TYPE,
+  YTDL_FORMAT_SORT,
   getYtdlCookiePath,
   buildDownloadScenarios,
   runWithCookieCopy,

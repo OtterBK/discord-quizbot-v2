@@ -64,6 +64,8 @@ auto_script/ 밑의 모든 .sh 스크립트는 `bash script.sh`로 실행하는 
 - 노래 다운로드 진단: bash auto_script/server_script/check_yt-dlp.sh [유튜브 URL]
   (2026-11-01 추가 - IPv4/IPv6 x 쿠키 유무별로 봇 차단/쿠키 유효성/IPv6 라우팅/OOM 기록을 한 번에 확인,
    실제 파일은 안 받고 운영 쿠키는 복사본으로 시험함)
+- 자동 더빙 캐시 정리: bash auto_script/server_script/clean_dubbed_cache.sh [--delete]
+  (2026-11-02 추가 - 이전 버전이 원본 대신 더빙 트랙으로 받아둔 캐시를 찾아 삭제, 옵션 없으면 목록만 출력)
 
 [systemd 서비스(quizbot3) 동작 방식 - 2026-08-15 정리]
 

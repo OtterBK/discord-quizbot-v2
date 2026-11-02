@@ -257,6 +257,23 @@ test('executeDownloadAudioCache: 시나리오 옵션이 yt-dlp가 모르는 인�
   assert.equal(youtubedl.args(calls[2]).includes('--no-warnings'), true);
 });
 
+test('executeDownloadAudioCache: 모든 시나리오가 원본 오디오 트랙 우선 정렬(--format-sort lang,+size)로 실행된다 (자동 더빙 트랙 방지, 2026-11-02 회귀 테스트)', async (t) =>
+{
+  setupCookieTest(t, { cookie_file_exists: true });
+  const calls = mockYtdlp(t, () => BOT_DETECTED_STDERR);
+
+  await download();
+
+  assert.equal(calls.length, 4);
+  for(const call of calls)
+  {
+    const cli_args = youtubedl.args(call);
+    const sort_index = cli_args.indexOf('--format-sort');
+    assert.notEqual(sort_index, -1);
+    assert.equal(cli_args[sort_index + 1], 'lang,+size'); //+size가 lang보다 앞서면 원본보다 작은 더빙 트랙이 선택됨
+  }
+});
+
 test('executeDownloadAudioCache: 쿠키 시나리오는 원본이 아닌 임시 복사본을 넘기고, 끝나면 복사본을 지운다', async (t) =>
 {
   const cookie_path = setupCookieTest(t, { cookie_file_exists: true });
