@@ -14,7 +14,9 @@
 #   - 품질만 있음:    첫 부분이 품질/변형 표시 ("low", "low, DRC", "medium, DRC", "Default, high") -> 유지.
 #                     단일 트랙 영상이거나 원본 트랙의 DRC(음량 압축) 변형 - DRC 변형엔 "original"이 안 붙음
 #                     (2026-11-05 실제 운영 캐시 확인: "[ko] low, DRC"는 한국어 원본 영상의 원본 트랙이었음)
+#   - 예전 형식:      "DASH audio" 등 예전 yt-dlp가 붙이던 설명 -> 언어 정보 없음, 유지
 #   - 정보 없음:      예전 버전으로 받아 format_note가 없는 캐시 -> 판단 불가라 유지
+#   - 위 형식에 정확히 맞는 것만 대상(화이트리스트) - 처음 보는 형식은 지우지 않는다
 #
 # 사용법:
 #   bash clean_dubbed_cache.sh            # 지울 대상 목록만 출력 (기본, 아무것도 안 지움)
@@ -45,17 +47,23 @@ const { SYSTEM_CONFIG } = require('./config/system_setting.js');
 const mode = process.argv[2];
 const cache_root = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
 
-//format_note 첫 부분이 품질/변형 표시면 언어 트랙 정보가 없는 것(단일 트랙 or 원본의 DRC 변형)
-const NON_LANGUAGE_TOKENS = new Set(['ultralow', 'low', 'medium', 'high', 'default', 'drc']);
+//더빙 트랙의 format_note 형식("<언어 이름>, <품질>")에 정확히 맞는 것만 대상으로 한다(화이트리스트).
+//"품질 표시가 아니면 언어"로 빼는 방식은 처음 보는 표시(예: 예전 yt-dlp의 "DASH audio")를 언어로
+//오판했음(2026-11-05) - 캐시를 잘못 지우면 그사이 삭제된 영상은 영영 못 받으므로 오판이 없어야 함.
+const QUALITY_TOKENS = new Set(['ultralow', 'low', 'medium', 'high']);
+const NON_LANGUAGE_TOKENS = new Set(['ultralow', 'low', 'medium', 'high', 'default', 'drc', 'dash audio']);
 
-//첫 부분이 언어 이름 + original 없음 = 더빙(또는 해설) 트랙
 const isDubbedTrack = (info) =>
 {
   const note = info.format_note;
   if(typeof note !== 'string' || note.length == 0) return false; //정보 없음 -> 판단 불가, 유지
   if(/original/i.test(note)) return false; //원본 트랙
-  const first_part = note.split(',')[0].trim().toLowerCase();
-  return NON_LANGUAGE_TOKENS.has(first_part) == false;
+
+  const parts = note.split(',').map((part) => part.trim().toLowerCase());
+  if(parts.length != 2) return false; //"<언어>, <품질>" 형식이 아님 (예: "DASH audio", "low")
+  //"low, DRC"는 품질 자리가 drc라서, "Default, high"는 언어 자리가 default라서 아래에서 걸러짐
+  const [language_part, quality_part] = parts;
+  return QUALITY_TOKENS.has(quality_part) && NON_LANGUAGE_TOKENS.has(language_part) == false;
 };
 
 let scanned = 0;
