@@ -7,11 +7,14 @@
 # 있으면 다시 받지 않으므로, 이미 더빙으로 받은 캐시를 지워야 다음 재생 때 원본 트랙(lang 우선 정렬)으로
 # 다시 받는다.
 #
-# 판별 기준 (캐시의 <video_id>.info.json에 남아있는, 실제로 받은 포맷 정보):
-#   - 더빙 트랙:   format_note가 "Indonesian, low"처럼 "<언어 이름>, <품질>" 형태이고 "original"이 없음
-#   - 원본 트랙:   format_note에 "original" 포함 ("English (US) original (default), low") -> 유지
-#   - 단일 트랙:   format_note가 "low"처럼 품질만 있음 -> 유지
-#   - 정보 없음:   예전 버전으로 받아 format_note가 없는 캐시 -> 판단 불가라 유지
+# 판별 기준 (캐시의 <video_id>.info.json에 남아있는, 실제로 받은 포맷 정보의 format_note):
+#   - 더빙/해설 트랙: 첫 부분이 언어 이름 ("English (US), low", "Indonesian, low", "Japanese descriptive, low")
+#                     이고 "original"이 없음 -> 삭제 대상
+#   - 원본 트랙:      "original" 포함 ("Korean original (default), low") -> 유지
+#   - 품질만 있음:    첫 부분이 품질/변형 표시 ("low", "low, DRC", "medium, DRC", "Default, high") -> 유지.
+#                     단일 트랙 영상이거나 원본 트랙의 DRC(음량 압축) 변형 - DRC 변형엔 "original"이 안 붙음
+#                     (2026-11-05 실제 운영 캐시 확인: "[ko] low, DRC"는 한국어 원본 영상의 원본 트랙이었음)
+#   - 정보 없음:      예전 버전으로 받아 format_note가 없는 캐시 -> 판단 불가라 유지
 #
 # 사용법:
 #   bash clean_dubbed_cache.sh            # 지울 대상 목록만 출력 (기본, 아무것도 안 지움)
@@ -42,13 +45,17 @@ const { SYSTEM_CONFIG } = require('./config/system_setting.js');
 const mode = process.argv[2];
 const cache_root = SYSTEM_CONFIG.CUSTOM_AUDIO_CACHE_PATH;
 
-//"<언어 이름>, <품질>" 형태 + original 없음 = 더빙 트랙
+//format_note 첫 부분이 품질/변형 표시면 언어 트랙 정보가 없는 것(단일 트랙 or 원본의 DRC 변형)
+const NON_LANGUAGE_TOKENS = new Set(['ultralow', 'low', 'medium', 'high', 'default', 'drc']);
+
+//첫 부분이 언어 이름 + original 없음 = 더빙(또는 해설) 트랙
 const isDubbedTrack = (info) =>
 {
   const note = info.format_note;
   if(typeof note !== 'string' || note.length == 0) return false; //정보 없음 -> 판단 불가, 유지
   if(/original/i.test(note)) return false; //원본 트랙
-  return note.includes(','); //단일 트랙은 "low"처럼 품질만 있음
+  const first_part = note.split(',')[0].trim().toLowerCase();
+  return NON_LANGUAGE_TOKENS.has(first_part) == false;
 };
 
 let scanned = 0;
